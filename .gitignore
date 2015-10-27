@@ -30,3 +30,7 @@
 
 # Debug files
 *.dSYM/
+
+# CM cache
+.cm/
+
