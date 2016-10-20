@@ -31,6 +31,9 @@
 # Debug files
 *.dSYM/
 
-# CM cache
+# macOS finder
+.DS_Store
+
+# SML/NJ
 .cm/
 
