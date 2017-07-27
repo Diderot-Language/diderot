@@ -35,7 +35,7 @@ fi
 cat > $TARGET <<XXXX
 #!/bin/sh
 #
-exec @SMLNJ_CMD@ @SMLcmdname=\$0 @SMLload=$INSTALL_HEAP_IMAGE \$@
+exec @SMLNJ_CMD@ @SMLcmdname=\$0 @SMLload=$INSTALL_HEAP_IMAGE "\$@"
 XXXX
 
 #install the script and heap image
