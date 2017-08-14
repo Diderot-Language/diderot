@@ -1,0 +1,177 @@
+# Makefile
+#
+# A Makefile for when we are using mlton to build the Diderot compiler
+#
+# This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
+#
+# COPYRIGHT (c) 2015 The University of Chicago
+# All rights reserved.
+#
+# @configure_input@
+#
+
+#### Start of system configuration section. ####
+
+#
+# directories for the install target
+#
+PREFIX =		@prefix@
+INSTALL_BINDIR =	$(PREFIX)/bin
+INSTALL_LIBDIR =	$(PREFIX)/lib
+INSTALL_INCDIR =	$(PREFIX)/include
+
+#
+# directories for the local-install target
+#
+SRCDIR =	@DIDEROT_ROOT@/src
+LIBDIR =	@DIDEROT_ROOT@/lib
+BINDIR =	@DIDEROT_ROOT@/bin
+
+#
+# configuration support
+#
+CONFIGDIR =	@DIDEROT_ROOT@/config
+
+INSTALL =	@INSTALL@
+SHELL =		@SHELL@
+@SET_MAKE@
+
+#
+# generator tools
+#
+MKMK =		$(SRCDIR)/compiler/gen/fragments/mkmk.sh
+MKFRAGS =	$(SRCDIR)/compiler/gen/fragments/mkfrags.sh
+
+#
+# MLton build tools
+#
+MLTON =		@MLTON@
+MLTON_FLAGS =	-const 'Exn.keepHistory true'
+
+#### End of system configuration section. ####
+
+PROGRAM =		diderotc
+ROOT_MLB =		driver/sources.mlb
+
+#
+# generated parser files
+#
+PARSER_FILES =		parser/diderot.grm.sml parser/diderot.lex.sml \
+			parser/diderot-1.0.grm.sml parser/diderot-1.0.lex.sml
+#
+# preprocess files that contain UTF-8 multibyte sequences
+#
+UTF8_FILES =	cfg-ir/dom-tree-fn.sml \
+		ein/ein-pp.sml \
+		parse-tree/operators.sml \
+		typechecker/check-expr.sml
+EXPANDED_FILES = $(patsubst %.sml,%_mlton.sml,$(UTF8_FILES))
+
+SRC_FILES =		$(wildcard */sources.mlb) $(wildcard */*sml)
+
+CODE_FRAG_DIRS =	codegen cxx-util target-cpu
+
+CODE_FRAG_FILES =	$(patsubst %,%/fragments.sml,$(CODE_FRAG_DIRS))
+CODE_FRAG_MKFILES =	$(patsubst %,%/fragments.gmk,$(CODE_FRAG_DIRS))
+
+.PHONY:		local-install
+local-install:	$(PROGRAM)
+	cp -p $(PROGRAM) $(BINDIR)
+
+.PHONY:		install
+install:	$(HEAP_IMAGE)
+	cp -p $(PROGRAM) $(INSTALL_BINDIR)
+
+.PHONY:		build
+build:		$(PROGRAM)
+
+$(PROGRAM): $(ROOT_MLB) $(SRC_FILES) $(CODE_FRAG_FILES) $(PARSER_FILES) $(EXPANDED_FILES)
+	$(MLTON) $(MLTON_FLAGS) -output $(PROGRAM) $(ROOT_MLB)
+
+.PHONY:		typecheck
+typecheck:
+	$(MLTON) -stop tc $(MLTON_FLAGS) $(ROOT_MLB)
+
+#
+# Generate the scanner and parser from specs
+#
+parser/diderot-1.0.grm.sml: parser/diderot-1.0.grm
+	cd parser; ml-antlr diderot-1.0.grm
+
+parser/diderot-1.0.lex.sml: parser/diderot-1.0.lex
+	cd parser; ml-ulex --strict-sml diderot-1.0.lex
+
+parser/diderot.grm.sml: parser/diderot.grm
+	cd parser; ml-antlr diderot.grm
+
+parser/diderot.lex.sml: parser/diderot.lex
+	cd parser; ml-ulex --strict-sml diderot.lex
+
+#
+# preprocess files that contain UTF-8 multibyte sequences
+#
+
+$(EXPANDED_FILES): %_mlton.sml: %.sml expand-utf8
+	expand-utf8 < $< > $@
+
+.phony:		UTF8
+UTF8:
+expand-utf8:	$(CONFIGDIR)/expand-utf8.c
+	$(CC) -o expand-utf8 $(CONFIGDIR)/expand-utf8.c
+#
+# Rules for generating the fragment dependency and source files
+#
+
+codegen/fragments.gmk: codegen/fragments/CATALOG $(wildcard codegen/fragments/*in)
+	$(MKMK) codegen
+
+codegen/fragments.sml:
+	$(MKFRAGS) codegen
+
+cxx-util/fragments.gmk: cxx-util/fragments/CATALOG $(wildcard cxx-util/fragments/*in)
+	$(MKMK) cxx-util
+
+cxx-util/fragments.sml:
+	$(MKFRAGS) cxx-util
+
+target-cpu/fragments.gmk: target-cpu/fragments/CATALOG $(wildcard target-cpu/fragments/*in)
+	$(MKMK) target-cpu
+
+target-cpu/fragments.sml:
+	$(MKFRAGS) target-cpu
+
+#
+# Dependency file rules
+#
+
+ifneq ($(MAKECMDGOALS),clean)
+ifneq ($(MAKECMDGOALS),devclean)
+ifneq ($(MAKECMDGOALS),distclean)
+sinclude codegen/fragments.gmk
+sinclude cxx-util/fragments.gmk
+sinclude target-cpu/fragments.gmk
+endif
+endif
+endif
+
+#################### Cleanup ####################
+
+CLEAN_SUBDIRS =		gen/fragments
+
+CLEAN_FILES +=		$(PROGRAM) \
+			$(CODE_FRAG_MKFILES) \
+			$(CODE_FRAG_FILES) \
+			$(PARSER_FILES) \
+			$(EXPANDED_FILES) \
+			expand-utf8
+
+DISTCLEAN_FILES +=	Makefile \
+			common/paths.sml \
+			common/size-of.sml \
+			nrrd/run-dnorm.sml \
+			options/version.sml \
+			$(MKMK) $(MKFRAGS)
+
+DEVCLEAN_FILES =
+
+include @DIDEROT_MKDIR@/clean-rules.gmk

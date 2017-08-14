@@ -24,6 +24,7 @@ dnl
 dnl include additional macros
 dnl
 sinclude(config/ax_check_compile_flag.m4)
+sinclude(config/ax_gcc_func_attribute.m4)
 sinclude(config/ax_gcc_x86_cpuid.m4)
 sinclude(config/ax_gcc_x86_avx_xgetbv.m4)
 sinclude(config/ax_ext.m4)
@@ -77,6 +78,10 @@ dnl extra compiler options
 dnl
 CXXFLAGS_BASE="-Wreturn-type -Wuninitialized"
 
+AC_LANG_PUSH([C++])
+AX_GCC_FUNC_ATTRIBUTE(noreturn)
+AC_LANG_POP([C++])
+
 dnl check for SIMD support
 dnl
 AX_EXT
@@ -108,6 +113,9 @@ AC_LINK_IFELSE(
     [Define to 1 if gcc compiler provides atomic operations.]),
    AC_MSG_RESULT(no))
 
+dnl
+dnl check endianess
+dnl
 AC_C_BIGENDIAN
 
 #
