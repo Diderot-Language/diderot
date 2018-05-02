@@ -1,0 +1,36 @@
+(* sources.mlb
+ *
+ * MLB file for compiling with MLton
+ *
+ * This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
+ *
+ * COPYRIGHT (c) 2015 The University of Chicago
+ * All rights reserved.
+ *)
+
+local
+
+  $(SML_LIB)/basis/basis.mlb
+  $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
+  $(SML_LIB)/smlnj-lib/Controls/controls-lib.mlb
+
+  ../mlton/sources.mlb
+
+  ../common/sources.mlb
+  ../ast/sources.mlb
+  ../basis/sources.mlb
+  ../nrrd/sources.mlb
+  ../inputs/sources.mlb
+  ../global-env/sources.mlb
+  ../fields/sources.mlb
+  ../simple/sources.mlb
+
+  dead-code.sml
+  util.sml
+  simplify.sml
+
+in
+
+  structure Simplify
+
+end

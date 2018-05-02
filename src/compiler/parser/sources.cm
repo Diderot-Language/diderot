@@ -1,0 +1,33 @@
+(* sources.cm
+ *
+ * This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
+ *
+ * COPYRIGHT (c) 2015 The University of Chicago
+ * All rights reserved.
+ *)
+
+Library
+
+  structure Parser
+
+is
+
+  $/basis.cm
+  $/smlnj-lib.cm
+  $/ml-lpt-lib.cm
+
+  ../basis/sources.cm
+  ../common/sources.cm
+  ../parse-tree/sources.cm
+
+(* version 1.0 *)
+  diderot-1.0.lex : ml-ulex
+  diderot-1.0.grm : ml-antlr
+  keywords-1.0.sml
+
+(* version 2.0 *)
+  diderot.lex : ml-ulex
+  diderot.grm : ml-antlr
+  keywords.sml
+
+  parser.sml

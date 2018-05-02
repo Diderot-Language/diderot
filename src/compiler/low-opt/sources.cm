@@ -1,0 +1,26 @@
+(* sources.cm
+ *
+ * This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
+ *
+ * COPYRIGHT (c) 2016 The University of Chicago
+ * All rights reserved.
+ *)
+
+Library
+
+  structure LowOptimizer
+
+is
+
+  $/basis.cm
+  $/smlnj-lib.cm
+  $/controls-lib.cm
+
+  ../cfg-ir/sources.cm
+  ../common/sources.cm
+  ../inputs/sources.cm
+  ../low-ir/sources.cm
+  ../options/sources.cm
+
+  low-contract.sml
+  low-opt.sml

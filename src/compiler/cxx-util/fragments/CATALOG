@@ -1,0 +1,15 @@
+CxxFragments
+cxx-head.in		cxxHead
+debugger-incl.in        debugIncl
+eigenvals2x2.in		eigenvals2x2
+eigenvecs2x2.in		eigenvecs2x2
+eigenvals3x3.in		eigenvals3x3
+eigenvecs3x3.in		eigenvecs3x3
+exec-incl.in		execIncl
+lib-cxx-incl.in		libCXXIncl
+lib-hxx-foot.in		libHXXFoot
+lib-hxx-head.in		libHXXHead
+namespace-close.in	namespaceClose
+namespace-open.in	namespaceOpen
+nrrd-save-helper.in	nrrdSaveHelper
+

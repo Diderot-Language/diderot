@@ -1,0 +1,36 @@
+(* sources.mlb
+ *
+ * MLB file for compiling with MLton
+ *
+ * This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
+ *
+ * COPYRIGHT (c) 2016 The University of Chicago
+ * All rights reserved.
+ *)
+
+local
+
+  $(SML_LIB)/basis/basis.mlb
+  $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
+
+  ../mlton/sources.mlb
+
+  ../common/sources.mlb
+
+  ein.sml
+  ein-filter.sml
+  ein-pp_mlton.sml	(* generated from ein-pp.sml *)
+  ein-sums.sml
+  ein-util.sml
+  mk-operators.sml
+
+in
+
+  structure Ein
+  structure EinFilter
+  structure EinPP
+  structure EinSums
+  structure EinUtil
+  structure MkOperators
+
+end

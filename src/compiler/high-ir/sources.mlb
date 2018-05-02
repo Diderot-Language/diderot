@@ -1,0 +1,36 @@
+(* sources.mlb
+ *
+ * MLB file for compiling with MLton
+ *
+ * This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
+ *
+ * COPYRIGHT (c) 2016 The University of Chicago
+ * All rights reserved.
+ *)
+
+local
+
+  $(SML_LIB)/basis/basis.mlb
+  $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
+
+  ../mlton/sources.mlb
+
+  ../basis/sources.mlb (* for MathFns *)
+  ../common/sources.mlb
+  ../cfg-ir/sources.mlb
+  ../fields/sources.mlb
+
+  high-types.sml
+  high-ir.sml
+  check-high.sml
+
+in
+
+  structure CheckHigh
+  structure HighIR
+  structure HighCensus
+  structure HighTypes
+  structure HighOps
+  structure HighPP
+
+end

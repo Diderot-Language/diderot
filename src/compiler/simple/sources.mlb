@@ -1,0 +1,41 @@
+(* sources.mlb
+ *
+ * MLB file for compiling with MLton
+ *
+ * This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
+ *
+ * COPYRIGHT (c) 2016 The University of Chicago
+ * All rights reserved.
+ *)
+
+local
+
+  $(SML_LIB)/basis/basis.mlb
+  $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
+  $(SML_LIB)/smlnj-lib/PP/pp-lib.mlb
+
+  ../mlton/sources.mlb
+
+  ../ast/sources.mlb
+  ../basis/sources.mlb
+  ../common/sources.mlb
+  ../fields/sources.mlb
+  ../inputs/sources.mlb
+
+  simple-types.sml
+  simple-var.sml
+  simple-func.sml
+  simple.sml
+  check-simple.sml
+  simple-pp.sml
+
+in
+
+  structure CheckSimple
+  structure Simple
+  structure SimpleFunc
+  structure SimplePP
+  structure SimpleTypes
+  structure SimpleVar
+
+end

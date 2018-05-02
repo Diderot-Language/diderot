@@ -1,0 +1,37 @@
+static int eigenvals (tensor_ref_2_2 mat, diderot::array<@REALTY@,2> &eval)
+{
+    int roots;
+
+  /* copy the given matrix elements */
+    @REALTY@ M00 = mat[0];
+    @REALTY@ M01 = mat[1];
+    @REALTY@ M11 = mat[3];
+
+  /* subtract out the eigenvalue mean (we will add it back to evals later);
+   * helps with numerical stability
+   */
+    @REALTY@ mean = @REALTY@(0.5) * (M00 + M11);
+    M00 -= mean;
+    M11 -= mean;
+
+    @REALTY@ Q = M00 - M11;
+    @REALTY@ D = @REALTY@(4)*M01*M01 + Q*Q;
+    if (D > diderot::__details::EPSILON) {
+      /* two distinct roots */
+        @REALTY@ vv = @REALTY@(0.5) * std::sqrt(D);
+        eval[0] = vv;
+        eval[1] = -vv;
+        roots = diderot::__details::ROOT_TWO;
+    }
+    else {
+      /* double root */
+        eval[0] = eval[1] = @REALTY@(0);
+        roots = diderot::__details::ROOT_DOUBLE;
+    }
+
+  /* add back in the eigenvalue mean */
+    eval[0] += mean;
+    eval[1] += mean;
+
+    return roots;
+}

@@ -1,0 +1,40 @@
+(* sources.mlb
+ *
+ * This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
+ *
+ * COPYRIGHT (c) 2016 The University of Chicago
+ * All rights reserved.
+ *)
+
+local
+
+  $(SML_LIB)/basis/basis.mlb
+  $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
+
+  ../common/sources.mlb
+  ../options/sources.mlb
+  ../inputs/sources.mlb
+  ../low-ir/sources.mlb
+  ../nrrd/sources.mlb
+  ../tree-ir/sources.mlb
+  ../codegen/sources.mlb
+  ../cxx-util/sources.mlb
+
+  fragments.sml		(* generated *)
+
+  gen-util.sml
+  gen-debugger-hooks.sml
+  gen-global-update.sml
+  gen-inputs.sml
+  gen-outputs.sml
+  gen-strand.sml
+  gen-globals.sml
+  gen-world.sml
+  gen.sml
+  target-cpu.sml
+
+in
+
+  structure TargetCPU
+
+end

@@ -1,0 +1,34 @@
+(* sources.mlb
+ *
+ * This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
+ *
+ * COPYRIGHT (c) 2016 The University of Chicago
+ * All rights reserved.
+ *)
+
+local
+
+  $(SML_LIB)/basis/basis.mlb
+  $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
+
+  ../mlton/sources.mlb
+
+  ../basis/sources.mlb	(* for MathFns *)
+  ../common/sources.mlb
+  ../cfg-ir/sources.mlb
+  ../fields/sources.mlb
+
+  mid-types.sml
+  mid-ir.sml
+  check-mid.sml
+
+in
+
+  structure CheckMid
+  structure MidIR
+  structure MidCensus
+  structure MidTypes
+  structure MidOps
+  structure MidPP
+
+end

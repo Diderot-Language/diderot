@@ -1,0 +1,66 @@
+(* sources.mlb
+ *
+ * MLB file for compiling with MLton
+ *
+ * This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
+ *
+ * COPYRIGHT (c) 2015 The University of Chicago
+ * All rights reserved.
+ *)
+
+local
+
+  $(SML_LIB)/basis/basis.mlb
+  $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
+  $(SML_LIB)/smlnj-lib/Controls/controls-lib.mlb
+  $(SML_LIB)/mllpt-lib/mllpt-lib.mlb
+
+  ../mlton/sources.mlb
+
+  api-types.sml
+  border-ctl.sml
+  create.sml
+  error.sml
+  int-lit.sml
+  real-lit.sml
+  literal.sml
+  phase-timer.sml
+  log.sml
+  paths.sml
+  rational.sml
+  raw-types.sml
+  stamp.sml
+  kernel.sml
+  reductions.sml
+  size-of.sml
+  stats.sml
+  strand-sets.sml
+  strand-util.sml
+  properties.sml
+  timers.sml
+
+in
+
+  structure APITypes
+  structure BorderCtl
+  structure Create
+  structure Error
+  structure IntLit
+  structure Kernel
+  structure Literal
+  structure Log
+  structure Paths
+  structure PhaseTimer
+  structure Properties
+  structure Rational
+  structure RawTypes
+  structure Reductions
+  structure RealLit
+  structure SizeOf
+  structure Stamp
+  structure Stats
+  structure StrandSets
+  structure StrandUtil
+  structure Timers
+
+end

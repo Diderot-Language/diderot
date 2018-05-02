@@ -1,0 +1,31 @@
+// Run the start methods of the initial strands (sequential version)
+//
+void world::run_start_methods ()
+{
+#ifndef DIDEROT_NO_GLOBALS
+    globals *glob = this->_globals;
+#endif
+
+    for (auto ix = this->_strands.begin_fresh();
+        ix != this->_strands.end_fresh();
+        )
+    {
+        diderot::strand_status sts = this->_strands.strand_start(@START_ARGS_IN_WRLD@ix);
+        switch (sts) {
+          case diderot::kStabilize:
+            ix = this->_strands.strand_stabilize (@STABILIZE_ARGS_IN_WRLD@ix);
+            break;
+#ifdef DIDEROT_HAS_STRAND_DIE
+          case diderot::kDie:
+            ix = this->_strands.kill (ix);
+            break;
+#endif
+          default:
+            assert (sts == this->_strands.status(ix));
+            ix = this->_strands.next_fresh(ix);
+            break;
+        }
+    }
+    this->_strands._nFresh = 0;
+
+}

@@ -1,0 +1,34 @@
+(* sources.mlb
+ *
+ * This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
+ *
+ * COPYRIGHT (c) 2015 The University of Chicago
+ * All rights reserved.
+ *)
+
+local
+
+  $(SML_LIB)/basis/basis.mlb
+  $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
+
+  ../mlton/sources.mlb
+
+  ../ast/sources.mlb
+  ../basis/sources.mlb
+  ../common/sources.mlb
+  ../fields/sources.mlb
+  ../simple/sources.mlb
+  ../cfg-ir/sources.mlb
+  ../high-ir/sources.mlb
+  ../ein/sources.mlb
+
+  translate-ty.sml
+  translate-basis.sml
+  analyze-simple.sml
+  translate.sml
+
+in
+
+  structure Translate
+
+end

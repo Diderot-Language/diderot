@@ -1,0 +1,33 @@
+(* sources.cm
+ *
+ * This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
+ *
+ * COPYRIGHT (c) 2016 The University of Chicago
+ * All rights reserved.
+ *)
+
+Library
+
+  structure LowToTree
+
+is
+
+  $/basis.cm
+  $/smlnj-lib.cm
+  $/controls-lib.cm
+
+  ../common/sources.cm
+  ../cfg-ir/sources.cm
+  ../fields/sources.cm
+  ../low-ir/sources.cm
+  ../options/sources.cm
+  ../tree-ir/sources.cm
+
+  assign-types.sml
+  env.sml
+  flatten.sml
+  low-to-tree.sml
+  scope-vars.sml
+  unify-vars.sml
+  util.sml
+

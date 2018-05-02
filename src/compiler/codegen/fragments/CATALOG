@@ -1,0 +1,7 @@
+Fragments
+lib-h-foot.in		libHFoot
+lib-h-body.in		libHBody
+lib-h-par-extras.in	libHParExtras
+lib-h-head.in		libHHead
+lib-api.json		jsonBody
+

@@ -1,0 +1,36 @@
+(* sources.mlb
+ *
+ * This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
+ *
+ * COPYRIGHT (c) 2016 The University of Chicago
+ * All rights reserved.
+ *)
+
+local
+
+  $(SML_LIB)/basis/basis.mlb
+
+  fn.sml
+  list.sml
+  list-pair.sml
+  option.sml
+  string.sml
+
+in
+
+  signature FN = FN
+  structure Fn = Fn
+
+  signature LIST = LIST_EXT
+  structure List = ListExt
+
+  signature LIST_PAIR = LIST_PAIR_EXT
+  structure ListPair = ListPairExt
+
+  signature OPTION = OPTION_EXT
+  structure Option = OptionExt
+
+  signature STRING = STRING_EXT
+  structure String = StringExt
+
+end

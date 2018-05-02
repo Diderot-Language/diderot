@@ -1,0 +1,36 @@
+(* sources.mlb
+ *
+ * MLB file for compiling with MLton
+ *
+ * This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
+ *
+ * COPYRIGHT (c) 2018 The University of Chicago
+ * All rights reserved.
+ *)
+
+local
+
+  $(SML_LIB)/basis/basis.mlb
+  $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
+
+  ../mlton/sources.mlb
+  ../common/sources.mlb
+  ../parse-tree/sources.mlb
+  ../ast/sources.mlb
+  ../global-env/sources.mlb
+
+  basis-names.sml
+  basis-vars.sml
+  basis.sml
+  dump-basis.sml
+  math-fns.sml
+
+in
+
+  structure Basis
+  structure BasisNames
+  structure BasisVars
+  structure DumpBasis
+  structure MathFns
+
+end

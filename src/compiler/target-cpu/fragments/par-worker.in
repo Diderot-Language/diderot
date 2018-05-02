@@ -1,0 +1,110 @@
+struct CACHE_ALIGN worker_arg {
+    world       *_wrld;         //!< world pointer
+    uint32_t    _id;            //!< worker ID
+    uint32_t    _maxNSteps;     //!< maximum number of steps to take; 0 == infinity
+    uint32_t    _nSteps;        //!< max number of steps taken by a strand in call to run
+    worker_cache _strands;
+};
+
+/* Function which processes active strands. */
+static void worker (void *arg)
+{
+    worker_arg *myArg = reinterpret_cast<worker_arg *>(arg);
+    world *wrld = myArg->_wrld;
+#ifndef DIDEROT_NO_GLOBALS
+    globals *glob = wrld->_globals;
+#endif
+    diderot::scheduler *sched = wrld->_sched;
+    worker_cache *strands = &(myArg->_strands);
+    bool treeNeedsUpdate = true;
+
+  // barrier before start of first super-step
+    sched->_bspBar.all_wait ();
+
+  // iterate until all strands are stable
+    uint32_t nSteps = 0;
+    uint32_t maxNSteps = myArg->_maxNSteps;
+
+    while ((wrld->_strands.num_active() > 0) && (nSteps < maxNSteps)) {
+        uint32_t numDead = 0;
+        uint32_t numStabilized = 0;
+        strands->refresh();
+        nSteps++;
+#ifdef DIDEROT_HAS_STRAND_COMMUNICATION
+      // build spatial partition to support communication
+        if (sched->_bspBar.wait(myArg->_id == 0)) {
+          // worker 0 does sequential work of rebuilding tree
+/* FIXME: tree building should be parallel */
+            IF_LOGGING ( LogKDTreeRebuildStart(wrld, myArg->_id+1); )
+            if (treeNeedsUpdate) {
+                wrld->_tree->update_strands ();
+            }
+            wrld->_tree->rebuild ();
+            IF_LOGGING ( LogKDTreeRebuildDone(wrld, myArg->_id+1); )
+          // synchronize on the tree having been built
+            sched->_bspBar.release();
+        }
+#endif
+        strand_array::sched_block *blk;
+        while ((blk = strands->get_block()) != nullptr) {
+#ifdef DIDEROT_HAS_START_METHOD
+          // run start methods for fresh strands
+            strands->run_start_methods(@START_ARGS@blk);
+#endif
+            uint32_t nStable = blk->_nStable;
+#ifdef DIDEROT_HAS_STRAND_DIE
+            uint32_t nDead = blk->_nDead;
+#endif
+          // update the strands
+            for (auto ix = strands->begin_active(blk);
+                ix != strands->end_active(blk);
+            ) {
+                diderot::strand_status sts = strands->strand_update(@UPDATE_ARGS@ix);
+                switch (sts) {
+                  case diderot::kStabilize:
+                  // stabilize the strand's state.
+                    IF_LOGGING ( LogStrandStabilize(wrld, myArg->_id+1, ix); )
+                    ix = strands->strand_stabilize(blk, @STABILIZE_ARGS@ix);
+                    break;
+#ifdef DIDEROT_HAS_STRAND_DIE
+                  case diderot::kDie:
+                    IF_LOGGING ( LogStrandDie(wrld, myArg->_id+1, ix); )
+                    ix = strands->kill (blk, ix);
+                    break;
+#endif
+                  default:
+                    assert (sts == strands->status(ix));
+                    ix = strands->next_active(blk, ix);
+                    break;
+                }
+            }
+          // finish the local-phase of the superstep by updating strand status
+            numStabilized += (blk->_nStable - nStable);
+#ifdef DIDEROT_HAS_STRAND_DIE
+            numDead += (blk->_nDead - nDead);
+#endif
+        }
+
+        strands->_nStabilizing = numStabilized;
+#ifdef DIDEROT_HAS_STRAND_DIE
+        strands->_nDying = numDead;
+#endif
+      // barrier at end of local update phase
+        if (sched->_bspBar.wait (myArg->_id == 0)) {
+          // finish the local-phase of the superstep by updating strand status
+            treeNeedsUpdate = wrld->_strands.finish_step();
+            wrld->swap_state();
+#ifdef DIDEROT_HAS_GLOBAL_UPDATE
+/* FIXME: global update should be parallel */
+          // worker 0 does sequential work of global update
+            wrld->global_update();
+#endif
+            sched->_bspBar.release();
+        }
+        strands->swap();
+    }
+
+  // return number of steps
+    myArg->_nSteps = nSteps;
+
+}

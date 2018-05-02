@@ -1,0 +1,63 @@
+(* run-dnorm_sml.in
+ *
+ * This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
+ *
+ * COPYRIGHT (c) 2015 The University of Chicago
+ * All rights reserved.
+ *
+ * This module supports running the teem command "unu dnorm" on a nrrd file.
+ *
+ * @configure_input@
+ *)
+
+structure RunDNorm : sig
+
+    val run : Error.err_stream * string -> {
+            version : string,
+            header : (string * string) list
+          } option
+
+  end = struct
+
+    structure SS = Substring
+
+    fun err (errStrm, msg) = (
+          Error.error (errStrm, "unu dnorm: " :: msg);
+          NONE)
+
+    fun run (errStrm, srcFile) = if OS.FileSys.access(srcFile, [OS.FileSys.A_READ])
+          then let
+            val unuCmd = OS.Path.concat(Paths.teemBin(), "unu")
+            val proc = Unix.execute (unuCmd, ["dnorm", "-h", "-i", srcFile])
+            val inS = Unix.textInstreamOf proc
+            fun stripWS ss = SS.string (SS.dropl Char.isSpace (SS.dropr Char.isSpace ss))
+            fun read content = (case TextIO.inputLine inS
+                   of SOME "\n" => read content (* dnorm outputs an extra blank line at the end *)
+                    | SOME ln => (
+                        case SS.fields (fn #":" => true | _ => false) (SS.full ln)
+                         of [name, value] =>
+                              read((SS.string name, stripWS value)::content)
+                          | _ => (
+                              Error.error (errStrm, [
+                                  "bogus nrrd header line \"", String.toString ln, "\""
+                                ]);
+                              content)
+                        (* end case *))
+                    | NONE => List.rev content
+                  (* end case *))
+            val info = (case TextIO.inputLine inS
+                   of SOME version => SOME{
+                          version = stripWS(SS.full version),
+                          header = read []
+                        }
+                    | NONE => err (errStrm, ["bogus nrrd file"])
+                  (* end case *))
+            val sts = Unix.reap proc
+            in
+              if OS.Process.isSuccess sts
+                then info
+                else err (errStrm, ["error running dnorm"])
+            end
+          else err (errStrm, ["image file \"", srcFile, "\" not found"])
+
+  end

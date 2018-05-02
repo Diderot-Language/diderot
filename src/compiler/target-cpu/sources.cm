@@ -1,0 +1,38 @@
+(* sources.cm
+ *
+ * This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
+ *
+ * COPYRIGHT (c) 2016 The University of Chicago
+ * All rights reserved.
+ *)
+
+Library
+
+  structure TargetCPU
+
+is
+
+  $/basis.cm
+  $/smlnj-lib.cm
+
+  ../codegen/sources.cm
+  ../common/sources.cm
+  ../cxx-util/sources.cm
+  ../inputs/sources.cm
+  ../low-ir/sources.cm
+  ../nrrd/sources.cm
+  ../options/sources.cm
+  ../tree-ir/sources.cm
+
+  fragments.sml		(* generated *)
+
+  gen.sml
+  gen-debugger-hooks.sml
+  gen-globals.sml
+  gen-global-update.sml
+  gen-inputs.sml
+  gen-outputs.sml
+  gen-strand.sml
+  gen-util.sml
+  gen-world.sml
+  target-cpu.sml

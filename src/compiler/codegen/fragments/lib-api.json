@@ -1,0 +1,213 @@
+{
+  "program" : "@PROG_NAME@",
+  "source-file" : "@SRCFILE@",
+  "build-cmd" : "@DIDEROTC_CMD@ @DIDEROTC_ARGV@",
+  "version" : "@DIDEROTC_VERSION@",
+  "float-size" : "@DIDEROT_REAL_SIZE@",
+  "int-size" : "@DIDEROT_INT_SIZE@",
+  "target" : "@DIDEROT_TARGET@",
+  "inputs" : [],
+  "runtime" : [
+    {
+      "name" : "new_world",
+      "func" : {
+        "return-ty" : { "kind" : "*", "arg" : "@PREFIX@_world_t" },
+        "name" : "@PREFIX@_new_world",
+        "params" : [ ]
+      }
+    },
+    {
+      "name": "init_world",
+      "func" : {
+        "return-ty" : "bool",
+        "name" : "@PREFIX@_init_world",
+        "params" : [
+          {
+            "name" : "wrld",
+            "param-ty" : { "kind" : "*", "arg" : "@PREFIX@_world_t" },
+            "attrbs" : ["world"]
+          }
+        ]
+      }
+    },
+    {
+      "name": "create_strands",
+      "func" : {
+        "return-ty" : "bool",
+        "name" : "@PREFIX@_create_strands",
+        "params" : [
+          {
+            "name" : "wrld",
+            "param-ty" : { "kind" : "*", "arg" : "@PREFIX@_world_t" },
+            "attrbs" : ["world"]
+          }
+        ]
+      }
+    },
+    {
+      "name": "run",
+      "func" : {
+        "return-ty" : "uint32_t",
+        "name" : "@PREFIX@_run",
+        "params" : [
+          {
+            "name" : "wrld",
+            "param-ty" : { "kind" : "*", "arg" : "@PREFIX@_world_t" },
+            "attrbs" : ["world"]
+          },
+          {
+            "name" : "maxNSteps",
+            "param-ty" : "uint32_t",
+            "attrbs" : ["world"]
+          }
+        ]
+      }
+    },
+    {
+      "name": "shutdown",
+      "func" : {
+        "return-ty" : "void",
+        "name" : "@PREFIX@_shutdown",
+        "params" : [
+          {
+            "name" : "wrld",
+            "param-ty" : { "kind" : "*", "arg" : "@PREFIX@_world_t" },
+            "attrbs" : ["world"]
+          }
+        ]
+      }
+    },
+    {
+      "name": "num_strands",
+      "get" : {
+        "return-ty" : "uint32_t",
+        "name" : "@PREFIX@_num_strands",
+        "params" : [
+          {
+            "name" : "wrld",
+            "param-ty" : { "kind" : "*", "arg" : "@PREFIX@_world_t" },
+            "attrbs" : ["world"]
+          }
+        ]
+      }
+    },
+    {
+      "name": "num_active_strands",
+      "get" : {
+        "return-ty" : "uint32_t",
+        "name" : "@PREFIX@_num_active_strands",
+        "params" : [
+          {
+            "name" : "wrld",
+            "param-ty" : { "kind" : "*", "arg" : "@PREFIX@_world_t" },
+            "attrbs" : ["world"]
+          }
+        ]
+      }
+    },
+    {
+      "name": "num_stable_strands",
+      "get" : {
+        "return-ty" : "uint32_t",
+        "name" : "@PREFIX@_num_stable_strands",
+        "params" : [
+          {
+            "name" : "wrld",
+            "param-ty" : { "kind" : "*", "arg" : "@PREFIX@_world_t" },
+            "attrbs" : ["world"]
+          }
+        ]
+      }
+    },
+    {
+      "name": "any_errors",
+      "get" : {
+        "return-ty" : "bool",
+        "name" : "@PREFIX@_any_errors",
+        "params" : [
+          {
+            "name" : "wrld",
+            "param-ty" : { "kind" : "*", "arg" : "@PREFIX@_world_t" },
+            "attrbs" : ["world"]
+          }
+        ]
+      }
+    },
+    {
+      "name" : "get_errors",
+      "get" : {
+        "return-ty" : { "kind" : "*", "arg" : "char"},
+        "name" : "@PREFIX@_get_errors",
+        "params" : [
+          {
+            "name" : "wrld",
+            "param-ty" : { "kind" : "*", "arg" : "@PREFIX@_world_t" },
+            "attrbs" : ["world"]
+          }
+        ]
+      }
+    },
+    {
+      "name" : "verbose",
+      "get" : {
+        "return-ty" : "bool",
+        "name" : "@PREFIX@_get_verbose",
+        "params" : [
+          {
+            "name" : "wrld",
+            "param-ty" : { "kind" : "*", "arg" : "@PREFIX@_world_t" },
+            "attrbs" : ["world"]
+          }
+        ]
+      },
+      "set" : {
+        "return-ty" : "void",
+        "name" : "@PREFIX@_set_verbose",
+        "params" : [
+          {
+            "name" : "wrld",
+            "param-ty" : { "kind" : "*", "arg" : "@PREFIX@_world_t" },
+            "attrbs" : ["world"]
+          },
+          {
+            "name" : "mode",
+            "param-ty" : "bool",
+            "attrbs" : ["out"]
+          }
+        ]
+      }
+    },
+    {
+      "name" : "printer_cb",
+      "set" : {
+        "return-ty" : "bool",
+        "name" : "@PREFIX@_set_printer_cb",
+        "params" : [
+          {
+            "name" : "wrld",
+            "param-ty" : { "kind" : "*", "arg" : "@PREFIX@_world_t" },
+            "attrbs" : ["world"]
+          },
+          {
+            "name" : "pr",
+            "param-ty" : {
+                "kind" : "*()",
+                "return-ty" : "bool",
+                "params" : [
+                  { "name" : "data", "param-ty" : { "kind" : "*", "arg" : "void" } },
+                  { "name" : "msg", "param-ty" : { "kind" : "*", "arg" : "char" } }
+                ]
+              },
+            "attrbs" : ["in"]
+          },
+          {
+            "name" : "data",
+            "param-ty" : { "kind" : "*", "arg" : "void" },
+            "attrbs" : ["in"]
+          }
+        ]
+      }
+    }
+  ],
+  "outputs" : []
+}

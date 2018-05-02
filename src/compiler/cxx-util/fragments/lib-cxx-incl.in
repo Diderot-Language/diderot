@@ -1,0 +1,10 @@
+#include "@H_FILE@"
+#include "diderot/diderot.hxx"
+
+#ifdef DIDEROT_ENABLE_LOGGING
+#define IF_LOGGING(...)         __VA_ARGS__
+#else
+#define IF_LOGGING(...)
+#endif
+
+static std::string ProgramName = "@PROG_NAME@";

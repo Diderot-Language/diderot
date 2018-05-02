@@ -1,0 +1,38 @@
+(* sources.mlb
+ *
+ * This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
+ *
+ * COPYRIGHT (c) 2016 The University of Chicago
+ * All rights reserved.
+ *)
+
+
+local
+
+  $(SML_LIB)/basis/basis.mlb
+  $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
+
+  ../mlton/sources.mlb
+
+  ../common/sources.mlb
+  ../fields/sources.mlb
+  ../cfg-ir/sources.mlb
+  ../low-ir/sources.mlb
+  ../mid-ir/sources.mlb
+  ../ein/sources.mlb
+
+  avail-rhs.sml
+  mk-low-ir.sml
+  field-to-low.sml
+  ein-to-scalar.sml
+  ein-to-vector.sml
+  ein-to-low.sml
+  eval-kern.sml
+  load-voxels.sml
+  mid-to-low.sml
+
+in
+
+  structure MidToLow
+
+end

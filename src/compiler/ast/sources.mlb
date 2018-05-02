@@ -1,0 +1,41 @@
+(* sources.mlb
+ *
+ * MLB file for compiling with MLton
+ *
+ * This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
+ *
+ * COPYRIGHT (c) 2015 The University of Chicago
+ * All rights reserved.
+ *)
+
+local
+
+  $(SML_LIB)/basis/basis.mlb
+  $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
+  $(SML_LIB)/smlnj-lib/PP/pp-lib.mlb
+
+  ../mlton/sources.mlb
+
+  ../common/sources.mlb
+
+  types.sml
+  var.sml
+  ast.sml
+  type-of.sml
+  meta-var.sml
+  type-util.sml
+  const-expr.sml
+  ast-pp.sml
+
+in
+
+  structure AST
+  structure ASTPP
+  structure ConstExpr
+  structure TypeOf
+  structure Types
+  structure TypeUtil
+  structure MetaVar
+  structure Var
+
+end

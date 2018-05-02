@@ -1,0 +1,35 @@
+(* sources.mlb
+ *
+ * This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
+ *
+ * COPYRIGHT (c) 2016 The University of Chicago
+ * All rights reserved.
+ *)
+
+local
+
+  $(SML_LIB)/basis/basis.mlb
+  $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
+
+  ../mlton/sources.mlb
+
+  ../basis/sources.mlb  (* for MathFns *)
+  ../common/sources.mlb
+  ../fields/sources.mlb
+  ../cfg-ir/sources.mlb
+  ../mid-ir/sources.mlb  (* for MidTypes *)
+
+  low-types.sml
+  low-ir.sml
+  check-low.sml
+
+in
+
+  structure CheckLow
+  structure LowIR
+  structure LowCensus
+  structure LowTypes
+  structure LowOps
+  structure LowPP
+
+end

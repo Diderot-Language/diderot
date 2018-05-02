@@ -1,0 +1,80 @@
+//! Run the Diderot program (parallel version)
+//! \param maxNSteps the limit on the number of super steps; 0 means unlimited
+//! \return the number of steps taken, or 0 if done or there is an error.
+uint32_t world::run (uint32_t maxNSteps)
+{
+    if (this->_stage == diderot::POST_CREATE) {
+#ifdef DIDEROT_HAS_GLOBAL_START
+        this->global_start();
+#endif
+        this->_stage = diderot::RUNNING;
+    }
+    else if (this->_stage == diderot::DONE) {
+        return 0;
+    }
+    assert (this->_stage == diderot::RUNNING);
+
+    diderot::scheduler *sched = this->_sched;
+
+    if (maxNSteps == 0) {
+        maxNSteps = 0xffffffff;  // essentially unlimited
+    }
+
+  // set task pointer
+    sched->_task = worker;
+
+  // initialize per-worker info
+    this->_strands._workers.clear();
+    worker_arg *args = new worker_arg[sched->_numWorkers];
+    for (int i = 0;  i < sched->_numWorkers;  i++) {
+        worker_arg *p = &args[i];
+        p->_wrld = this;
+        p->_id = i;
+        p->_maxNSteps = maxNSteps;
+        p->_nSteps = 0;
+#ifndef DIDEROT_BSP
+        p->_nStable = 0;
+        p->_nDead = 0;
+#endif
+        p->_strands.init (this->_strands);
+        sched->_info[i]._data = p;
+    }
+
+    double t0 = airTime();
+
+  // Start worker threads
+    if (this->_verbose) {
+        std::cerr << "run with " << this->_strands.num_active() << " active strands / "
+            << sched->_numWorkers << " workers ..." << std::endl;
+    }
+    this->_strands.prepare_run ();
+    sched->_gate.release_workers (IF_LOGGING( this ));
+
+  // wait for the computation to finish
+    sched->_gate.controller_wait (IF_LOGGING( this ));
+
+  // get max # steps and update global counts of active and stable strands when no-bsp
+    uint32_t nSteps = 0;
+    for (uint32_t i = 0;  i < sched->_numWorkers;  i++) {
+        nSteps = std::max (nSteps, args[i]._nSteps);
+#ifndef DIDEROT_BSP
+      // if there is no BSP, then the controller updates #active and #stable
+        this->_strands._nActive -= args[i]._nStable + args[i]._nDead;
+        this->_strands._nStable += args[i]._nStable;
+#endif
+    }
+    delete[] args;
+
+    t0 = airTime() - t0;
+    if (this->_verbose) {
+        std::cerr << nSteps << " steps done in " << t0 << " seconds" << std::endl;
+    }
+    this->_run_time += t0;
+
+    if (this->_strands.num_active() == 0) {
+        this->_stage = diderot::DONE;
+    }
+
+    return nSteps;
+
+} // world::run

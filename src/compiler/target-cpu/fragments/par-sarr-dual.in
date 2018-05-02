@@ -1,0 +1,558 @@
+// forward declaration of worker_cache type
+struct worker_cache;
+// forward declarations of strand methods
+#ifdef DIDEROT_HAS_START_METHOD
+static diderot::strand_status @STRAND@_start (@START_PARAMS@
+    @STRAND@_local *selfLocal, @STRAND@_shared *selfIn, @STRAND@_shared *selfOut);
+#endif // DIDEROT_HAS_START_METHOD
+static diderot::strand_status @STRAND@_update (@UPDATE_PARAMS@
+    @STRAND@_local *selfLocal, @STRAND@_shared *selfIn, @STRAND@_shared *selfOut);
+#ifdef DIDEROT_HAS_STABILIZE_METHOD
+static void @STRAND@_stabilize (@STABILIZE_PARAMS@
+    @STRAND@_local *selfLocal, @STRAND@_shared *selfIn, @STRAND@_shared *selfOut);
+#endif // DIDEROT_HAS_STABILIZE_METHOD
+
+#ifdef DIDEROT_HAS_STRAND_DIE
+#  error unexpected presence of "die"
+#endif
+
+// strand_array for PARALLEL_TARGET/BSP/DUAL STATE/DIRECT ACCESS
+//
+struct strand_array {
+    typedef @STRANDTY@ strand_t;
+    typedef uint32_t index_t;
+    typedef index_t sid_t;              // strand ID (index into strand-state storage)
+
+    // scheduling block of strands
+    //
+    struct CACHE_ALIGN sched_block {
+        index_t         _start;         // first index in block
+        index_t         _stop;          // last index in block + 1
+        uint32_t        _nStable;       // number of stable strands in the block
+
+      // return the number of strands in the block
+        uint32_t num_strands () const { return this->_stop - this->_start; }
+      // return the number of active strands in the block
+        uint32_t num_active () const
+        {
+            return this->num_strands() - this->_nStable;
+        }
+    };
+
+    uint8_t             *_status;       // the array of status information for the strands
+    char                *_storage;      // points to array of @STRANDTY@ structs
+    uint32_t            _inIdx;         // index of shared input state (either 0 or 1)
+    sched_block         *_schedBlks;    // blocks of strands for parallel scheduling
+    uint32_t            _nItems;        // number of items in the _storage and _status arrays
+    uint32_t            _nFresh;        // number of fresh strands (new strands from create_strands)
+    uint32_t            _nBlks;         // number of scheduling blocks
+    uint32_t            _blkSz;         // size of scheduling blocks
+    atomic_uint32_t     _nStable CACHE_ALIGN;
+                                        // global number of stable strands
+    atomic_uint32_t     _nActive CACHE_ALIGN;
+                                        // global number of active strands
+    atomic_uint32_t     _nextSchedBlk CACHE_ALIGN;
+                                        // next block to schedule
+    std::vector<worker_cache *> _workers;
+
+    strand_array ()
+        : _status(nullptr), _storage(nullptr), _schedBlks(nullptr), _nItems(0),
+          _nStable(0), _nActive(0), _nFresh(0), _nBlks(0), _blkSz(0), _nextSchedBlk(0)
+    { }
+    ~strand_array ();
+
+    uint32_t in_state_index () const { return this->_inIdx; }
+
+    uint32_t num_active () const { return this->_nActive; }
+    uint32_t num_stable () const { return this->_nStable; }
+    uint32_t num_alive () const { return this->_nActive+this->_nStable; }
+
+  // return the ID of a strand, which is the value of the _idx array
+    sid_t id (index_t ix) const
+    {
+        assert (ix < this->_nItems);
+        return ix;
+    }
+  // return a pointer to the strand with the given ID
+    @STRANDTY@ *id_to_strand (sid_t id) const
+    {
+        assert (id < this->_nItems);
+        return reinterpret_cast<@STRANDTY@ *>(this->_storage + id * sizeof(@STRANDTY@));
+    }
+
+  // return a strand's status
+    diderot::strand_status status (index_t ix) const
+    {
+        return static_cast<diderot::strand_status>(this->_status[ix]);
+    }
+  // return a pointer to the given strand
+    @STRANDTY@ *strand (index_t ix) const
+    {
+        return this->id_to_strand(this->id(ix));
+    }
+  // return a pointer to the local state of strand ix
+    @STRAND@_local *local_state (index_t ix) const
+    {
+        return &(this->strand(ix)->_local);
+    }
+  // return a pointer to the local state of strand with the given ID
+    @STRAND@_local *id_to_local_state (sid_t id) const
+    {
+        return &(this->id_to_strand(id)->_local);
+    }
+  // return a pointer to the in-state of strand ix
+    const @STRAND@_shared *in_state (index_t ix) const
+    {
+        return &(this->strand(ix)->_shared[this->_inIdx]);
+    }
+  // return a pointer to the in-state of the strand with the given ID
+    const @STRAND@_shared *id_to_in_state (sid_t id) const
+    {
+        return &(this->id_to_strand(id)->_shared[this->_inIdx]);
+    }
+  // return a pointer to the out-state of strand ix
+    @STRAND@_shared *out_state (index_t ix) const
+    {
+        return &(this->strand(ix)->_shared[this->_inIdx ^ 1]);
+    }
+
+  // set the scheduling block size based on the number of workers and the number of
+  // strands.  This should be called before alloc.
+    void set_block_size (uint32_t nWorkers, uint32_t nStrands)
+    {
+        this->_blkSz = diderot::sched_block_size (nWorkers, nStrands);
+    }
+
+  // allocate space for nItems organized into blkSz sized blocks of strands
+    bool alloc (uint32_t nItems);
+
+  // initialize the first nStrands locations as new active strands
+    void create_strands (uint32_t nStrands);
+
+  // swap in and out states
+    void swap ()
+    {
+        this->_inIdx ^= 1;
+// FIXME: once we have parallel reductions and parallel tree building, we will need
+// to reset this counter in other places too
+        this->_nextSchedBlk = 0;
+    }
+
+  // invoke strand's stabilize method (single-thread version)
+    index_t strand_stabilize (@STABILIZE_PARAMS@index_t ix)
+    {
+        @STRANDTY@ *self = this->strand(ix);
+        @STRAND@_shared *selfIn = &self->_shared[this->_inIdx];
+        @STRAND@_shared *selfOut = &self->_shared[this->_inIdx^1];
+#ifdef DIDEROT_HAS_STABILIZE_METHOD
+      // note that we swap out and in here because out holds the current state
+        @STRAND@_stabilize (@STABILIZE_ARGS@&self->_local, selfOut, selfIn);
+        std::memcpy (selfOut, selfIn, sizeof(@STRAND@_shared));
+#else
+        std::memcpy (selfIn, selfOut, sizeof(@STRAND@_shared));
+#endif // DIDEROT_HAS_STABILIZE_METHOD
+        this->_status[ix] = diderot::kStable;
+        this->_nActive--;
+        this->_nStable++;
+      // skip to next active strand
+        do {
+            ix++;
+        } while ((ix < this->_nItems) && notActiveSts(this->status(ix)));
+        return ix;
+    }
+
+#ifdef DIDEROT_HAS_KILL_ALL // need kill for when step limit expires
+  // mark the given strand as dead (single-thread version)
+    index_t kill (index_t ix)
+    {
+        this->_status[ix] = diderot::kDead;
+        this->_nActive--;
+      // skip to next active strand
+        do {
+            ix++;
+        } while ((ix < this->_nItems) && notActiveSts(this->status(ix)));
+        return ix;
+    }
+#endif
+
+  // prepare to run the workers
+    void prepare_run ()
+    {
+        this->_nextSchedBlk = 0;
+    }
+
+  // finish the local-phase of a superstep
+    bool finish_step ();
+
+#ifdef DIDEROT_HAS_KILL_ALL // need kill for when step limit expires
+  // finish a kill_all operation (NOP)
+    void finish_kill_all () { }
+#endif
+
+  // finish a stabilize_all operation (NOP)
+    void finish_stabilize_all () { }
+
+  // iterator over all alive strands (single-threaded version)
+    index_t begin_alive () const
+    {
+        index_t ix = 0;
+        return ix;
+    }
+    index_t end_alive () const { return this->_nItems; }
+    index_t next_alive (index_t &ix) const
+    {
+        ix++;
+        return ix;
+    }
+
+  // iterator over all active strands (single-threaded version)
+    index_t begin_active () const
+    {
+        index_t ix = 0;
+        while ((ix < this->_nItems) && notActiveSts(this->status(ix))) {
+            ix++;
+        }
+        return ix;
+    }
+    index_t end_active () const { return this->_nItems; }
+    index_t next_active (index_t &ix) const
+    {
+        do {
+            ix++;
+        } while ((ix < this->_nItems) && notActiveSts(this->status(ix)));
+        return ix;
+    }
+
+  // iterator over stable strands
+    index_t begin_stable () const
+    {
+        index_t ix = 0;
+        while ((ix < this->_nItems) && (this->status(ix) != diderot::kStable)) {
+            ix++;
+        }
+        return ix;
+    }
+    index_t end_stable () const { return this->_nItems; }
+    index_t next_stable (index_t &ix) const
+    {
+        do {
+            ix++;
+        } while ((ix < this->_nItems) && (this->status(ix) != diderot::kStable));
+        return ix;
+    }
+
+  // iterator over fresh strands; since the only new strands were created by create_strand
+  // we iterate over all of them
+    index_t begin_fresh () const { return 0; }
+    index_t end_fresh () const { return this->_nFresh; }
+    index_t next_fresh (index_t &ix) const { return ++ix; }
+
+}; // struct strand_array
+
+strand_array::~strand_array ()
+{
+  // run destructors to reclaim any dynamic memory attached to the strand state
+    for (auto ix = this->begin_alive();  ix != this->end_alive();  ix = this->next_alive(ix)) {
+        this->strand(ix)->~@STRANDTY@();
+    }
+    if (this->_status != nullptr) std::free (this->_status);
+    if (this->_storage != nullptr) std::free (this->_storage);
+    if (this->_schedBlks != nullptr) std::free (this->_schedBlks);
+}
+
+bool strand_array::alloc (uint32_t nItems)
+{
+    if (this->_blkSz == 0) {
+        std::cerr << "Internal error: strand_array block size is 0\n";
+        return true;
+    }
+    this->_storage = static_cast<char *>(std::malloc (nItems * sizeof(@STRANDTY@)));
+    if (this->_storage == nullptr) {
+        return true;
+    }
+    this->_status = static_cast<uint8_t *>(std::malloc (nItems * sizeof(uint8_t)));
+    if (this->_status == nullptr) {
+        std::free (this->_storage);
+        return true;
+    }
+    this->_nBlks = (nItems + this->_blkSz - 1) / this->_blkSz;
+    this->_schedBlks = static_cast<sched_block *>(std::malloc (this->_nBlks * sizeof(sched_block)));
+    if (this->_schedBlks == nullptr) {
+        std::free (this->_storage);
+        std::free (this->_status);
+        return true;
+    }
+    this->_inIdx = 0;
+    this->_nItems = nItems;
+    this->_nActive = 0;
+    this->_nStable = 0;
+    this->_nFresh = 0;
+    return false;
+}
+
+void strand_array::create_strands (uint32_t nStrands)
+{
+    assert (this->_nActive == 0);
+    assert (this->_nItems == nStrands);
+    for (uint32_t ix = 0;  ix < nStrands;  ix++) {
+#ifdef DIDEROT_HAS_START_METHOD
+        this->_status[ix] = diderot::kNew;
+#else
+        this->_status[ix] = diderot::kActive;
+#endif
+        new(this->strand(ix)) @STRANDTY@;
+    }
+    this->_nActive = nStrands;
+    this->_nFresh = nStrands;
+  // initialize the scheduling blocks
+    for (uint32_t ix = 0, i = 0;  i < this->_nBlks;  i++) {
+        this->_schedBlks[i]._start = ix;
+        ix += this->_blkSz;
+        this->_schedBlks[i]._stop = ix;
+        this->_schedBlks[i]._nStable = 0;
+    }
+  // the last block may be incomplete, so adjust it
+    this->_schedBlks[this->_nBlks-1]._stop = nStrands;
+}
+
+// a local copy of strand state for workers
+struct worker_cache {
+    typedef strand_array::strand_t strand_t;
+    typedef strand_array::index_t index_t;
+    typedef strand_array::sid_t sid_t;
+    typedef strand_array::sched_block sched_block;
+
+    uint8_t             *_status;       // the array of status information for the strands
+    char                *_storage;      // points to array of @STRANDTY@ structs
+    sched_block         *_schedBlks;    // blocks of strands for parallel scheduling
+    atomic_uint32_t     *_nStablePtr;   // pointer to _nStable
+    atomic_uint32_t     *_nActivePtr;   // pointer to _nActive
+    atomic_uint32_t     *_nextBlkPtr;   // pointer to _nextSchedBlk
+    uint32_t            _nStabilizing;  // count of strands run by this worker that stabilized in
+                                        // the current superstep
+#ifdef DIDEROT_HAS_STRAND_DIE
+    uint32_t            _nDying;        // count of strands run by this worker that died in
+                                        // the current superstep
+#endif
+    uint32_t            _inIdx;         // index of shared input state (either 0 or 1)
+    uint32_t            _nBlks;         // number of scheduling blocks
+    uint32_t            _blkSz;         // size of scheduling blocks
+#ifndef NDEBUG
+    uint32_t        _nItems;        // number of items in the _storage and _status arrays
+#endif
+
+    void init (strand_array &sarr)
+    {
+        this->_status = sarr._status;
+        this->_storage = sarr._storage;
+        this->_schedBlks = sarr._schedBlks;
+        this->_nStablePtr = &sarr._nStable;
+        this->_nActivePtr = &sarr._nActive;
+        this->_nextBlkPtr = &sarr._nextSchedBlk;
+        this->_nStabilizing = 0;
+#ifdef DIDEROT_HAS_STRAND_DIE
+        this->_nDying = 0;
+#endif
+        this->_inIdx = sarr._inIdx;
+        this->_nBlks = sarr._nBlks;
+        this->_blkSz = sarr._blkSz;
+#ifndef NDEBUG
+        this->_nItems = sarr._nItems;
+#endif
+        sarr._workers.push_back (this);
+    }
+
+  // refresh those parts of the cache that might change between steps
+    void refresh ()
+    {
+        // this target does not support dynamic strands, so nothing can change
+    }
+
+  // return the ID of a strand, which is the value of the _idx array
+    sid_t id (index_t ix) const
+    {
+        assert (ix < this->_nItems);
+        return ix;
+    }
+  // return a pointer to the strand with the given ID
+    @STRANDTY@ *id_to_strand (sid_t id) const
+    {
+        return reinterpret_cast<@STRANDTY@ *>(this->_storage + id * sizeof(@STRANDTY@));
+    }
+  // return a strand's status
+    diderot::strand_status status (index_t ix) const
+    {
+        return static_cast<diderot::strand_status>(this->_status[ix]);
+    }
+  // return a pointer to the given strand
+    @STRANDTY@ *strand (index_t ix) const
+    {
+        return this->id_to_strand(this->id(ix));
+    }
+
+  // swap in and out states
+    void swap ()
+    {
+        this->_inIdx ^= 1;
+    }
+
+#ifdef DIDEROT_HAS_START_METHOD
+  // invoke strand's start method
+    diderot::strand_status strand_start (@START_PARAMS@index_t ix)
+    {
+        @STRANDTY@ *self = this->strand(ix);
+        return @STRAND@_start (@START_ARGS@
+            &self->_local,
+            &self->_shared[this->_inIdx],
+            &self->_shared[this->_inIdx^1]);
+    }
+
+    void run_start_methods (@START_PARAMS@sched_block *bp);
+#endif // DIDEROT_HAS_START_METHOD
+
+  // invoke strand's update method
+    diderot::strand_status strand_update (@UPDATE_PARAMS@index_t ix)
+    {
+        @STRANDTY@ *self = this->strand(ix);
+        return @STRAND@_update (@UPDATE_ARGS@
+            &self->_local,
+            &self->_shared[this->_inIdx],
+            &self->_shared[this->_inIdx^1]);
+    }
+
+  // invoke strand's stabilize method (multithread version)
+    index_t strand_stabilize (sched_block *bp, @STABILIZE_PARAMS@index_t ix)
+    {
+        @STRANDTY@ *self = this->strand(ix);
+        @STRAND@_shared *selfIn = &self->_shared[this->_inIdx];
+        @STRAND@_shared *selfOut = &self->_shared[this->_inIdx^1];
+#ifdef DIDEROT_HAS_STABILIZE_METHOD
+      // note that we swap out and in here because out holds the current state
+        @STRAND@_stabilize (@STABILIZE_ARGS@&self->_local, selfOut, selfIn);
+        std::memcpy (selfOut, selfIn, sizeof(@STRAND@_shared));
+#else
+        std::memcpy (selfIn, selfOut, sizeof(@STRAND@_shared));
+#endif // DIDEROT_HAS_STABILIZE_METHOD
+        this->_status[ix] = diderot::kStable;
+        bp->_nStable++;
+      // skip to next active strand
+        do {
+            ix++;
+        } while ((ix < bp->_stop) && notActiveSts(this->status(ix)));
+        return ix;
+    }
+
+  // iterator over alive strands in a scheduling block
+    index_t begin_alive (const sched_block *bp) const
+    {
+        index_t ix = bp->_start;
+        return ix;
+    }
+    index_t end_alive (const sched_block *bp) const { return bp->_stop; }
+    index_t next_alive (const sched_block *bp, index_t &ix) const
+    {
+        return ix;
+    }
+
+  // iterator over active strands in a scheduling block
+    index_t begin_active (const sched_block *bp) const
+    {
+        index_t ix = bp->_start;
+        while ((ix < bp->_stop) && notActiveSts(this->status(ix))) {
+            ix++;
+        }
+        return ix;
+    }
+    index_t end_active (const sched_block *bp) const { return bp->_stop; }
+    index_t next_active (const sched_block *bp, index_t &ix) const
+    {
+        do {
+            ix++;
+        } while ((ix < bp->_stop) && notActiveSts(this->status(ix)));
+        return ix;
+    }
+
+  // iterator over fresh strands in a scheduling block
+    index_t begin_fresh (const sched_block *bp) const
+    {
+        index_t ix = bp->_start;
+        while ((ix < bp->_stop) && (this->status(ix) != diderot::kNew)) {
+            ix++;
+        }
+        return ix;
+    }
+    index_t end_fresh (const sched_block *bp) const { return bp->_stop; }
+    index_t next_fresh (const sched_block *bp, index_t &ix) const
+    {
+        do {
+            ix++;
+        } while ((ix < bp->_stop) && (this->status(ix) != diderot::kNew));
+        return ix;
+    }
+
+  // get a block of strands
+    sched_block *get_block ();
+
+}; // struct worker_cache
+
+strand_array::sched_block *worker_cache::get_block ()
+{
+    do {
+        uint32_t blkId = this->_nextBlkPtr->fetch_add(1);
+        if (blkId < this->_nBlks) {
+            strand_array::sched_block *bp = &this->_schedBlks[blkId];
+            if (bp->num_active() > 0) {
+                return bp;
+            } // else skip stable block
+        }
+        else {  // no more blocks
+            return nullptr;
+        }
+    } while (true);
+
+}
+
+// finish the update phase of a superstep.    Return true if there are any dead strands.
+bool strand_array::finish_step ()
+{
+    int32_t nStabilizing = 0;
+#ifdef DIDEROT_HAS_STRAND_DIE
+    int32_t nDying = 0;
+#endif
+
+    for (auto it = this->_workers.begin();  it != this->_workers.end();  ++it) {
+        worker_cache *wp = *it;
+        nStabilizing += wp->_nStabilizing;
+#ifdef DIDEROT_HAS_STRAND_DIE
+        nDying += wp->_nDying;
+#endif
+    }
+
+#ifdef DIDEROT_HAS_STRAND_DIE
+    if (nDying > 0) {
+      /* FIXME: compact dead strands */
+/*
+      // check to see if we need to compact dead strands?
+        if ((this->_nStrands - this->_nActive) / this->_schedBlkSz > ??) {
+        }
+*/
+    }
+#endif
+
+  // reset scheduler for next superstep
+    this->_nextSchedBlk = 0;
+
+  // update global count of stable strands
+    this->_nStable += nStabilizing;
+  // update global count of active strands
+#ifdef DIDEROT_HAS_STRAND_DIE
+    this->_nActive -= (nStabilizing + nDying);
+
+    return (nDying > 0);
+#else
+    this->_nActive -= nStabilizing;
+
+    return false;
+#endif
+
+}

@@ -1,0 +1,90 @@
+//! Run the Diderot program (sequential version)
+//! \param max_nsteps the limit on the number of super steps; 0 means unlimited
+//! \return the number of steps taken, or 0 if done or there is an error.
+uint32_t world::run (uint32_t max_nsteps)
+{
+    if (this->_stage == diderot::POST_CREATE) {
+#ifdef DIDEROT_HAS_GLOBAL_START
+        this->global_start();
+#endif
+        this->_stage = diderot::RUNNING;
+    }
+    else if (this->_stage == diderot::DONE) {
+        return 0;
+    }
+    assert (this->_stage == diderot::RUNNING);
+
+#ifndef DIDEROT_NO_GLOBALS
+    globals *glob = this->_globals;
+#endif
+
+    if (max_nsteps == 0) {
+        max_nsteps = 0xffffffff;  // essentially unlimited
+    }
+
+    double t0 = airTime();
+
+    if (this->_verbose) {
+        std::cerr << "run with " << this->_strands.num_active() << " strands ..." << std::endl;
+    }
+
+#if defined(DIDEROT_HAS_STRAND_COMMUNICATION) && !(defined(DIDEROT_HAS_STRAND_DIE) || defined(DIDEROT_HAS_STRAND_NEW))
+  // initial recording of strands for KD-tree
+    this->_tree->update_strands ();
+#endif
+
+  // iterate until all strands are stable
+    bool treeNeedsUpdate = true;
+    uint32_t nSteps = 0;
+    while ((this->_strands.num_active() > 0) && (nSteps < max_nsteps)) {
+        nSteps++;
+#ifdef DIDEROT_HAS_STRAND_COMMUNICATION
+      // build spatial partition to support communication
+        if (treeNeedsUpdate) {
+	    this->_tree->update_strands ();
+        }
+        this->_tree->rebuild ();
+#endif
+#ifdef DIDEROT_HAS_START_METHOD
+      // run start methods for fresh strands
+        this->run_start_methods();
+#endif
+      // update strands
+        for (auto ix = this->_strands.begin_active();
+            ix != this->_strands.end_active();
+            )
+        {
+            diderot::strand_status sts = this->_strands.strand_update (@UPDATE_ARGS_IN_WRLD@ix);
+            switch (sts) {
+              case diderot::kStabilize:
+                ix = this->_strands.strand_stabilize(@STABILIZE_ARGS_IN_WRLD@ix);
+                break;
+#ifdef DIDEROT_HAS_STRAND_DIE
+              case diderot::kDie:
+                ix = this->_strands.kill(ix);
+                break;
+#endif
+              default:
+                ix = this->_strands.next_active(ix);
+                break;
+            }
+        }
+      // finish the local-phase of the superstep by updating strand status
+        treeNeedsUpdate = this->_strands.finish_step();
+
+        this->swap_state();
+
+#ifdef DIDEROT_HAS_GLOBAL_UPDATE
+        this->global_update();
+#endif
+    }
+
+    this->_run_time += airTime() - t0;
+
+    if (this->_strands.num_active() == 0) {
+        this->_stage = diderot::DONE;
+    }
+
+    return nSteps;
+
+} // world::run

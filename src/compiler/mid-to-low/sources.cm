@@ -1,0 +1,33 @@
+(* sources.cm
+ *
+ * This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
+ *
+ * COPYRIGHT (c) 2016 The University of Chicago
+ * All rights reserved.
+ *)
+
+Library
+
+  structure MidToLow
+
+is
+
+  $/basis.cm
+  $/smlnj-lib.cm
+
+  ../common/sources.cm
+  ../fields/sources.cm
+  ../cfg-ir/sources.cm
+  ../low-ir/sources.cm
+  ../mid-ir/sources.cm
+  ../ein/sources.cm
+
+  avail-rhs.sml
+  ein-to-low.sml
+  ein-to-scalar.sml
+  ein-to-vector.sml
+  eval-kern.sml
+  field-to-low.sml
+  load-voxels.sml
+  mid-to-low.sml
+  mk-low-ir.sml

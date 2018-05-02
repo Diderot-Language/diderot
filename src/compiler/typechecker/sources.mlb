@@ -1,0 +1,42 @@
+(* sources.mlb
+ *
+ * MLB file for compiling with MLton
+ *
+ * This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
+ *
+ * COPYRIGHT (c) 2016 The University of Chicago
+ * All rights reserved.
+ *)
+
+local
+
+  $(SML_LIB)/basis/basis.mlb
+  $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
+
+  ../common/sources.mlb
+  ../ast/sources.mlb
+  ../basis/sources.mlb
+  ../global-env/sources.mlb
+  ../parse-tree/sources.mlb
+  ../options/sources.mlb
+
+  type-error.sml
+  env.sml
+  unify.sml
+  util.sml
+  check-const.sml
+  check-expr_mlton.sml	(* generated from check-expr.sml *)
+  check-create.sml
+  check-type.sml
+  check-stmt.sml
+  check-params.sml
+  check-globals.sml
+  check-strand.sml
+  check-var-uses.sml
+  typechecker.sml
+
+in
+
+  structure Typechecker
+
+end

@@ -1,0 +1,18 @@
+//! get the number of hardware cores
+//! \param wrld the world-state of the Diderot program
+//! \return the number of cores on the system
+uint32_t @PREFIX@_get_num_cores (@PREFIX@_world_t *wrld);
+
+//! set the number of workers.  The value should be between 0 and the number of
+//! hardware cores.  Note that this function should be called after @PREFIX@_init_world
+//! and before @PREFIX@_create_strands.
+//! \param wrld the world-state of the Diderot program
+//! \param nWorkers the requested number of workers; 0 means set the number of
+//!        workers to the number of cores.
+//! \return true if there are any errors
+bool @PREFIX@_set_num_workers (@PREFIX@_world_t *wrld, uint32_t nWorkers);
+
+//! get the number of workers.
+//! \param wrld the world-state of the Diderot program
+//! \return the number of workers
+uint32_t @PREFIX@_get_num_workers (@PREFIX@_world_t *wrld);

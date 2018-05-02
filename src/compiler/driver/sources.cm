@@ -1,0 +1,46 @@
+(* sources.cm
+ *
+ * This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
+ *
+ * COPYRIGHT (c) 2015 The University of Chicago
+ * All rights reserved.
+ *)
+
+Library
+
+  structure Main
+
+is
+  $/basis.cm
+  $/smlnj-lib.cm
+  $/controls-lib.cm
+  $/ml-lpt-lib.cm
+
+  ../ast/sources.cm
+  ../basis/sources.cm
+  ../common/sources.cm
+  ../high-ir/sources.cm
+  ../high-opt/sources.cm
+  ../high-to-mid/sources.cm
+  ../low-ir/sources.cm
+  ../low-opt/sources.cm
+  ../low-to-tree/sources.cm
+  ../mid-ir/sources.cm
+  ../mid-opt/sources.cm
+  ../mid-to-low/sources.cm
+  ../options/sources.cm
+  ../parse-tree/sources.cm
+  ../parser/sources.cm
+  ../simple/sources.cm
+  ../simple-opt/sources.cm
+  ../simplify/sources.cm
+  ../target-cpu/sources.cm
+  ../translate/sources.cm
+  ../tree-ir/sources.cm
+  ../tree-opt/sources.cm
+  ../typechecker/sources.cm
+
+  about.sml
+  main.sml
+  targets.sml
+

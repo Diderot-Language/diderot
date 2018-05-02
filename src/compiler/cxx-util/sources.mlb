@@ -1,0 +1,47 @@
+(* sources.mlb
+ *
+ * This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
+ *
+ * COPYRIGHT (c) 2016 The University of Chicago
+ * All rights reserved.
+ *)
+
+local
+
+  $(SML_LIB)/basis/basis.mlb
+  $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
+  $(SML_LIB)/smlnj-lib/PP/pp-lib.mlb
+
+  ../mlton/sources.mlb
+
+  ../basis/sources.mlb
+  ../common/sources.mlb
+  ../fields/sources.mlb
+  ../inputs/sources.mlb
+  ../nrrd/sources.mlb
+  ../tree-ir/sources.mlb
+  ../codegen/sources.mlb
+
+  fragments.sml		(* generated *)
+  cxx-names.sml
+  type-to-cxx.sml
+  gen-tys-and-ops.sml
+  print-as-cxx.sml
+  run-cc.sml
+  tree-to-cxx.sml
+  gen-inputs-util.sml
+  gen-outputs-util.sml
+
+in
+
+  structure CxxFragments
+  structure CxxNames
+  structure GenInputsUtil
+  structure GenTysAndOps
+  structure GenOutputsUtil
+  structure PrintAsCxx
+  structure RunCC
+  structure TreeToCxx
+  structure TypeToCxx
+
+end

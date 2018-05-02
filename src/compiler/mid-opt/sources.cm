@@ -1,0 +1,28 @@
+(* sources.cm
+ *
+ * This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
+ *
+ * COPYRIGHT (c) 2015 The University of Chicago
+ * All rights reserved.
+ *)
+
+Library
+
+  structure MidOptimizer
+
+is
+
+  $/basis.cm
+  $/smlnj-lib.cm
+  $/controls-lib.cm
+
+  ../cfg-ir/sources.cm
+  ../common/sources.cm
+  ../inputs/sources.cm
+  ../mid-ir/sources.cm
+  ../options/sources.cm
+
+  border-ctl.sml
+  dom-tree.sml
+  mid-contract.sml
+  mid-opt.sml

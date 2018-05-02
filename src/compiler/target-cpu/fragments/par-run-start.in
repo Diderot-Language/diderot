@@ -1,0 +1,24 @@
+// Run the start methods of the initial strands (parallel version)
+//
+void worker_cache::run_start_methods (@START_PARAMS@sched_block *bp)
+{
+    for (auto ix = this->begin_fresh(bp); ix != this->end_fresh(bp); )
+    {
+        diderot::strand_status sts = this->strand_start(@START_ARGS@ix);
+        switch (sts) {
+          case diderot::kStabilize:
+            ix = this->strand_stabilize (bp, @STABILIZE_ARGS@ix);
+            break;
+#ifdef DIDEROT_HAS_STRAND_DIE
+          case diderot::kDie:
+            ix = this->kill (bp, ix);
+            break;
+#endif
+          default:
+	    this->_status[ix] = diderot::kActive;
+            ix = this->next_fresh(bp, ix);
+            break;
+        }
+    }
+
+}

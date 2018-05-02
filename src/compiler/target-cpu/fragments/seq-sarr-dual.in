@@ -1,0 +1,303 @@
+// forward declarations of strand methods
+#ifdef DIDEROT_HAS_START_METHOD
+static diderot::strand_status @STRAND@_start (@START_PARAMS@
+    @STRAND@_local *selfLocal, @STRAND@_shared *selfIn, @STRAND@_shared *selfOut);
+#endif // DIDEROT_HAS_START_METHOD
+static diderot::strand_status @STRAND@_update (@UPDATE_PARAMS@
+    @STRAND@_local *selfLocal, @STRAND@_shared *selfIn, @STRAND@_shared *selfOut);
+#ifdef DIDEROT_HAS_STABILIZE_METHOD
+static void @STRAND@_stabilize (@STABILIZE_PARAMS@
+    @STRAND@_local *selfLocal, @STRAND@_shared *selfIn, @STRAND@_shared *selfOut);
+#endif // DIDEROT_HAS_STABILIZE_METHOD
+
+// if we have both communication and "die", then we need to track when strands die
+// so that we can rebuild the list of strands use to construct the kd-tree
+#if defined(DIDEROT_HAS_STRAND_COMMUNICATION) && !defined(DIDEROT_HAS_STRAND_DIE)
+#  define TRACK_STRAND_DEATH
+#endif
+
+// strand_array for SEQUENTIAL/BSP/DUAL STATE/DIRECT ACCESS
+//
+struct strand_array {
+    typedef @STRANDTY@ strand_t;
+    typedef uint32_t index_t;
+    typedef index_t sid_t;              // strand ID (index into strand-state storage)
+
+    uint8_t             *_status;       // the array of status information for the strands
+    char                *_storage;      // points to array of @STRANDTY@ structs
+    uint32_t            _inIdx;         // index of shared input state (either 0 or 1)
+    uint32_t            _nItems;        // number of items in the _storage and _status arrays
+    uint32_t            _nStable;       // number of stable strands
+    uint32_t            _nActive;       // number of active strands
+    uint32_t            _nFresh;        // number of fresh strands (new strands from create_strands)
+#ifdef TRACK_STRAND_DEATH
+    bool                _died;          // a strand died in the current superstep.
+#endif
+
+    strand_array () : _status(nullptr), _storage(nullptr), _nItems(0) { }
+    ~strand_array ();
+
+    uint32_t in_state_index () const { return this->_inIdx; }
+
+    uint32_t num_active () const { return this->_nActive; }
+    uint32_t num_stable () const { return this->_nStable; }
+    uint32_t num_alive () const { return this->_nActive+this->_nStable; }
+
+  // return the ID of a strand, which is the same as the ix index
+    sid_t id (index_t ix) const
+    {
+        assert (ix < this->_nItems);
+        return ix;
+    }
+  // return a pointer to the strand with the given ID
+    @STRANDTY@ *id_to_strand (sid_t id) const
+    {
+        assert (id < this->_nItems);
+        return reinterpret_cast<@STRANDTY@ *>(this->_storage + id * sizeof(@STRANDTY@));
+    }
+
+  // return a strand's status
+    diderot::strand_status status (index_t ix) const
+    {
+        assert (ix < this->_nItems);
+        return static_cast<diderot::strand_status>(this->_status[ix]);
+    }
+  // return a pointer to the given strand
+    @STRANDTY@ *strand (index_t ix) const
+    {
+        return this->id_to_strand(this->id(ix));
+    }
+  // return a pointer to the local state of strand ix
+    @STRAND@_local *local_state (index_t ix) const
+    {
+        return &(this->strand(ix)->_local);
+    }
+  // return a pointer to the local state of strand with the given ID
+    @STRAND@_local *id_to_local_state (sid_t id) const
+    {
+        return &(this->id_to_strand(id)->_local);
+    }
+  // return a pointer to the in-state of strand ix
+    const @STRAND@_shared *in_state (index_t ix) const
+    {
+        return &(this->strand(ix)->_shared[this->_inIdx]);
+    }
+  // return a pointer to the in-state of the strand with the given ID
+    const @STRAND@_shared *id_to_in_state (sid_t id) const
+    {
+        return &(this->id_to_strand(id)->_shared[this->_inIdx]);
+    }
+  // return a pointer to the out-state of strand ix
+    @STRAND@_shared *out_state (index_t ix) const
+    {
+        return &(this->strand(ix)->_shared[this->_inIdx ^ 1]);
+    }
+
+  // is an index valid for the strand array?
+    bool validIndex (index_t ix) const { return (ix < this->_nItems); }
+
+  // is a given strand alive?
+    bool isAlive (index_t ix) const
+    {
+#ifdef DIDEROT_HAS_STRAND_DIE
+        return aliveSts(this->status(ix));
+#else
+        return true;
+#endif
+    }
+
+  // allocate space for nItems
+    bool alloc (uint32_t nItems)
+    {
+        this->_storage = static_cast<char *>(std::malloc (nItems * sizeof(@STRANDTY@)));
+        if (this->_storage == nullptr) {
+            return true;
+        }
+        this->_status = static_cast<uint8_t *>(std::malloc (nItems * sizeof(uint8_t)));
+        if (this->_status == nullptr) {
+            std::free (this->_storage);
+            return true;
+        }
+        this->_inIdx = 0;
+        this->_nItems = nItems;
+        this->_nActive = 0;
+        this->_nStable = 0;
+        this->_nFresh = 0;
+        return false;
+    }
+
+  // initialize the first nStrands locations as new active strands
+    void create_strands (uint32_t nStrands)
+    {
+        assert (this->_nActive == 0);
+        assert (this->_nItems == nStrands);
+        for (index_t ix = 0;  ix < nStrands;  ix++) {
+            this->_status[ix] = diderot::kActive;
+            new (this->strand(ix)) @STRANDTY@;
+        }
+        this->_nActive = nStrands;
+        this->_nFresh = nStrands;
+#ifdef TRACK_STRAND_DEATH
+        this->_died = false;
+#endif
+    }
+
+  // swap in and out states
+    void swap ()
+    {
+        this->_inIdx ^= 1;
+    }
+
+#ifdef DIDEROT_HAS_START_METHOD
+  // invoke strand's start method
+    diderot::strand_status strand_start (@START_PARAMS@index_t ix)
+    {
+        @STRANDTY@ *self = this->strand(ix);
+        return @STRAND@_start (@START_ARGS@
+            &self->_local,
+            &self->_shared[this->_inIdx],
+            &self->_shared[this->_inIdx^1]);
+    }
+#endif // DIDEROT_HAS_START_METHOD
+
+  // invoke strand's update method
+    diderot::strand_status strand_update (@UPDATE_PARAMS@index_t ix)
+    {
+        @STRANDTY@ *self = this->strand(ix);
+        return @STRAND@_update (@UPDATE_ARGS@
+            &self->_local,
+            &self->_shared[this->_inIdx],
+            &self->_shared[this->_inIdx^1]);
+    }
+
+  // invoke strand's stabilize method
+    index_t strand_stabilize (@STABILIZE_PARAMS@index_t ix)
+    {
+        @STRANDTY@ *self = this->strand(ix);
+        @STRAND@_shared *selfIn = &self->_shared[this->_inIdx];
+        @STRAND@_shared *selfOut = &self->_shared[this->_inIdx^1];
+#ifdef DIDEROT_HAS_STABILIZE_METHOD
+      // note that we swap out and in here because out holds the current state
+        @STRAND@_stabilize (@STABILIZE_ARGS@&self->_local, selfOut, selfIn);
+        std::memcpy (selfOut, selfIn, sizeof(@STRAND@_shared));
+#else
+        std::memcpy (selfIn, selfOut, sizeof(@STRAND@_shared));
+#endif // DIDEROT_HAS_STABILIZE_METHOD
+        this->_status[ix] = diderot::kStable;
+        this->_nActive--;
+        this->_nStable++;
+      // skip to next active strand
+        do {
+            ix++;
+        } while ((ix < this->_nItems) && notActiveSts(this->status(ix)));
+        return ix;
+    }
+
+  // mark the given strand as dead
+    index_t kill (index_t ix)
+    {
+#ifdef TRACK_STRAND_DEATH
+        this->_died = true;
+#endif
+        this->_status[ix] = diderot::kDead;
+        this->_nActive--;
+      // skip to next active strand
+        do {
+            ix++;
+        } while ((ix < this->_nItems) && notActiveSts(this->status(ix)));
+        return ix;
+    }
+
+  // finish the local-phase of a superstep (NOP)
+#ifdef TRACK_STRAND_DEATH
+    bool finish_step ()
+    {
+        bool res = this->_died;
+        this->_died = false;
+        return res;
+    }
+#else
+    bool finish_step () { return false; }
+#endif
+
+  // finish a kill_all operation (NOP)
+    void finish_kill_all () { }
+
+  // finish a stabilize_all operation (NOP)
+    void finish_stabilize_all () { }
+
+    index_t begin_alive () const
+    {
+        index_t ix = 0;
+#ifdef DIDEROT_HAS_STRAND_DIE
+        while ((ix < this->_nItems) && notAliveSts(this->status(ix))) {
+            ix++;
+        }
+#endif
+        return ix;
+    }
+    index_t end_alive () const { return this->_nItems; }
+    index_t next_alive (index_t &ix) const
+    {
+        ix++;
+#ifdef DIDEROT_HAS_STRAND_DIE
+        while ((ix < this->_nItems) && notAliveSts(this->status(ix))) {
+            ix++;
+        }
+#endif
+        return ix;
+    }
+
+  // iterator over active strands
+    index_t begin_active () const
+    {
+        index_t ix = 0;
+        while ((ix < this->_nItems) && notActiveSts(this->status(ix))) {
+            ix++;
+        }
+        return ix;
+    }
+    index_t end_active () const { return this->_nItems; }
+    index_t next_active (index_t &ix) const
+    {
+        do {
+            ix++;
+        } while ((ix < this->_nItems) && notActiveSts(this->status(ix)));
+        return ix;
+    }
+
+  // iterator over stable strands
+    index_t begin_stable () const
+    {
+        index_t ix = 0;
+        while ((ix < this->_nItems) && (this->status(ix) != diderot::kStable)) {
+            ix++;
+        }
+        return ix;
+    }
+    index_t end_stable () const { return this->_nItems; }
+    index_t next_stable (index_t &ix) const
+    {
+        do {
+            ix++;
+        } while ((ix < this->_nItems) && (this->status(ix) != diderot::kStable));
+        return ix;
+    }
+
+  // iterator over fresh strands; since the only new strands were created by create_strand
+  // we iterate over all of them
+    index_t begin_fresh () const { return 0; }
+    index_t end_fresh () const { return this->_nFresh; }
+    index_t next_fresh (index_t &ix) const { return ++ix; }
+
+}; // struct strand_array
+
+strand_array::~strand_array ()
+{
+  // run destructors to reclaim any dynamic memory attached to the strand state
+    for (auto ix = this->begin_alive();  ix != this->end_alive();  ix = this->next_alive(ix)) {
+        this->strand(ix)->~@STRANDTY@();
+    }
+    if (this->_status != nullptr) std::free (this->_status);
+    if (this->_storage != nullptr) std::free (this->_storage);
+}

@@ -1,0 +1,33 @@
+(* sources.cm
+ *
+ * This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
+ *
+ * COPYRIGHT (c) 2015 The University of Chicago
+ * All rights reserved.
+ *)
+
+Library
+
+  structure HighOptimizer
+
+is
+
+  $/basis.cm
+  $/smlnj-lib.cm
+  $/controls-lib.cm
+
+  ../cfg-ir/sources.cm
+  ../common/sources.cm
+  ../fields/sources.cm
+  ../ein/sources.cm
+  ../high-ir/sources.cm
+  ../inputs/sources.cm
+  ../options/sources.cm
+
+  apply.sml
+  derivative.sml
+  eps-util.sml
+  high-opt.sml
+  normalize.sml
+  normalize-ein.sml
+  reorder.sml

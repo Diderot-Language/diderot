@@ -1,0 +1,22 @@
+/*! \file @HXX_FILE@
+ *
+ * C++ interface to library generated from @SRCFILE@.
+ *
+ * Command: @DIDEROTC_CMD@ @DIDEROTC_ARGV@
+ * Version: @DIDEROTC_VERSION@
+ */
+
+#ifndef @HXX_DEFINE@
+#define @HXX_DEFINE@
+
+#define @DIDEROT_FLOAT_PRECISION@
+#define @DIDEROT_INT_PRECISION@
+#define @DIDEROT_TARGET@
+
+#include <string>
+#include <cstdint>
+#include "teem/nrrd.h"
+
+namespace @PREFIX@ {
+
+struct World_t;

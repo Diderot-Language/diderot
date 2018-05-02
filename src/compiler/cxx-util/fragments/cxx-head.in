@@ -1,0 +1,7 @@
+/*! \file @CXXFILE@
+ *
+ * Generated from @SRCFILE@.
+ *
+ * Command: @DIDEROTC_CMD@ @DIDEROTC_ARGV@
+ * Version: @DIDEROTC_VERSION@
+ */

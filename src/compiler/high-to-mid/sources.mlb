@@ -1,0 +1,37 @@
+(* sources.mlb
+ *
+ * This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
+ *
+ * COPYRIGHT (c) 2016 The University of Chicago
+ * All rights reserved.
+ *)
+
+local
+
+  $(SML_LIB)/basis/basis.mlb
+  $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
+
+  ../mlton/sources.mlb
+
+  ../basis/sources.mlb (* for MathFns *)
+  ../cfg-ir/sources.mlb
+  ../common/sources.mlb
+  ../ein/sources.mlb
+  ../fields/sources.mlb
+  ../high-ir/sources.mlb
+  ../mid-ir/sources.mlb
+
+  avail-rhs.sml
+  clean-index.sml
+  clean-params.sml
+  coord-space-transform.sml
+  float-ein.sml
+  probe-ein.sml
+  handle-ein.sml
+  high-to-mid.sml
+
+in
+
+  structure HighToMid
+
+end

@@ -1,0 +1,30 @@
+(* sources.cm
+ *
+ * This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
+ *
+ * COPYRIGHT (c) 2015 The University of Chicago
+ * All rights reserved.
+ *)
+
+Library
+
+  structure CheckMid
+  structure MidIR
+  structure MidCensus
+  structure MidTypes
+  structure MidOps
+  structure MidPP
+
+is
+
+  $/basis.cm
+  $/smlnj-lib.cm
+
+  ../basis/sources.cm	(* for MathFns *)
+  ../common/sources.cm
+  ../cfg-ir/sources.cm
+  ../fields/sources.cm
+
+  check-mid.sml
+  mid-ir.sml
+  mid-types.sml

@@ -1,0 +1,62 @@
+static int eigenvecs (tensor_ref_2_2 mat, diderot::array<@REALTY@,2> &eval, diderot::array<tensor_2,2> &evec)
+{
+    int roots;
+
+  /* copy the given matrix elements */
+    @REALTY@ M00 = mat[0];
+    @REALTY@ M01 = mat[1];
+    @REALTY@ M11 = mat[3];
+
+  /* subtract out the eigenvalue mean (we will add it back to evals later);
+   * helps with numerical stability
+   */
+    @REALTY@ mean = @REALTY@(0.5) * (M00 + M11);
+    M00 -= mean;
+    M11 -= mean;
+
+    @REALTY@ Q = M00 - M11;
+    @REALTY@ D = @REALTY@(4)*M01*M01 + Q*Q;
+    if (D > diderot::__details::EPSILON) {
+      /* two distinct roots */
+        @REALTY@ vv = @REALTY@(0.5) * std::sqrt(D);
+        eval[0] = vv;
+        eval[1] = -vv;
+      /* null space of T = M - evec[0]*I ==
+         [M00 - vv      M01  ]
+         [  M01      M11 - vv]
+         is evec[0], but we know evec[0] and evec[1] are orthogonal,
+         so row span of T is evec[1]
+      */
+        @REALTY@ r1[2] = { M00 - vv, M01 };
+        @REALTY@ r2[2] = { M01, M11 - vv };
+        if ((r1[0]*r2[0] + r1[1]*r2[1]) > @REALTY@(0)) {
+            evec[1][0] = r1[0] + r2[0];
+            evec[1][1] = r1[1] + r2[1];
+        }
+        else {
+            evec[1][0] = r1[0] - r2[0];
+            evec[1][1] = r1[1] - r2[1];
+        }
+        diderot::__details::normalize2 (evec[1]._data);
+        evec[0][0] = evec[1][1];
+        evec[0][1] = -evec[1][0];
+        diderot::__details::normalize2 (evec[0]._data);
+        roots = diderot::__details::ROOT_TWO;
+    }
+    else {
+      /* double root */
+        eval[0] = eval[1] = @REALTY@(0.0);
+      /* use any basis for eigenvectors */
+        evec[0][0] = @REALTY@(1.0);
+        evec[0][1] = @REALTY@(0.0);
+        evec[1][0] = @REALTY@(0.0);
+        evec[1][1] = @REALTY@(1.0);
+        roots = diderot::__details::ROOT_DOUBLE;
+    }
+
+    /* add back in the eigenvalue mean */
+    eval[0] += mean;
+    eval[1] += mean;
+
+    return roots;
+}

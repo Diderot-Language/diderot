@@ -1,0 +1,6 @@
+namespace @PREFIX@ {
+
+static std::string ProgramName = "@PROG_NAME@";
+
+struct world;
+struct @STRAND@_strand;

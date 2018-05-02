@@ -1,0 +1,33 @@
+(* sources.mlb
+ *
+ * MLB file for compiling with MLton
+ *
+ * This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
+ *
+ * COPYRIGHT (c) 2015 The University of Chicago
+ * All rights reserved.
+ *)
+
+local
+
+  $(SML_LIB)/basis/basis.mlb
+  $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
+
+  ../mlton/sources.mlb
+
+  ../common/sources.mlb
+  ../nrrd/sources.mlb
+
+  image-info.sml
+  field-def.sml
+  index-ctl.sml
+  tensor-shape.sml
+
+in
+
+  structure FieldDef
+  structure ImageInfo
+  structure IndexCtl
+  structure TensorShape
+
+end

@@ -1,0 +1,42 @@
+/*! \file @H_FILE@
+ *
+ * C interface to library generated from @SRCFILE@.
+ *
+ * Command: @DIDEROTC_CMD@ @DIDEROTC_ARGV@
+ * Version: @DIDEROTC_VERSION@
+ */
+
+#ifndef @H_DEFINE@
+#define @H_DEFINE@
+
+#define @DIDEROT_FLOAT_PRECISION@
+#define @DIDEROT_INT_PRECISION@
+#define @DIDEROT_TARGET@
+
+#include "diderot/config.h"
+
+#if defined(HAVE_STDBOOL_H)
+#  include <stdbool.h>
+#elif !defined(__bool_true_false_are_defined)
+#  ifndef HAVE__BOOL
+#    ifdef __cplusplus
+       typedef bool _Bool;
+#    else
+#      define _Bool signed char
+#    endif
+#  endif
+#  define bool _Bool
+#  define false 0
+#  define true 1
+#  define __bool_true_false_are_defined 1
+#endif
+
+#include <stdint.h>
+#include <string.h>
+#include "teem/nrrd.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef struct @PREFIX@_struct_world @PREFIX@_world_t;

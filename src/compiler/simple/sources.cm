@@ -1,0 +1,35 @@
+(* sources.cm
+ *
+ * This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
+ *
+ * COPYRIGHT (c) 2015 The University of Chicago
+ * All rights reserved.
+ *)
+
+Library
+
+  structure CheckSimple
+  structure Simple
+  structure SimpleFunc
+  structure SimplePP
+  structure SimpleTypes
+  structure SimpleVar
+
+is
+
+  $/basis.cm
+  $/smlnj-lib.cm
+  $/pp-lib.cm
+
+  ../ast/sources.cm
+  ../basis/sources.cm
+  ../common/sources.cm
+  ../fields/sources.cm
+  ../inputs/sources.cm
+
+  check-simple.sml
+  simple.sml
+  simple-func.sml
+  simple-pp.sml
+  simple-types.sml
+  simple-var.sml

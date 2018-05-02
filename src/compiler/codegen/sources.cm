@@ -1,0 +1,55 @@
+(* sources.cm
+ *
+ * This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
+ *
+ * COPYRIGHT (c) 2016 The University of Chicago
+ * All rights reserved.
+ *)
+
+Library
+
+  structure CLang
+  structure CodeGenEnv
+  structure CodeGenUtil
+  structure CodeOutput
+  structure CollectInfo
+  structure GenLibraryJSON
+  structure GenLibraryInterface
+  structure GlobalStruct
+  structure OutputUtil
+  structure PrintAsC
+  structure PseudoVars
+  structure StringSubst
+  structure TargetSpec
+
+is
+
+  $/basis.cm
+  $/smlnj-lib.cm
+  $/pp-lib.cm
+  $/json-lib.cm
+
+  json-util.sml		(* temporary include until we require SML/NJ 110.81 *)
+
+  ../common/sources.cm
+  ../fields/sources.cm
+  ../inputs/sources.cm
+  ../options/sources.cm
+  ../nrrd/sources.cm
+  ../tree-ir/sources.cm
+
+  fragments.sml		(* generated *)
+  clang.sml
+  collect-info.sml
+  codegen-env.sml
+  codegen-util.sml
+  code-output.sml
+  gen-library-json.sml
+  gen-library-interface.sml
+  global-struct.sml
+  output-util.sml
+  print-as-c.sml
+  pseudo-vars.sml	(* may want to merge this file into codegen-env.sml *)
+  string-subst.sml
+  target-spec.sml
+

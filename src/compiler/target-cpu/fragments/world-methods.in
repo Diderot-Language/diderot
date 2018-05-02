@@ -1,0 +1,143 @@
+// Allocate the program's world
+//
+world::world ()
+    : diderot::world_base (ProgramName, @IS_GRID@, @NUM_AXES@)
+{
+#ifndef DIDEROT_NO_GLOBALS
+    this->_globals = new globals;
+#endif
+
+#ifdef DIDEROT_HAS_STRAND_COMMUNICATION
+    this->_tree = nullptr;
+#endif
+} // world constructor
+
+// shutdown and deallocate the world
+//
+world::~world ()
+{
+#ifndef DIDEROT_NO_GLOBALS
+    delete this->_globals;
+#endif
+
+#ifdef DIDEROT_HAS_STRAND_COMMUNICATION
+    delete this->_tree;
+#endif
+
+} // world destructor
+
+// Initialize the program's world
+//
+bool world::init ()
+{
+    assert (this->_stage == diderot::POST_NEW);
+
+#if !defined(DIDEROT_STANDALONE_EXEC) && !defined(DIDEROT_NO_INPUTS)
+  // initialize the defined flags for the input globals
+    init_defined_inputs (this);
+#endif
+
+#ifdef DIDEROT_TARGET_PARALLEL
+  // get CPU info
+    if (this->_sched->get_cpu_info (this)) {
+        return true;
+    }
+#endif
+
+#ifdef DIDEROT_HAS_CONSTS
+    init_consts (this);
+#endif
+
+    this->_stage = diderot::POST_INIT;
+
+    return false;
+
+}
+
+// allocate the initial strands and initialize the rest of the world structure.
+//
+bool world::alloc (int32_t base[@NUM_AXES@], uint32_t size[@NUM_AXES@])
+{
+    size_t numStrands = 1;
+    for (uint32_t i = 0;  i < @NUM_AXES@;  i++) {
+        numStrands *= size[i];
+        this->_base[i] = base[i];
+        this->_size[i] = size[i];
+    }
+
+    if (this->_verbose) {
+        std::cerr << "world::alloc: " << size[0];
+        for (uint32_t i = 1;  i < @NUM_AXES@;  i++) {
+            std::cerr << " x " << size[i];
+        }
+        std::cerr << std::endl;
+    }
+
+#ifdef DIDEROT_TARGET_PARALLEL
+  // determine the block size based on the initial number of strands and the
+  // number of workers
+    this->_strands.set_block_size (this->_sched->_numWorkers, numStrands);
+#endif
+
+  // allocate the strand array
+    if (this->_strands.alloc (numStrands)) {
+        biffMsgAdd (this->_errors, "unable to allocate strand-state array\n");
+        return true;
+    }
+
+  // initialize strand state pointers etc.
+    this->_strands.create_strands (numStrands);
+
+#ifdef DIDEROT_HAS_STRAND_COMMUNICATION
+    this->_tree = new diderot::kdtree<@SPATIAL_DIM@, @REALTY@, strand_array> (&this->_strands);
+#endif
+
+    return false;
+
+} // world::alloc
+
+// swap input and output states
+//
+inline void world::swap_state ()
+{
+    this->_strands.swap ();
+}
+
+#ifdef DIDEROT_HAS_KILL_ALL
+void world::kill_all ()
+{
+    if (this->_strands.num_active() > 0) {
+        for (auto ix = this->_strands.begin_active();
+            ix != this->_strands.end_active();
+            )
+        {
+            assert (this->_strands.status(ix) == diderot::kActive);
+            ix = this->_strands.kill (ix);
+        }
+        this->_strands.finish_kill_all();
+    }
+    assert (this->_strands.num_active() == 0);
+}
+#endif
+
+#ifdef DIDEROT_HAS_STABILIZE_ALL
+void world::stabilize_all ()
+{
+#ifndef DIDEROT_NO_GLOBALS
+    globals *glob = this->_globals;
+#endif
+
+    if (this->_strands.num_active() > 0) {
+        for (auto ix = this->_strands.begin_active();
+            ix != this->_strands.end_active();
+            )
+        {
+            assert (this->_strands.status(ix) == diderot::kActive);
+            this->_strands._status[ix] = diderot::kStable;
+            ix = this->_strands.strand_stabilize (@STABILIZE_ARGS_IN_WRLD@ix);
+        }
+        this->_strands.finish_stabilize_all();
+    }
+    assert (this->_strands.num_active() == 0);
+}
+#endif

@@ -1,0 +1,591 @@
+(* diderot.grm
+ *
+ * This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
+ *
+ * COPYRIGHT (c) 2018 The University of Chicago
+ * All rights reserved.
+ *)
+
+%name Diderot;
+
+%start Root;
+
+%tokens
+  : KW_bool                     ("bool")
+  | KW_const                    ("const")
+  | KW_continue                 ("continue")
+  | KW_create_array             ("create_array")
+  | KW_create_collection        ("create_collection")
+  | KW_die                      ("die")
+  | KW_else                     ("else")
+  | KW_false                    ("false")
+  | KW_field                    ("field")
+  | KW_foreach                  ("foreach")
+  | KW_function                 ("function")
+  | KW_identity                 ("identity")
+  | KW_if                       ("if")
+  | KW_image                    ("image")
+  | KW_in                       ("in")
+  | KW_initialize               ("initialize")
+  | KW_input                    ("input")
+  | KW_int                      ("int")
+  | KW_kernel                   ("kernel")
+  | KW_load_image               ("load_image")
+  | KW_load_sequence            ("load_sequence")
+  | KW_mat2                     ("mat2")
+  | KW_mat3                     ("mat3")
+  | KW_mat4                     ("mat4")
+  | KW_nan                      ("nan")
+  | KW_new                      ("new")
+  | KW_output                   ("output")
+  | KW_print                    ("print")
+  | KW_real                     ("real")
+  | KW_return                   ("return")
+  | KW_stabilize                ("stabilize")
+  | KW_start                    ("start")
+  | KW_strand                   ("strand")
+  | KW_string                   ("string")
+  | KW_tensor                   ("tensor")
+  | KW_true                     ("true")
+  | KW_update                   ("update")
+  | KW_vec2                     ("vec2")
+  | KW_vec3                     ("vec3")
+  | KW_vec4                     ("vec4")
+  | KW_zeros                    ("zeros")
+  | OP_eq                       ("=")
+  | OP_pluseq                   ("+=")
+  | OP_minuseq                  ("-=")
+  | OP_stareq                   ("*=")
+  | OP_slasheq                  ("/=")
+  | OP_modeq                    ("%=")
+  | OP_orelse                   ("||")
+  | OP_andalso                  ("&&")
+  | OP_lt                       ("<")
+  | OP_lte                      ("<=")
+  | OP_eqeq                     ("==")
+  | OP_neq                      ("!=")
+  | OP_gte                      (">=")
+  | OP_gt                       (">")
+  | OP_plus                     ("+")
+  | OP_minus                    ("-")
+  | OP_star                     ("*")
+  | OP_convolve                 ("⊛")
+  | OP_dot                      ("•")
+  | OP_cross                    ("×")
+  | OP_outer                    ("⊗")
+  | OP_slash                    ("/")
+  | OP_mod                      ("%")
+  | OP_exp                      ("^")
+  | OP_at                       ("@")
+  | OP_D                        ("∇")
+  | OP_Dotimes                  ("∇⊗")
+  | OP_curl                     ("∇×")
+  | OP_Ddot                     ("∇•")
+  | LP                          ("(")
+  | RP                          (")")
+  | LB                          ("[")
+  | RB                          ("]")
+  | LCB                         ("{")
+  | RCB                         ("}")
+  | COMMA                       (",")
+  | SEMI                        (";")
+  | COLON                       (":")
+  | HASH                        ("#")
+  | BANG                        ("!")
+  | BAR                         ("|")
+  | DOT                         (".")
+  | DOTDOT                      ("..")
+  | VERSION of int list
+  | ID of Atom.atom
+  | INT of IntLit.t
+  | REAL of RealLit.t
+  | STRING of string
+  ;
+
+%keywords
+  KW_bool, KW_const, KW_continue, KW_create_array, KW_create_collection, KW_die, KW_else,
+  KW_false, KW_field, KW_foreach, KW_function, KW_identity, KW_if, KW_image, KW_in,
+  KW_initialize, KW_input, KW_int, KW_kernel, KW_load_image, KW_load_sequence, KW_mat2,
+  KW_mat3, KW_mat4, KW_nan, KW_new, KW_output, KW_print, KW_real, KW_return, KW_stabilize,
+  KW_start, KW_strand, KW_string, KW_tensor, KW_true, KW_update, KW_vec2, KW_vec3, KW_vec4,
+  KW_zeros;
+
+%defs (
+  structure PT = ParseTree
+  structure L = Literal
+  structure Op = Operators
+
+(* apply a mark constructor to a span and a tree *)
+  fun mark cons (span : AntlrStreamPos.span, tr) = cons{span = span, tree = tr}
+
+(* specialize mark functions for common node types *)
+  val markDecl = mark PT.GD_Mark
+  fun markTy (_, e as PT.T_Mark _) = e
+    | markTy (sp, tr) = mark PT.T_Mark (sp, tr)
+  fun markStmt (_, e as PT.S_Mark _) = e
+    | markStmt (sp, tr) = mark PT.S_Mark (sp, tr)
+  fun markExpr (_, e as PT.E_Mark _) = e
+    | markExpr (sp, tr) = mark PT.E_Mark (sp, tr)
+
+  fun mkCondExp cons = let
+        fun mk (_, e, [], _) = e
+          | mk (lpos, e, [(_, e')], rpos) = markExpr((lpos, rpos), cons(e, e'))
+          | mk (lpos, e, (pos, e')::r, rpos) = markExpr((lpos, rpos), cons(e, mk(pos, e', r, rpos)))
+        in
+          mk
+        end
+
+(* build an application for an infix binary operator *)
+  fun mkBinApp (e1, rator, e2) = PT.E_BinOp(e1, rator, e2)
+
+(* construct application expressions for left-associative binary operators *)
+  fun mkLBinExp (_, e, []) = e
+    | mkLBinExp (lpos, e, (id, e', rpos)::r) =
+        mkLBinExp (lpos, markExpr((lpos, rpos), mkBinApp(e, id, e')), r)
+
+(* construct application expressions for right-associative binary operators *)
+  fun mkRBinExp (_, e, [], _) = e
+    | mkRBinExp (lpos, e, [(id, _, e')], rpos) =
+        markExpr ((lpos, rpos), mkBinApp(e, id, e'))
+    | mkRBinExp (lpos, e, (id, pos, e')::r, rpos) =
+        markExpr ((lpos, rpos), mkBinApp(e, id, mkRBinExp(pos, e', r, rpos)))
+
+  fun mkOptExp (_, e, NONE) = e
+    | mkOptExp (spn, e, SOME mk) = mk(spn, e)
+
+  fun flatten NONE = []
+    | flatten (SOME(x, xs)) = x::xs
+
+  fun ilit i = PT.E_Lit(L.Int i)
+);
+
+Root
+        : VERSION Program
+                => (PT.Program{span = Program_SPAN, tree = Program})
+        ;
+
+Program
+        : GlobalDcl* InitializeBlock? StrandDcl GlobalStart? GlobalUpdate? CreateStrands
+                => ({
+                      globals = GlobalDcl,
+                      globInit = InitializeBlock,
+                      strand = StrandDcl,
+                      create = CreateStrands,
+                      start = GlobalStart,
+                      update = GlobalUpdate
+                    })
+        ;
+
+CreateStrands
+        : "create_collection" Comprehension ";"?
+                => (mark PT.CR_Mark (FULL_SPAN, PT.CR_Collection Comprehension))
+        | "create_array" Comprehension ";"?
+                => (mark PT.CR_Mark (FULL_SPAN, PT.CR_Array(NONE, Comprehension)))
+        ;
+
+GlobalDcl
+        : InputDcl
+                => (InputDcl)
+        | ConstDcl
+                => (ConstDcl)
+        | VarDcl
+                => (markDecl(FULL_SPAN, PT.GD_Var VarDcl))
+        | FunctionDcl
+                => (FunctionDcl)
+        ;
+
+ConstDcl
+        : "const" Type BindId ( "=" ConstExpr )? ";"
+                => (markDecl(FULL_SPAN, PT.GD_Const(Type, BindId, SR)))
+        ;
+
+InputDcl
+        : "input" Type BindId ( "(" STRING ")" )? ( "=" ConstExpr )? ";"
+                => (markDecl(FULL_SPAN, PT.GD_Input(Type, BindId, SR1, SR2)))
+        ;
+
+VarDcl
+        : Type BindId ( "=" Expression )? ";"
+                => (mark PT.VD_Mark (FULL_SPAN, PT.VD_Decl(Type, BindId, SR)))
+        ;
+
+FunctionDcl
+        : "function" Type BindId "(" Parameters ")" FunctionDef
+                => (markDecl(FULL_SPAN, PT.GD_Func(Type, BindId, Parameters, FunctionDef)))
+        ;
+
+Parameters
+        : ( Parameter ( "," Parameter )* )?
+                => (flatten SR)
+        ;
+
+Parameter
+        : Type BindId
+                => (mark PT.P_Mark (FULL_SPAN, PT.P_Param(Type, BindId)))
+        ;
+
+FunctionDef
+        : "=" Expression ";"
+                => (PT.FB_Expr Expression)
+        | Block ";"?
+                => (PT.FB_Stmt Block)
+        ;
+
+InitializeBlock
+        : "initialize" Block ";"?
+        ;
+
+StrandDcl
+        : "strand" BindId "(" Parameters ")" "{" StateVarDcl* InitializeBlock? MethodDcl* "}" ";"?
+                => (mark PT.SD_Mark (FULL_SPAN, PT.SD_Strand{
+                      name = BindId,
+                      params = Parameters,
+                      state = StateVarDcl,
+                      stateInit = InitializeBlock,
+                      methods = MethodDcl
+                    }))
+        ;
+
+StateVarDcl
+        : "output" VarDcl
+                => (mark PT.SVD_Mark (FULL_SPAN, PT.SVD_VarDcl(true, VarDcl)))
+        | VarDcl
+                => (mark PT.SVD_Mark (FULL_SPAN, PT.SVD_VarDcl(false, VarDcl)))
+        ;
+
+MethodDcl
+        : MethodName Block ";"?
+                => (mark PT.M_Mark (FULL_SPAN, PT.M_Method(MethodName, Block)))
+        ;
+
+MethodName
+        : "start"       => (StrandUtil.Start)
+        | "update"      => (StrandUtil.Update)
+        | "stabilize"   => (StrandUtil.Stabilize)
+        ;
+
+GlobalStart
+        : "start" Block ";"?
+                => (markStmt (FULL_SPAN, Block))
+        ;
+
+GlobalUpdate
+        : "update" Block ";"?
+                => (markStmt (FULL_SPAN, Block))
+        ;
+
+Block
+        : "{" ( Statement )* "}"
+                => (case SR
+                     of [s] => markStmt (FULL_SPAN, s)
+                      | stms => markStmt (FULL_SPAN, PT.S_Block stms)
+                    (* end case *))
+        ;
+
+Statement
+        : AtomicStmt
+        | "if" "(" Expression ")" Statement IfRest
+                => (IfRest (FULL_SPAN, Expression, Statement))
+        | "foreach" "(" Type Iterator ")" Block
+                => (markStmt (FULL_SPAN, PT.S_Foreach(Type, Iterator, Block)))
+        ;
+
+IfRest
+        : (* empty *)
+                => (fn (span, e, s) => markStmt (span, PT.S_IfThen(e, s)))
+        | "else" Statement
+                => (fn (span, e, s) => markStmt (span, PT.S_IfThenElse(e, s, Statement)))
+        ;
+
+AtomicStmt
+        : Block
+                => (Block)
+        | "print" "(" Arguments ")" ";"
+                => (markStmt (FULL_SPAN, PT.S_Print Arguments))
+        | "new" ID "(" Arguments ")" ";"
+                => (markStmt (FULL_SPAN, PT.S_New(ID, Arguments)))
+        | "stabilize" ";"
+                => (markStmt (FULL_SPAN, PT.S_Stabilize))
+        | "die" ";"
+                => (markStmt (FULL_SPAN, PT.S_Die))
+        | "continue" ";"
+                => (markStmt (FULL_SPAN, PT.S_Continue))
+        | "return" Expression ";"
+                => (markStmt (FULL_SPAN, PT.S_Return Expression))
+        | VarDcl
+                => (PT.S_Decl VarDcl)
+        | BindId "=" Expression ";"
+                => (markStmt (FULL_SPAN, PT.S_Assign(BindId, NONE, Expression)))
+        | BindId AssignOp Expression ";"
+                => (markStmt (FULL_SPAN, PT.S_Assign(BindId, SOME AssignOp, Expression)))
+        ;
+
+AssignOp
+        : "+="  => (Op.asgn_add)
+        | "-="  => (Op.asgn_sub)
+        | "*="  => (Op.asgn_mul)
+        | "/="  => (Op.asgn_div)
+        | "%="  => (Op.asgn_mod)
+        ;
+
+Type
+        : "image" "(" ConstExpr ")" Shape
+                => (markTy (FULL_SPAN, PT.T_Image{dim=ConstExpr, shape=Shape}))
+        | "field" "#" Continuity "(" ConstExpr ")" Shape
+                => (markTy (FULL_SPAN, PT.T_Field{diff=Continuity, dim=ConstExpr, shape=Shape}))
+        | "kernel" "#" Continuity
+                => (markTy (FULL_SPAN, PT.T_Kernel Continuity))
+        | ConcreteType
+                => (ConcreteType)
+        ;
+
+Continuity
+        : INT   => (INT)
+        ;
+
+ConcreteType
+        : PrimitiveType SequenceDims
+                => (markTy (FULL_SPAN, SequenceDims PrimitiveType))
+        ;
+
+SequenceDims
+        : (* empty *)
+                => (fn ty => ty)
+        | "[" "]"
+                => (fn ty => PT.T_DynSeq ty)
+        | "[" ConstExpr "]" SequenceDims
+                => (fn ty => SequenceDims(PT.T_Seq(ty, ConstExpr)))
+        ;
+
+PrimitiveType
+        : "tensor" Shape        => (markTy(FULL_SPAN, PT.T_Tensor Shape))
+        | "vec2"                => (PT.T_Tensor[ilit 2])
+        | "vec3"                => (PT.T_Tensor[ilit 3])
+        | "vec4"                => (PT.T_Tensor[ilit 4])
+        | "mat2"                => (PT.T_Tensor[ilit 2, ilit 2])
+        | "mat3"                => (PT.T_Tensor[ilit 3, ilit 3])
+        | "mat4"                => (PT.T_Tensor[ilit 4, ilit 4])
+        | "bool"                => (PT.T_Bool)
+        | "int"                 => (PT.T_Int)
+        | "real"                => (PT.T_Tensor[])
+        | "string"              => (PT.T_String)
+        | ID                    => (PT.T_Id ID)
+        ;
+
+Shape
+        : "[" ( ConstExpr ( "," ConstExpr )* )? "]"
+                => (flatten (SR : (PT.expr * PT.expr list) option))
+        ;
+
+Comprehension
+        : "{" Expression "|" Iterator ( "," Iterator )* "}"
+                => (mark PT.COMP_Mark
+                      (FULL_SPAN, PT.COMP_Comprehension(Expression, Iterator :: SR)))
+        ;
+
+Iterator
+        : BindId "in" Expression
+                => (mark PT.I_Mark (FULL_SPAN, PT.I_Iterator(BindId, Expression)))
+        ;
+
+Expression
+        : RangeExpr ( "if" Expression "else" Expression => (Expression1, Expression2) )?
+                => (case SR
+                     of NONE => RangeExpr
+                      | SOME(e1, e2) => markExpr(FULL_SPAN, PT.E_Cond(RangeExpr, e1, e2))
+                    (* end case *))
+        ;
+
+RangeExpr
+        : OrExpr ( ".." OrExpr )?
+                => (case SR
+                     of NONE => OrExpr
+                      | SOME e => markExpr (FULL_SPAN, PT.E_Range(OrExpr, e))
+                    (* end case *))
+        ;
+
+OrExpr
+        : AndExpr ( "||" AndExpr => (#1 FULL_SPAN, AndExpr) )*
+                => (mkCondExp PT.E_OrElse (#1 AndExpr_SPAN, AndExpr, SR, #2 SR_SPAN))
+        ;
+
+AndExpr
+        : CompareExpr ( "&&" CompareExpr => (#1 FULL_SPAN, CompareExpr) )*
+                => (mkCondExp PT.E_AndAlso (#1 CompareExpr_SPAN, CompareExpr, SR, #2 SR_SPAN))
+        ;
+
+CompareExpr
+        : AddExpr ( CompareOp AddExpr => (CompareOp, AddExpr, #2 AddExpr_SPAN) )*
+                => (mkLBinExp (#1 AddExpr_SPAN, AddExpr, SR))
+        ;
+
+CompareOp
+        : "<"   => (Op.op_lt)
+        | "<="  => (Op.op_lte)
+        | "=="  => (Op.op_equ)
+        | "!="  => (Op.op_neq)
+        | ">="  => (Op.op_gte)
+        | ">"   => (Op.op_gt)
+        ;
+
+AddExpr
+        : MultiplyExpr ( AddOp MultiplyExpr => (AddOp, MultiplyExpr, #2 MultiplyExpr_SPAN) )*
+                => (mkLBinExp (#1 MultiplyExpr_SPAN, MultiplyExpr, SR))
+        ;
+
+AddOp
+        : "+"   => (Op.op_add)
+        | "-"   => (Op.op_sub)
+        | "@"   => (Op.op_at)
+        ;
+
+MultiplyExpr
+        : PrefixExpr ( MultiplyOp PrefixExpr => (MultiplyOp, PrefixExpr, #2 PrefixExpr_SPAN) )*
+                => (mkLBinExp (#1 PrefixExpr_SPAN, PrefixExpr, SR))
+        ;
+
+MultiplyOp
+        : "*"   => (Op.op_mul)
+        | "/"   => (Op.op_div)
+        | "%"   => (Op.op_mod)
+        | "⊛"   => (Op.op_convolve)
+        | "•"   => (Op.op_dot)
+        | "×"   => (Op.op_cross)
+        | "⊗"   => (Op.op_outer)
+        | ":"   => (Op.op_colon)
+        ;
+
+PrefixExpr
+        : PowerExpr
+                => (PowerExpr)
+        | PrefixOp PrefixExpr
+                => (markExpr (FULL_SPAN, PT.E_UnaryOp(PrefixOp, PrefixExpr)))
+        ;
+
+PrefixOp
+        : "-"           => (Op.op_neg)
+        | "!"           => (Op.op_not)
+        ;
+
+PowerExpr
+        : SuffixExpr ( "^" SuffixExpr => (Op.op_pow, #1 SuffixExpr_SPAN, SuffixExpr) )*
+                => (mkRBinExp (#1 FULL_SPAN, SuffixExpr, SR, #2 FULL_SPAN))
+        ;
+
+SuffixExpr
+        : %try DiffExpr "{" Expression "|" Iterator "}"
+                => (markExpr (FULL_SPAN,
+                      PT.E_Apply(
+                        DiffExpr,
+                        [PT.E_SeqComp(PT.COMP_Comprehension(Expression, [Iterator]))])))
+        | %try DiffExpr ( Suffix )*
+                => (case SR
+                     of [] => DiffExpr
+                      | ss => markExpr(FULL_SPAN, List.foldl (fn (f, e) => f e) DiffExpr ss)
+                    (* end case *))
+(*
+        | ID "{" Expression "|" Iterator "}"
+                => (markExpr (FULL_SPAN,
+                      PT.E_Apply(PT.E_Var ID,
+                        [PT.E_SeqComp(PT.COMP_Comprehension(Expression, [Iterator]))])))
+*)
+        | "real" "(" Expression ")"
+                => (markExpr (FULL_SPAN, PT.E_Real Expression))
+        | "load_sequence" "(" ConstExpr ")"
+                => (markExpr (FULL_SPAN, PT.E_LoadSeq ConstExpr))
+        | "load_image" "(" ConstExpr ")"
+                => (markExpr (FULL_SPAN, PT.E_LoadImage ConstExpr))
+        | "identity" "[" ConstExpr "]"
+                => (markExpr (FULL_SPAN, PT.E_Id ConstExpr))
+        | "zeros" Shape
+                => (markExpr (FULL_SPAN, PT.E_Zero Shape))
+        | "nan" ( Shape )?
+                => (markExpr (FULL_SPAN, PT.E_NaN(getOpt(SR, []))))
+        ;
+
+Suffix
+        : "(" Arguments ")"
+                => (fn e => PT.E_Apply(e, Arguments))
+        | "[" Indices "]"
+                => (fn e => PT.E_Subscript(e, Indices))
+        | "." ID
+                => (fn e => PT.E_Select(e, ID))
+        ;
+
+Indices
+        : IndexExpr ( "," IndexExpr )*
+                => (IndexExpr :: SR)
+        ;
+
+IndexExpr
+        : Expression
+                => (SOME Expression)
+        | ":"
+                => (NONE)
+        ;
+
+DiffExpr
+        : AtomicExpr
+                => (AtomicExpr)
+        | DiffOp DiffExpr
+                => (markExpr (FULL_SPAN, PT.E_UnaryOp(DiffOp, DiffExpr)))
+        ;
+
+DiffOp
+        : "∇"   => (Op.op_D)
+        | "∇⊗"  => (Op.op_Dotimes)
+        | "∇×"  => (Op.op_curl)
+        | "∇•"  => (Op.op_Ddot)
+        ;
+
+AtomicExpr
+        : ID
+                => (markExpr (FULL_SPAN, PT.E_Var ID))
+        | ID "#" Continuity
+                => (markExpr (FULL_SPAN, PT.E_Kernel(ID, Continuity)))
+        | INT
+                => (markExpr (FULL_SPAN, ilit INT))
+        | REAL
+                => (markExpr (FULL_SPAN, PT.E_Lit(L.Real REAL)))
+        | STRING
+                => (markExpr (FULL_SPAN, PT.E_Lit(L.String STRING)))
+        | "true"
+                => (markExpr (FULL_SPAN, PT.E_Lit(L.Bool true)))
+        | "false"
+                => (markExpr (FULL_SPAN, PT.E_Lit(L.Bool false)))
+        | "(" Expression ")"
+                => (Expression)
+        | "{" "}"
+                => (markExpr (FULL_SPAN, PT.E_Sequence[]))
+        | "{" Expression SeqRest "}"
+                => (markExpr (FULL_SPAN, SeqRest Expression))
+        | "[" Expression ( "," Expression )* "]"
+                => (markExpr (FULL_SPAN, PT.E_Cons(Expression::SR)))
+        | "|" Expression "|"
+                => (markExpr (FULL_SPAN, PT.E_UnaryOp(BasisNames.op_norm, Expression)))
+        ;
+
+Arguments
+        : (* empty *)
+                => ([])
+        | Expression ( "," Expression )*
+                => (Expression :: SR)
+        ;
+
+SeqRest
+        : ( "," Expression )*
+                => (fn e => PT.E_Sequence(e::SR))
+        | "|" Iterator
+                => (fn e => PT.E_SeqComp(PT.COMP_Comprehension(e, [Iterator])))
+        ;
+
+ConstExpr
+        : Expression
+                => (Expression)
+        ;
+
+(* binding occurrence of an identifier *)
+BindId
+        : ID
+                => ({span=ID_SPAN, tree=ID})
+        ;

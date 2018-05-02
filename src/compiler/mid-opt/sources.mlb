@@ -1,0 +1,30 @@
+(* sources.mlb
+ *
+ * This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
+ *
+ * COPYRIGHT (c) 2016 The University of Chicago
+ * All rights reserved.
+ *)
+
+local
+
+  $(SML_LIB)/basis/basis.mlb
+  $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
+  $(SML_LIB)/smlnj-lib/Controls/controls-lib.mlb
+
+  ../cfg-ir/sources.mlb
+  ../common/sources.mlb
+  ../inputs/sources.mlb
+  ../mid-ir/sources.mlb
+  ../options/sources.mlb
+
+  dom-tree.sml
+  border-ctl.sml
+  mid-contract.sml
+  mid-opt.sml
+
+in
+
+  structure MidOptimizer
+
+end

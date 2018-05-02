@@ -1,0 +1,58 @@
+(* sources.mlb
+ *
+ * This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
+ *
+ * COPYRIGHT (c) 2016 The University of Chicago
+ * All rights reserved.
+ *)
+
+local
+
+  $(SML_LIB)/basis/basis.mlb
+  $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
+  $(SML_LIB)/smlnj-lib/PP/pp-lib.mlb
+  $(SML_LIB)/smlnj-lib/JSON/json-lib.mlb
+
+  json-util.sml		(* temporary include until we require SML/NJ 110.81 *)
+
+  ../mlton/sources.mlb
+
+  ../common/sources.mlb
+  ../fields/sources.mlb
+  ../inputs/sources.mlb
+  ../options/sources.mlb
+  ../nrrd/sources.mlb
+  ../tree-ir/sources.mlb
+
+  fragments.sml		(* generated *)
+  collect-info.sml
+  string-subst.sml
+  clang.sml
+  global-struct.sml
+  print-as-c.sml
+  target-spec.sml
+  pseudo-vars.sml	(* may want to merge this file into codegen-env.sml *)
+  codegen-env.sml
+  codegen-util.sml
+  code-output.sml
+  output-util.sml
+  gen-library-interface.sml
+  gen-library-json.sml
+
+in
+
+  structure CLang
+  structure CodeGenEnv
+  structure CodeGenUtil
+  structure CodeOutput
+  structure CollectInfo
+  structure GenLibraryJSON
+  structure GenLibraryInterface
+  structure GlobalStruct
+  structure OutputUtil
+  structure PrintAsC
+  structure PseudoVars
+  structure StringSubst
+  structure TargetSpec
+
+end

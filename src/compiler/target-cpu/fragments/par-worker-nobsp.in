@@ -1,0 +1,83 @@
+struct CACHE_ALIGN worker_arg {
+    world       *_wrld;         //!< world pointer
+    uint32_t    _id;            //!< worker ID
+    uint32_t    _maxNSteps;     //!< maximum number of steps to take; 0 == infinity
+    uint32_t    _nSteps;        //!< max number of steps taken by a strand in call to run
+    uint32_t    _nStable;       //!< number of strands that stabilized in call to run
+    uint32_t    _nDead;         //!< number of strands that died in call to run
+    worker_cache _strands;
+};
+
+/* Worker task for when we do not need super-step synchronization */
+static void worker (void *arg)
+{
+    worker_arg *myArg = reinterpret_cast<worker_arg *>(arg);
+    world *wrld = myArg->_wrld;
+#ifndef DIDEROT_NO_GLOBALS
+    globals *glob = wrld->_globals;
+#endif
+
+  // iterate until there is no more work to do
+    uint32_t numDead = 0;
+    uint32_t numStabilized = 0;
+    uint32_t maxSteps = 0;
+    uint32_t maxNSteps = myArg->_maxNSteps;
+    strand_array::sched_block *blk;
+    IF_LOGGING ( LogGetStrandBlock(wrld, myArg->_id+1); )
+    while ((blk = myArg->_strands.get_block()) != nullptr) {
+        IF_LOGGING ( LogGotStrandBlock(wrld, myArg->_id+1); )
+        uint32_t nStable = blk->_nStable;
+#ifdef DIDEROT_HAS_STRAND_DIE
+        uint32_t nDead = blk->_nDead;
+#endif
+      // update the strands
+        for (auto ix = myArg->_strands.begin_active(blk);
+            ix != myArg->_strands.end_active(blk);
+        ) {
+          // run the strand to completion, or until the step limit is exceeded
+            @STRANDTY@ *self = myArg->_strands.strand(ix);
+            diderot::strand_status sts = myArg->_strands.status(ix);
+#ifdef DIDEROT_HAS_START_METHOD
+            if (sts == diderot::kNew) {
+                IF_LOGGING ( LogStrandStart(wrld, myArg->_id+1, ix); )
+                sts = @STRAND@_start(@START_ARGS@self);
+            }
+#endif
+            uint32_t nSteps = 0;
+            while ((! sts) && (nSteps < maxNSteps)) {
+                nSteps++;
+                sts = @STRAND@_update(@UPDATE_ARGS@self);
+            }
+            switch (sts) {
+              case diderot::kStabilize:
+              // stabilize the strand's state.
+                IF_LOGGING ( LogStrandStabilize(wrld, myArg->_id+1, ix); )
+                ix = myArg->_strands.strand_stabilize (blk, @STABILIZE_ARGS@ix);
+                break;
+#ifdef DIDEROT_HAS_STRAND_DIE
+              case diderot::kDie:
+                IF_LOGGING ( LogStrandDie(wrld, myArg->_id+1, ix); )
+                ix = myArg->_strands.kill (blk, ix);
+                break;
+#endif
+              default:
+                assert (sts == myArg->_strands.status(ix));
+                ix = myArg->_strands.next_active(blk, ix);
+                break;
+            }
+            if (maxSteps < nSteps) maxSteps = nSteps;
+        }
+        numStabilized += (blk->_nStable - nStable);
+#ifdef DIDEROT_HAS_STRAND_DIE
+        numDead += (blk->_nDead - nDead);
+#endif
+        IF_LOGGING ( LogGetStrandBlock(wrld, myArg->_id+1); )
+    }
+    IF_LOGGING ( LogNoStrandBlock(wrld, myArg->_id+1); )
+
+  // update global counts of active and stable strands
+    myArg->_nSteps = maxSteps;
+    myArg->_nStable = numStabilized;
+    myArg->_nDead = numDead;
+
+}

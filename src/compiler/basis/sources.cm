@@ -1,0 +1,32 @@
+(* sources.cm
+ *
+ * This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
+ *
+ * COPYRIGHT (c) 2018 The University of Chicago
+ * All rights reserved.
+ *)
+
+Library
+
+  structure Basis
+  structure BasisNames
+  structure BasisVars
+  structure DumpBasis
+  structure MathFns
+
+is
+
+  $/basis.cm
+  $/smlnj-lib.cm
+
+  ../ast/sources.cm
+  ../common/sources.cm
+  ../global-env/sources.cm
+  ../parse-tree/sources.cm
+
+  basis.sml
+  basis-names.sml
+  basis-vars.sml
+  dump-basis.sml
+  math-fns.sml
+

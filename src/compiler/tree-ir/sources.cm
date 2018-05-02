@@ -1,0 +1,44 @@
+(* sources.cm
+ *
+ * This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
+ *
+ * COPYRIGHT (c) 2016 The University of Chicago
+ * All rights reserved.
+ *)
+
+Library
+
+  structure CheckTree
+  structure TreeFunc
+  structure TreeGlobalVar
+  structure TreeIR
+  structure TreeOps
+  structure TreePP
+  structure TreeStateVar
+  structure TreeTypes
+  structure TreeTypeOf
+  structure TreeVar
+  structure VectorLayout
+
+is
+  $/basis.cm
+  $/smlnj-lib.cm
+
+  ../basis/sources.cm
+  ../common/sources.cm
+  ../fields/sources.cm
+  ../cfg-ir/sources.cm
+  ../inputs/sources.cm
+  ../low-ir/sources.cm
+
+  check-tree.sml
+  tree-func.sml
+  tree-global-var.sml
+  tree-ir.sml
+  tree-ops.sml
+  tree-pp.sml
+  tree-state-var.sml
+  tree-types.sml
+  tree-type-of.sml
+  tree-var.sml
+  vector-layout.sml

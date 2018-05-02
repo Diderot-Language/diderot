@@ -1,0 +1,203 @@
+using namespace @PREFIX@;
+
+//! Main function for standalone parallel C target
+//
+int main (int argc, const char **argv)
+{
+    bool        timingFlg = false;      //! true if timing computation
+    uint32_t    stepLimit = 0;          //! limit on number of execution steps (0 means unlimited)
+    std::string printFile = "-";        //! file to direct printed output into
+    uint32_t    reqNumWorkers;          //! requested number of worker threads
+#ifdef DIDEROT_EXEC_SNAPSHOT
+    uint32_t    snapshotPeriod = 1;     //! supersteps per snapshot
+#endif
+    uint32_t    nSteps = 0;             //! number of supersteps taken
+
+  // create the world
+    world *wrld = new (std::nothrow) world();
+    if (wrld == nullptr) {
+        std::cerr << "Error: unable to create world" << std::endl;
+        exit (1);
+    }
+
+  // initialize scheduler stuff
+    if (wrld->_verbose) {
+        std::cerr << "CPU info: " << wrld->_sched->_numHWCores << " cores / "
+            << wrld->_sched->_numHWThreads << " threads\n";
+        std::cerr << "initializing world ..." << std::endl;
+    }
+    if (wrld->init()) {
+        exit_with_error (wrld, "Error initializing world");
+    }
+
+#ifndef DIDEROT_NO_INPUTS
+  // initialize the default values for the inputs
+    cmd_line_inputs inputs;
+    init_defaults (&inputs);
+#endif
+
+  // handle command-line options
+    {
+        diderot::options *opts = new diderot::options ();
+        reqNumWorkers = wrld->_sched->_numHWCores;
+        opts->add ("l,limit", "specify limit on number of super-steps (0 means unlimited)",
+            &stepLimit, true);
+#ifdef DIDEROT_EXEC_SNAPSHOT
+        opts->add ("s,snapshot",
+            "specify number of super-steps per snapshot (0 means no snapshots)",
+            &snapshotPeriod, true);
+#endif
+        opts->add ("print", "specify where to direct printed output", &printFile, true);
+        opts->addFlag ("v,verbose", "enable runtime-system messages", &(wrld->_verbose));
+        opts->addFlag ("t,timing", "enable execution timing", &timingFlg);
+        opts->add ("n,nworkers", "specify number of worker threads", &reqNumWorkers, true);
+#ifndef DIDEROT_NO_INPUTS
+      // register options for setting global inputs
+        register_inputs (&inputs, opts);
+#endif
+        register_outputs (opts);
+        opts->process (argc, argv);
+        delete opts;
+    }
+
+  // redirect printing (if necessary)
+    if (printFile.compare("-") != 0) {
+        wrld->_printTo = new std::ofstream (printFile);
+        if (wrld->_printTo->fail()) {
+            exit_with_error (wrld, "Error opening print file");
+        }
+        diderot::__details::config_ostream (*wrld->_printTo);
+    }
+    else {
+        diderot::__details::config_ostream (std::cout);
+    }
+
+    wrld->_sched->set_num_workers (reqNumWorkers);
+#ifdef DIDEROT_ENABLE_LOGGING
+  // initialize logging
+    wrld->_log_file = new diderot::log::file("@LOG_FILE@", wrld->_sched);
+#endif
+    if (wrld->_sched->create_workers (wrld)) {
+        exit_with_error (wrld, "Error creating workers");
+    }
+
+#ifndef DIDEROT_NO_INPUTS
+  // initialize the input globals
+    if (init_inputs (wrld, &inputs)) {
+        exit_with_error (wrld, "Error initializing inputs");
+    }
+#endif
+
+  // run the generated global initialization code
+    if (wrld->_verbose) {
+        std::cerr << "initializing globals and creating strands ...\n";
+    }
+    if (wrld->create_strands()) {
+        exit_with_error (wrld, "Error in global initialization");
+    }
+
+#ifdef DIDEROT_EXEC_SNAPSHOT
+
+    if (snapshotPeriod > 0) {
+     // write initial state as snapshot 0
+        if (write_snapshot (wrld, "-0000")) {
+            exit_with_error (wrld, "Error generating snapshot");
+        }
+     // run the program for `snapshotPeriod` steps at a time with a snapshot after each run
+        while (true) {
+            uint32_t n, limit;
+          // determine a step limit for the next run
+            if (stepLimit > 0) {
+                if (stepLimit <= nSteps) {
+                    break;
+                }
+                limit = std::min(stepLimit - nSteps, snapshotPeriod);
+            }
+            else {
+                limit = snapshotPeriod;
+            }
+          // run the program for upto limit steps
+            if ((n = wrld->run (limit)) == 0) {
+                break;
+            }
+            nSteps += n;
+            if (wrld->_errors->errNum > 0) {
+                break;
+            }
+            else if (wrld->_strands.num_alive() == 0) {
+                wrld->error("no alive strands, so no snapshot at step %d", nSteps);
+                break;
+            }
+          // write a snapshot with the step count as a suffix
+            std::string suffix = std::to_string(nSteps);
+            if (suffix.length() < 4) {
+                suffix = std::string("0000").substr(0, 4 - suffix.length()) + suffix;
+            }
+            suffix = "-" + suffix;
+            if (write_snapshot (wrld, suffix)) {
+                exit_with_error (wrld, "Error generating snapshot");
+            }
+        }
+    }
+    else {
+        nSteps = wrld->run (stepLimit);
+    }
+
+#else // !DIDEROT_EXEC_SNAPSHOT
+
+    nSteps = wrld->run (stepLimit);
+
+#endif // DIDEROT_EXEC_SNAPSHOT
+
+  // shutdown the workers
+    wrld->_sched->shutdown (wrld);
+
+    if (wrld->_errors->errNum > 0) {
+        exit_with_error (wrld, "Error during execution");
+    }
+
+    if ((stepLimit != 0) && (wrld->_strands.num_active() > 0)) {
+#ifdef DIDEROT_STRAND_ARRAY
+        if (wrld->_verbose) {
+            std::cerr << "Step limit expired; "
+                << wrld->_strands.num_active() << " active strands remaining" << std::endl;
+        }
+#else
+      // step limit expired, so kill remaining strands
+        if (wrld->_verbose) {
+            std::cerr << "Step limit expired. Killing remaining "
+                << wrld->_strands.num_active() << " active strands" << std::endl;
+        }
+        wrld->kill_all();
+#endif
+    }
+
+    if (wrld->_verbose) {
+        std::cerr << "done: " << nSteps << " steps, in " << wrld->_run_time << " seconds";
+#ifndef DIDEROT_STRAND_ARRAY
+        std::cerr << "; " << wrld->_strands.num_stable() << " stable strands" << std::endl;
+#else
+        std::cerr << std::endl;
+#endif
+    }
+    else if (timingFlg) {
+        std::cout << "usr=" << wrld->_run_time << std::endl;
+    }
+
+  // output the final strand states
+    if (wrld->_strands.num_stable() > 0) {
+        if (write_output (wrld)) {
+            exit_with_error (wrld, "Error generating output");
+        }
+    }
+    else {
+        std::cerr << "Error: no stable strands at termination, so no output\n";
+        delete wrld;
+        return 1;
+    }
+
+    delete wrld;
+
+    return 0;
+
+} // main

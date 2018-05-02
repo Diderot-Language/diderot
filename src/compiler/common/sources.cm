@@ -1,0 +1,59 @@
+(* sources.cm
+ *
+ * This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
+ *
+ * COPYRIGHT (c) 2015 The University of Chicago
+ * All rights reserved.
+ *)
+
+Library
+
+  structure APITypes
+  structure BorderCtl
+  structure Create
+  structure Error
+  structure IntLit
+  structure Kernel
+  structure Literal
+  structure Log
+  structure Paths
+  structure PhaseTimer
+  structure Properties
+  structure Rational
+  structure RawTypes
+  structure Reductions
+  structure RealLit
+  structure SizeOf
+  structure Stamp
+  structure Stats
+  structure StrandSets
+  structure StrandUtil
+  structure Timers
+
+is
+  $/basis.cm
+  $/smlnj-lib.cm
+  $/controls-lib.cm
+  $/ml-lpt-lib.cm       (* required by error.sml *)
+
+  api-types.sml
+  border-ctl.sml
+  create.sml
+  error.sml
+  int-lit.sml
+  literal.sml
+  kernel.sml
+  log.sml
+  paths.sml
+  phase-timer.sml
+  properties.sml
+  rational.sml
+  raw-types.sml
+  reductions.sml
+  real-lit.sml
+  size-of.sml
+  stamp.sml
+  stats.sml
+  strand-sets.sml
+  strand-util.sml
+  timers.sml

@@ -66,14 +66,6 @@ AX_CXX_COMPILE_STDCXX(11,[],[mandatory])
 AC_PROG_INSTALL
 AC_PROG_MAKE_SET
 
-dnl FIXME: this works for now, but we should probably switch to libtool
-dnl
-AC_PATH_PROG(LD, [ld], [none])
-if test x$LD = xnone ; then
-  AC_MSG_ERROR([cannot find ld command])
-fi
-AC_SUBST(LD)
-
 dnl extra compiler options
 dnl
 CXXFLAGS_BASE="-Wreturn-type -Wuninitialized"
@@ -99,7 +91,7 @@ dnl
 dnl run the compiler tests in 64-bit mode
 dnl
 save_CFLAGS=$CFLAGS
-CFLAGS="$CFLAGS $CFLAG_MXX"
+CFLAGS="$CFLAGS $CXXFLAG_Mxx"
 
 dnl
 dnl check for gcc builtin atomic operations
@@ -257,40 +249,60 @@ if test x"$hasGetCPU" != xyes ; then
 AC_CHECK_FUNCS([sched_getcpu])
 fi
 
+#################### Linking configuration ####################
+
+dnl FIXME: this works for now, but we should probably switch to libtool
+dnl
+AC_PATH_PROG(LD, [ld], [none])
+if test x$LD = xnone ; then
+  AC_MSG_ERROR([cannot find ld command])
+fi
+AC_SUBST(LD)
+
 dnl
 dnl OS-specific linking issues
 dnl
 LD_NEEDS_RPATH=false;
-LIBM=""
+CXXFLAG_fPIC=""
+LDFLAG_LIBM=""
 case "$host_os" in
-  darwin*) # On Mac OS X we check for the presence of macports and/or fink
-    if test -x /opt/local/bin/port ; then
-      HAS_MACPORTS=yes
-    else
-      HAS_MACPORTS=no
-    fi
+  darwin*)
+  # On Mac OS X we check for the presence of homebrew, macports, and fink.
+  # we set up the search paths in priority homebrew > macports > fink.
     if test -x /sw/bin/fink ; then
-      HAS_FINK=yes
-    else
-      HAS_FINK=no
+      LDPATHS="-L/sw/lib"
     fi
+    if test -x /opt/local/bin/port ; then
+      LDPATHS="-L/opt/local/lib $LDPATHS"
+    fi
+    if test -d /usr/local/Cellar -a /usr/local/bin/brew ; then
+      LDPATHS="-L/usr/local/lib $LDPATHS"
+    fi
+    DSLEXT="dylib"
+    LD_STATIC=$LD
+    LD_DYNAMIC="$CXX -dynamiclib"
   ;;
-  linux*) # On Linux we include the -rpath option to pick up dynamically-loaded libraries
+  linux*)
+  # On Linux we include the -rpath option to pick up dynamically-loaded libraries
+  # and the -fPIC compiler flag to generate position-indenpendent code
     LD_NEEDS_RPATH=true
-    LIBM="-lm"
+    LDFLAG_LIBM="-lm"
+    CXXFLAG_fPIC="-fPIC"
+    DSLEXT="so"
+    LD_STATIC=$LD
+    LD_DYNAMIC="$CXX -shared"
   ;;
 esac
 
-if test x"$HAS_MACPORTS" = xyes ; then
-  LDPATHS="-L/opt/local/lib"
-elif test x"$HAS_FINK" = xyes ; then
-  LDPATHS="-L/sw/lib"
-else
-  LDPATHS=""
-fi
+AC_SUBST(LD_STATIC)
+AC_SUBST(LD_DYNAMIC)
 AC_SUBST(LDPATHS)
 AC_SUBST(LD_NEEDS_RPATH)
-AC_SUBST(LIBM)
+AC_SUBST(LDFLAG_LIBM)
+AC_SUBST(CXXFLAG_fPIC)
+AC_SUBST(DSLEXT)
+
+#################### end Linking configuration ####################
 
 #################### Logging configuration ####################
 
@@ -376,10 +388,10 @@ dnl
       # check for AMD's SDK
       AC_MSG_CHECKING([for cl.h in AMD's SDK])
       if test -d /opt/AMDAPP/include/CL ; then
-	HAVE_CL_H="yes"
-	CL_HEADER="/opt/AMDAPP/include/CL/cl.h"
-	AC_DEFINE([HAVE_CL_CL_H])
-	CPPFLAGS_CL="-I/opt/AMDAPP/include"
+        HAVE_CL_H="yes"
+        CL_HEADER="/opt/AMDAPP/include/CL/cl.h"
+        AC_DEFINE([HAVE_CL_CL_H])
+        CPPFLAGS_CL="-I/opt/AMDAPP/include"
       fi
       AC_MSG_RESULT([$HAVE_CL_H])
     fi
@@ -388,16 +400,16 @@ dnl
       AC_MSG_CHECKING([for NVIDIA's SDK cl.h])
       CUDA_HOME=none
       for CUDA in cuda cuda-7.0 cuda-6.5 cuda-6.0 ; do
-	if test -d /usr/local/$CUDA/include/CL ; then
-	  CUDA_HOME=/usr/local/$CUDA
-	  break
-	fi
+        if test -d /usr/local/$CUDA/include/CL ; then
+          CUDA_HOME=/usr/local/$CUDA
+          break
+        fi
       done
       if test x"$CUDA_HOME" != xnone ; then
-	HAVE_CL_H="yes"
-	CL_HEADER="$CUDA_HOME/include/CL/cl.h"
-	AC_DEFINE([HAVE_CL_CL_H])
-	CPPFLAGS_CL="-I$CUDA_HOME/include"
+        HAVE_CL_H="yes"
+        CL_HEADER="$CUDA_HOME/include/CL/cl.h"
+        AC_DEFINE([HAVE_CL_CL_H])
+        CPPFLAGS_CL="-I$CUDA_HOME/include"
       fi
       AC_MSG_RESULT([$HAVE_CL_H])
     fi
@@ -432,8 +444,8 @@ dnl
 #else
   printf("0\n");
 #endif
-	]])],
-	[CL_VERSION=`./conftest$EXEEXT`], [CL_VERSION=0])
+        ]])],
+        [CL_VERSION=`./conftest$EXEEXT`], [CL_VERSION=0])
 dnl
 dnl check to see how we access the host-side vector types.  For OpenCL 1.1,
 dnl the specification specifies the behavior, but it was unspecified in 1.0.
@@ -441,17 +453,17 @@ dnl
       AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
   #include "$CL_HEADER"
   ]],
-	[[cl_float4 x; x[0] = 0.0;]])],
-	[AC_DEFINE([CL_HOST_VECTORS_ARE_ARRAYS],[1],[host vector types are arrays])],
+        [[cl_float4 x; x[0] = 0.0;]])],
+        [AC_DEFINE([CL_HOST_VECTORS_ARE_ARRAYS],[1],[host vector types are arrays])],
   dnl
   dnl not arrays, so try the OpenCL 1.1 structure representation
   dnl
-	[AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+        [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include "$CL_HEADER"
 ]],
-	[[cl_float4 x; x.s[0] = 0.0;]])],
-	[AC_DEFINE([CL_HOST_VECTORS_ARE_STRUCTS],[1],[host vector types are structs])],
-	[AC_MSG_ERROR([unable to figure out host types for OpenCL vectors])])])
+        [[cl_float4 x; x.s[0] = 0.0;]])],
+        [AC_DEFINE([CL_HOST_VECTORS_ARE_STRUCTS],[1],[host vector types are structs])],
+        [AC_MSG_ERROR([unable to figure out host types for OpenCL vectors])])])
     # restore saved CPPFLAGS
       CPPFLAGS=$save_CPPFLAGS
     # substitutions
@@ -680,6 +692,27 @@ AC_SUBST(ASCIIDOCTOR)
 
 #################### end Documentation tools configuration ####################
 
+#################### Diderot Debugger configuration ####################
+
+dnl The debugger is under development
+dnl
+
+dnl if the debugger is enabled, then include its makefile and
+dnl look for wxwidgets
+dnl
+if test x"$DEBUGGER_ENABLED" = xtrue ; then
+  DEBUGGER_MAKEFILE=src/debugger/build/Makefile
+  search_path="$PATH$PATH_SEPARATOR/usr/local/bin$PATH_SEPARATOR/opt/local/bin"
+  AC_PATH_PROG([WX_CONFIG], [wx-config], [none], [$search_path])
+  if test x"$WX_CONFIG" = xnone ; then
+    AC_MSG_ERROR([unable to find wx-config, which is required by the Diderot debugger])
+  fi
+else
+  DEBUGGER_MAKEFILE=
+fi
+
+#################### end Diderot Debugger configuration ####################
+
 #################### config.h ####################
 
 AC_DEFINE_UNQUOTED(DIDEROT_INCLUDE_PATH,["$DIDEROT_SRCDIR/lib/include"], [path for Diderot header files])
@@ -712,14 +745,6 @@ if test x"$SML" = xmlton ; then
 else
   COMPILER_MAKEFILE_IN=""
   FRAG_GEN_MAKEFILE=
-fi
-
-dnl include the debugger Makefile, if it is enabled
-dnl
-if test x"$DEBUGGER_ENABLED" = xtrue ; then
-  DEBUGGER_MAKEFILE=src/debugger/build/Makefile
-else
-  DEBUGGER_MAKEFILE=
 fi
 
 AC_CONFIG_FILES(

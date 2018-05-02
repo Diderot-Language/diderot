@@ -1,0 +1,64 @@
+
+/***** World query operations *****/
+
+//! Return the total number of strands (active+stable) in the world
+uint32_t @PREFIX@_num_strands (@PREFIX@_world_t *wrld);
+
+//! Return the total number of active strands
+uint32_t @PREFIX@_num_active_strands (@PREFIX@_world_t *wrld);
+
+//! Return the total number of stable strands
+uint32_t @PREFIX@_num_stable_strands (@PREFIX@_world_t *wrld);
+
+//! Return true if there are any recorded error conditions
+bool @PREFIX@_any_errors (@PREFIX@_world_t *wrld);
+
+//! Return the pending error message (if any).  This call clears the pending error
+//! state.
+char *@PREFIX@_get_errors (@PREFIX@_world_t *wrld);
+
+/***** Program running operations *****/
+
+//! Allocate the program's world
+//! \return the new world or NULL if there are any errors
+@PREFIX@_world_t *@PREFIX@_new_world ();
+
+//! Initialize the execution state for the world.  This includes allocating processor
+//! and GPU resources for parallel execution.
+//! \param wrld the world-state of the Diderot program
+//! \return true if there are any errors
+bool @PREFIX@_init_world (@PREFIX@_world_t *wrld);
+
+//! Initiaize the globals and create the initial set of strands
+//! \param wrld the world-state of the Diderot program
+//! \return true if there are any errors
+bool @PREFIX@_create_strands (@PREFIX@_world_t *wrld);
+
+//! Run the Diderot program
+//! \param wrld the world-state of the Diderot program
+//! \param maxNSteps the limit on the number of super steps; 0 means unlimited
+//! \return the number of steps taken.
+uint32_t @PREFIX@_run (@PREFIX@_world_t *wrld, uint32_t maxNSteps);
+
+//! shutdown and deallocate the world
+//! \param wrld the world-state of the Diderot program
+void @PREFIX@_shutdown (@PREFIX@_world_t *wrld);
+
+/***** Runtime options *****/
+
+//! Set verbose mode
+//! \param wrld the world-state of the Diderot program
+//! \param mode the mode value to set; true means verbose
+void @PREFIX@_set_verbose (@PREFIX@_world_t *wrld, bool mode);
+
+//! Get verbose mode
+//! \return true if there are any errors
+bool @PREFIX@_get_verbose (@PREFIX@_world_t *wrld);
+
+//! Register a callback function for Diderot print() calls
+//! \param wrld the world-state of the Diderot program
+//! \param pr the printing callback function
+//! \param data an opaque data value that will be passed to the
+//!             printer
+//! \return true if there are any errors
+bool @PREFIX@_set_printer_cb (@PREFIX@_world_t *wrld, bool (*pr)(void *, char *), void *data);

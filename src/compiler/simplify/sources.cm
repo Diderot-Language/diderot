@@ -1,0 +1,31 @@
+(* sources.cm
+ *
+ * This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
+ *
+ * COPYRIGHT (c) 2015 The University of Chicago
+ * All rights reserved.
+ *)
+
+library
+
+  structure Simplify
+
+is
+
+  $/basis.cm
+  $/smlnj-lib.cm
+  $/controls-lib.cm
+
+  ../ast/sources.cm
+  ../basis/sources.cm
+  ../common/sources.cm
+  ../fields/sources.cm
+  ../global-env/sources.cm
+  ../inputs/sources.cm
+  ../nrrd/sources.cm
+  ../simple/sources.cm
+
+  dead-code.sml
+  simplify.sml
+  util.sml
+

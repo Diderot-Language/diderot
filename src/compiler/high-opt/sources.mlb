@@ -1,0 +1,37 @@
+(* sources.mlb
+ *
+ * This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
+ *
+ * COPYRIGHT (c) 2016 The University of Chicago
+ * All rights reserved.
+ *)
+
+local
+
+  $(SML_LIB)/basis/basis.mlb
+  $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
+  $(SML_LIB)/smlnj-lib/Controls/controls-lib.mlb
+
+  ../mlton/sources.mlb
+
+  ../cfg-ir/sources.mlb
+  ../common/sources.mlb
+  ../fields/sources.mlb
+  ../ein/sources.mlb
+  ../high-ir/sources.mlb
+  ../inputs/sources.mlb
+  ../options/sources.mlb
+
+  apply.sml
+  derivative.sml
+  eps-util.sml
+  normalize-ein.sml
+  reorder.sml
+  normalize.sml
+  high-opt.sml
+
+in
+
+  structure HighOptimizer
+
+end

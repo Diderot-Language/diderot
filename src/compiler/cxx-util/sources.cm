@@ -1,0 +1,44 @@
+(* sources.cm
+ *
+ * This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
+ *
+ * COPYRIGHT (c) 2016 The University of Chicago
+ * All rights reserved.
+ *)
+
+Library
+
+  structure CxxFragments
+  structure CxxNames
+  structure GenInputsUtil
+  structure GenTysAndOps
+  structure GenOutputsUtil
+  structure PrintAsCxx
+  structure RunCC
+  structure TreeToCxx
+  structure TypeToCxx
+
+is
+  $/basis.cm
+  $/smlnj-lib.cm
+  $/pp-lib.cm
+
+  ../basis/sources.cm
+  ../codegen/sources.cm
+  ../common/sources.cm
+  ../fields/sources.cm
+  ../inputs/sources.cm
+  ../nrrd/sources.cm
+  ../tree-ir/sources.cm
+
+  fragments.sml		(* generated *)
+
+  cxx-names.sml
+  gen-inputs-util.sml
+  gen-tys-and-ops.sml
+  gen-outputs-util.sml
+  print-as-cxx.sml
+  run-cc.sml
+  tree-to-cxx.sml
+  type-to-cxx.sml
+

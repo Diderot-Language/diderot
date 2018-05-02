@@ -1,0 +1,33 @@
+(* sources.cm
+ *
+ * This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
+ *
+ * COPYRIGHT (c) 2015 The University of Chicago
+ * All rights reserved.
+ *)
+
+library
+  structure AST
+  structure ASTPP
+  structure ConstExpr
+  structure TypeOf
+  structure Types
+  structure TypeUtil
+  structure MetaVar
+  structure Var
+is
+
+  $/basis.cm
+  $/smlnj-lib.cm
+  $/pp-lib.cm
+
+  ../common/sources.cm
+
+  ast.sml
+  ast-pp.sml
+  const-expr.sml
+  meta-var.sml
+  types.sml
+  type-of.sml
+  type-util.sml
+  var.sml

@@ -1,0 +1,29 @@
+(* sources.cm
+ *
+ * This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
+ *
+ * COPYRIGHT (c) 2015 The University of Chicago
+ * All rights reserved.
+ *)
+
+Library
+
+  structure CmdLineConstants
+  structure Ctl
+  structure Options
+  structure TargetOptions
+  structure Version
+
+is
+
+  $/basis.cm
+  $/smlnj-lib.cm
+  $/controls-lib.cm
+
+  ../common/sources.cm
+
+  cmd-line-constants.sml
+  ctl.sml
+  options.sml
+  target-options.sml
+  version.sml

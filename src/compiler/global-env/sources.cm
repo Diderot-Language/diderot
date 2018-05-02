@@ -1,0 +1,24 @@
+(* sources.cm
+ *
+ * This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
+ *
+ * COPYRIGHT (c) 2015 The University of Chicago
+ * All rights reserved.
+ *)
+
+Library
+
+  structure GlobalEnv
+  structure StrandEnv
+
+is
+
+  $/basis.cm
+  $/smlnj-lib.cm
+
+  ../ast/sources.cm
+  ../common/sources.cm
+
+  global-env.sml
+  strand-env.sml
+

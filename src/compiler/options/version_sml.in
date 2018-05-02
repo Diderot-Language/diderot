@@ -1,0 +1,34 @@
+(* version.sml
+ *
+ * This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
+ *
+ * COPYRIGHT (c) 2015 The University of Chicago
+ * All rights reserved.
+ *)
+
+structure Version =
+  struct
+
+  (* name of version that characterizes the features of the compiler;
+   * e.g., "master", "vis12", etc.
+   *)
+    val name = "@BRANCH@"
+
+  (* we expect the version string from configure.ac to have the form "major.minor"
+   * or "major.minor-patch".
+   *)
+    val (major, minor, patch) = (
+          case String.fields (fn #"." => true | #"-" => true | _ => false) "@PACKAGE_VERSION@"
+           of [a, b] => (valOf(Int.fromString a), valOf(Int.fromString b), "")
+            | [a, b, c] => (valOf(Int.fromString a), valOf(Int.fromString b), c)
+          (* end case *))
+
+  (* date of latest feature update *)
+    val date = {year = 2016, month = 07, day = 29}
+
+    val message = Format.format "%s:%4d-%02d-%02d" [
+            Format.STR name, Format.INT(#year date),
+            Format.INT (#month date), Format.INT (#day date)
+          ]
+
+  end

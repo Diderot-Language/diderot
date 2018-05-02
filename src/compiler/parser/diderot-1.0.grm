@@ -1,0 +1,624 @@
+(* diderot-1.0.grm
+ *
+ * This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
+ *
+ * COPYRIGHT (c) 2018 The University of Chicago
+ * All rights reserved.
+ *)
+
+%name Diderot100;
+
+%start Root;
+
+%tokens
+  : KW_bool             ("bool")
+  | KW_continue         ("continue")
+  | KW_die              ("die")
+  | KW_else             ("else")
+  | KW_false            ("false")
+  | KW_field            ("field")
+  | KW_foreach          ("foreach")
+  | KW_function         ("function")
+  | KW_global           ("global")
+  | KW_identity         ("identity")    (* identity matrix *)
+  | KW_if               ("if")
+  | KW_image            ("image")
+  | KW_in               ("in")
+  | KW_initially        ("initially")
+  | KW_input            ("input")
+  | KW_int              ("int")
+  | KW_kernel           ("kernel")
+  | KW_load             ("load")
+  | KW_nan              ("nan")
+  | KW_new              ("new")
+  | KW_output           ("output")
+  | KW_print            ("print")
+  | KW_real             ("real")
+  | KW_return           ("return")
+  | KW_stabilize        ("stabilize")
+  | KW_strand           ("strand")
+  | KW_string           ("string")
+  | KW_tensor           ("tensor")
+  | KW_true             ("true")
+  | KW_update           ("update")
+  | KW_vec2             ("vec2")
+  | KW_vec3             ("vec3")
+  | KW_vec4             ("vec4")
+  | KW_zeros            ("zeros")       (* zero tensor *)
+  | OP_eq               ("=")
+  | OP_pluseq           ("+=")
+  | OP_minuseq          ("-=")
+  | OP_stareq           ("*=")
+  | OP_slasheq          ("/=")
+  | OP_modeq            ("%=")
+  | OP_orelse           ("||")
+  | OP_andalso          ("&&")
+  | OP_lt               ("<")
+  | OP_lte              ("<=")
+  | OP_eqeq             ("==")
+  | OP_neq              ("!=")
+  | OP_gte              (">=")
+  | OP_gt               (">")
+  | OP_plus             ("+")
+  | OP_minus            ("-")
+  | OP_star             ("*")
+  | OP_convolve         ("⊛")
+  | OP_dot              ("•")
+  | OP_cross            ("×")
+  | OP_outer            ("⊗")
+  | OP_slash            ("/")
+  | OP_mod              ("%")
+  | OP_exp              ("^")
+  | OP_at               ("@")
+  | OP_D                ("∇")
+  | OP_Dotimes          ("∇⊗")
+  | OP_curl             ("∇×")
+  | OP_Ddot             ("∇•")
+  | LP                  ("(")
+  | RP                  (")")
+  | LB                  ("[")
+  | RB                  ("]")
+  | LCB                 ("{")
+  | RCB                 ("}")
+  | COMMA               (",")
+  | SEMI                (";")
+  | COLON               (":")
+  | HASH                ("#")
+  | BANG                ("!")
+  | BAR                 ("|")
+  | DOT                 (".")
+  | DOTDOT              ("..")
+  | VERSION of int list
+  | ID of Atom.atom
+  | INT of IntLit.t
+  | REAL of RealLit.t
+  | STRING of string
+  ;
+
+%keywords
+  KW_bool, KW_continue, KW_die, KW_else, KW_field, KW_foreach, KW_function, KW_identity,
+  KW_if, KW_global, KW_image, KW_initially, KW_int, KW_kernel, KW_load, KW_nan, KW_new,
+  KW_output, KW_print, KW_real, KW_return, KW_stabilize, KW_strand, KW_string, KW_tensor,
+  KW_update, KW_vec2, KW_vec3, KW_vec4, KW_zeros;
+
+%defs (
+  structure PT = ParseTree
+  structure L = Literal
+  structure Op = Operators
+
+(* apply a mark constructor to a span and a tree *)
+  fun mark cons (span : AntlrStreamPos.span, tr) = cons{span = span, tree = tr}
+
+(* specialize mark functions for common node types *)
+  val markDecl = mark PT.GD_Mark
+  fun markTy (_, e as PT.T_Mark _) = e
+    | markTy (sp, tr) = mark PT.T_Mark (sp, tr)
+  fun markStmt (_, e as PT.S_Mark _) = e
+    | markStmt (sp, tr) = mark PT.S_Mark (sp, tr)
+  fun markExpr (_, e as PT.E_Mark _) = e
+    | markExpr (sp, tr) = mark PT.E_Mark (sp, tr)
+
+  fun mkCondExp (cons : PT.expr * PT.expr -> PT.expr) = let
+        fun mk (_, e, [], _) = e
+          | mk (lpos, e, [(_, e')], rpos) = markExpr((lpos, rpos), cons(e, e'))
+          | mk (lpos, e, (pos, e')::r, rpos) = markExpr((lpos, rpos), cons(e, mk(pos, e', r, rpos)))
+        in
+          mk
+        end
+
+(* build an application for an infix binary operator *)
+  fun mkBinApp (e1, rator, e2) = PT.E_BinOp(e1, rator, e2)
+
+(* construct application expressions for left-associative binary operators *)
+  fun mkLBinExp (_, e, []) = e
+    | mkLBinExp (lpos, e, (id, e', rpos)::r) =
+        mkLBinExp (lpos, markExpr((lpos, rpos), mkBinApp(e, id, e')), r)
+
+(* construct application expressions for right-associative binary operators *)
+  fun mkRBinExp (_, e, [], _) = e
+    | mkRBinExp (lpos, e, [(id, _, e')], rpos) =
+        markExpr ((lpos, rpos), mkBinApp(e, id, e'))
+    | mkRBinExp (lpos, e, (id, pos, e')::r, rpos) =
+        markExpr ((lpos, rpos), mkBinApp(e, id, mkRBinExp(pos, e', r, rpos)))
+
+  fun mkOptExp (_, e, NONE) = e
+    | mkOptExp (spn, e, SOME mk) = mk(spn, e)
+
+  fun flatten NONE = []
+    | flatten (SOME(x, xs)) = x::xs
+
+  fun ilit i = PT.E_Lit(L.Int i)
+);
+
+Root
+        : VERSION? Program
+                => (PT.Program{span = Program_SPAN, tree = Program})
+        ;
+
+Program
+        : GlobalDecl* StrandDecl GlobalUpdate? CoordinationDecl
+                => ({
+                      globals = GlobalDecl,
+                      globInit = NONE,
+                      strand = StrandDecl,
+                      create = CoordinationDecl,
+                      start = NONE,
+                      update = GlobalUpdate
+                    })
+        ;
+
+GlobalDecl
+        : InputDecl
+        | VarDecl
+                => (markDecl (FULL_SPAN, PT.GD_Var VarDecl))
+        | FunDecl
+        ;
+
+
+(***** Inputs *****)
+
+InputDecl
+        : "input" InputType BindId ("(" STRING ")")? ( "=" Initializer )? ";"
+                => (markDecl(FULL_SPAN, PT.GD_Input(InputType, BindId, SR1, SR2)))
+        ;
+
+
+(***** Variable declarations *****)
+
+VarDecl
+        : Type BindId "=" Expr ";"
+                => (mark PT.VD_Mark (FULL_SPAN, PT.VD_Decl(Type, BindId, SOME Expr)))
+        ;
+
+
+(***** Function declarations *****)
+
+FunDecl
+        : "function" ConcreteType BindId "(" Params ")" FunBody
+                => (markDecl(FULL_SPAN, PT.GD_Func(ConcreteType, BindId, Params, FunBody)))
+        ;
+
+Params
+        : ( Param ( "," Param )* )?
+                => (flatten SR)
+        ;
+
+Param
+        : ValueType BindId
+                => (mark PT.P_Mark (FULL_SPAN, PT.P_Param(ValueType, BindId)))
+        ;
+
+FunBody
+        : "=" Expr ";"
+                => (PT.FB_Expr Expr)
+        | Block
+                => (PT.FB_Stmt Block)
+        ;
+
+
+(***** Strands *****)
+
+StrandDecl
+        : "strand" BindId "(" Params ")" "{" StrandStateDecl* StrandMethod+ "}"
+                => (mark PT.SD_Mark (FULL_SPAN, PT.SD_Strand{
+                      name = BindId,
+                      params = Params,
+                      state = StrandStateDecl,
+                      stateInit = NONE,
+                      methods = StrandMethod
+                    }))
+        ;
+
+StrandStateDecl
+        : "output" VarDecl
+                => (mark PT.SVD_Mark (FULL_SPAN, PT.SVD_VarDcl(true, VarDecl)))
+        | VarDecl
+                => (mark PT.SVD_Mark (FULL_SPAN, PT.SVD_VarDcl(false, VarDecl)))
+        ;
+
+StrandMethod
+        : MethodId Block
+                => (mark PT.M_Mark (FULL_SPAN, PT.M_Method(MethodId, Block)))
+        ;
+
+MethodId
+        : "update"      => (StrandUtil.Update)
+        | "stabilize"   => (StrandUtil.Stabilize)
+        ;
+
+Block
+        : "{" Stmt* "}"
+                => (markStmt(FULL_SPAN, PT.S_Block Stmt))
+        ;
+
+Stmt
+        : AtomicStmt
+                => (AtomicStmt)
+        | %try  "foreach" "(" Type Iterator ")" Stmt
+                => (markStmt (FULL_SPAN, PT.S_Foreach(Type, Iterator, Stmt)))
+        | %try "if" "(" Expr ")" Stmt "else" Stmt
+                => (markStmt(FULL_SPAN, PT.S_IfThenElse(Expr, Stmt1, Stmt2)))
+        | %try "if" "(" Expr ")" Stmt
+                => (markStmt(FULL_SPAN, PT.S_IfThen(Expr, Stmt)))
+        ;
+
+AtomicStmt
+        : Block
+                => (Block)
+        | VarDecl
+                => (PT.S_Decl VarDecl)
+        | "stabilize" ";"
+                => (markStmt(FULL_SPAN, PT.S_Stabilize))
+        | "continue" ";"
+                => (markStmt(FULL_SPAN, PT.S_Continue))
+        | "die" ";"
+                => (markStmt(FULL_SPAN, PT.S_Die))
+        | "new" ID "(" Arguments ")" ";"
+                => (markStmt(FULL_SPAN, PT.S_New(ID, Arguments)))
+        | "print" "(" Expr ("," Expr)* ")" ";"
+                => (markStmt(FULL_SPAN, PT.S_Print(Expr::SR)))
+        | BindId "=" Expr ";"
+                => (markStmt (FULL_SPAN, PT.S_Assign(BindId, NONE, Expr)))
+        | BindId "+=" Expr ";"
+                => (markStmt(FULL_SPAN, PT.S_Assign(BindId, SOME Op.asgn_add, Expr)))
+        | BindId "-=" Expr ";"
+                => (markStmt(FULL_SPAN, PT.S_Assign(BindId, SOME Op.asgn_sub, Expr)))
+        | BindId "*=" Expr ";"
+                => (markStmt(FULL_SPAN, PT.S_Assign(BindId, SOME Op.asgn_mul, Expr)))
+        | BindId "/=" Expr ";"
+                => (markStmt(FULL_SPAN, PT.S_Assign(BindId, SOME Op.asgn_div, Expr)))
+        | BindId "%=" Expr ";"
+                => (markStmt(FULL_SPAN, PT.S_Assign(BindId, SOME Op.asgn_mod, Expr)))
+        | "return" Expr ";"
+                => (markStmt(FULL_SPAN, PT.S_Return Expr))
+        ;
+
+Arguments
+        : ( Expr ("," Expr)* )?
+                => (flatten SR)
+        ;
+
+(***** Coordination declaration *****)
+
+CoordinationDecl
+        : "initially" (Array | Collection) ";"
+                => (SR FULL_SPAN)
+        ;
+
+Array
+        : "[" Create "|" Iterations "]"
+                => (fn span =>
+                      mark PT.CR_Mark
+                        (span, PT.CR_Array(
+                          NONE,
+                          mark PT.COMP_Mark
+                            (FULL_SPAN, PT.COMP_Comprehension(Create, Iterations)))))
+        ;
+
+Collection
+        : "{" Create "|" Iterations "}"
+                => (fn span =>
+                      mark PT.CR_Mark
+                        (span, PT.CR_Collection(
+                          mark PT.COMP_Mark
+                            (FULL_SPAN, PT.COMP_Comprehension(Create, Iterations)))))
+        ;
+
+Create
+        : ID "(" Arguments ")"
+                => (markExpr (FULL_SPAN, PT.E_Apply(PT.E_Var ID, Arguments)))
+        ;
+
+Iterations
+        : Iteration ( "," Iteration )*
+                => (Iteration :: SR)
+        ;
+
+Iteration
+        : BindId "in" Expr ".." Expr
+                => (mark PT.I_Mark (
+                      FULL_SPAN,
+                      PT.I_Iterator(BindId,
+                        markExpr((#1 Expr1_SPAN, #2 Expr2_SPAN),
+                        PT.E_Range(Expr1, Expr2)))))
+        ;
+
+(***** Global update block *****)
+
+GlobalUpdate
+        : "global" Block
+                => (markStmt (FULL_SPAN, Block))
+        ;
+
+(***** Types *****)
+
+Type    : "image" "(" Dimension ")" Dimensions
+                => (markTy(FULL_SPAN, PT.T_Image{
+                        shape = Dimensions, dim = Dimension
+                      }))
+        | "field" "#" INT "(" Dimension ")" Dimensions
+                => (markTy(FULL_SPAN, PT.T_Field{
+                        diff = INT,
+                        shape = Dimensions,
+                        dim = Dimension
+                      }))
+        | "kernel" "#" INT
+                => (markTy(FULL_SPAN, PT.T_Kernel INT))
+        | ConcreteType
+        ;
+
+ConcreteType
+        : ValueType SeqDimensions
+                => (markTy(FULL_SPAN, SeqDimensions ValueType))
+        ;
+
+SeqDimensions
+        : (* empty *)
+                => (fn ty => ty)
+        | "{" "}"
+                => (fn ty => PT.T_DynSeq ty)
+        | "{" Dimension "}" SeqDimensions
+                => (fn ty => SeqDimensions(PT.T_Seq(ty, Dimension)))
+        ;
+
+InputType
+        : "image" "(" Dimension ")" Dimensions
+                => (markTy(FULL_SPAN, PT.T_Image{
+                        shape = Dimensions, dim = Dimension
+                      }))
+        | ValueType SeqDimensions
+                => (markTy(FULL_SPAN, SeqDimensions ValueType))
+        ;
+
+ValueType
+        : "tensor" Dimensions
+                => (markTy(FULL_SPAN, PT.T_Tensor Dimensions))
+        | "vec2"
+                => (PT.T_Tensor[ilit 2])
+        | "vec3"
+                => (PT.T_Tensor[ilit 3])
+        | "vec4"
+                => (PT.T_Tensor[ilit 4])
+        | "bool"
+                => (markTy(FULL_SPAN, PT.T_Bool))
+        | "int"
+                => (markTy(FULL_SPAN, PT.T_Int))
+        | "real"
+                => (markTy(FULL_SPAN, PT.T_Real))
+        | "string"
+                => (markTy(FULL_SPAN, PT.T_String))
+        | ID
+                => (markTy(FULL_SPAN, PT.T_Id ID))
+        ;
+
+Dimensions
+        : "[" ( Dimension ("," Dimension)* )? "]"
+                => (flatten SR)
+        ;
+
+Dimension
+        : INT
+                => (markExpr (FULL_SPAN, ilit INT))
+        ;
+
+(***** Expressions *****)
+
+Expr
+        : TestExpr ( "if" Expr "else" Expr => (Expr1, Expr2) )?
+                => (case SR
+                     of NONE => TestExpr
+                      | SOME(e1, e2) => markExpr(FULL_SPAN, PT.E_Cond(TestExpr, e1, e2))
+                    (* end case *))
+        ;
+
+TestExpr
+        : AndExpr ( "||" AndExpr => (#1 FULL_SPAN, AndExpr) )*
+                => (mkCondExp PT.E_OrElse (#1 AndExpr_SPAN, AndExpr, SR, #2 SR_SPAN))
+        ;
+
+AndExpr
+        : CmpExpr ( "&&" CmpExpr => (#1 FULL_SPAN, CmpExpr) )*
+                => (mkCondExp PT.E_AndAlso (#1 CmpExpr_SPAN, CmpExpr, SR, #2 SR_SPAN))
+        ;
+
+CmpExpr
+        : AddExpr ( CmpOp AddExpr => (CmpOp, AddExpr, #2 AddExpr_SPAN) )*
+                => (mkLBinExp (#1 AddExpr_SPAN, AddExpr, SR))
+        ;
+
+CmpOp
+        : "<" => (Op.op_lt) | "<=" => (Op.op_lte)
+        | "==" => (Op.op_equ) | "!=" => (Op.op_neq)
+        | ">=" => (Op.op_gte) | ">" => (Op.op_gt)
+        ;
+
+AddExpr
+        : MulExpr ( AddOp MulExpr => (AddOp, MulExpr, #2 MulExpr_SPAN) )*
+                => (mkLBinExp (#1 MulExpr_SPAN, MulExpr, SR))
+        ;
+
+AddOp
+        : "+" => (Op.op_add) | "-" => (Op.op_sub) | "@" => (Op.op_at)
+        ;
+
+MulExpr
+        : PrefixExpr ( MulOp PrefixExpr => (MulOp, PrefixExpr, #2 PrefixExpr_SPAN) )*
+                => (mkLBinExp (#1 PrefixExpr_SPAN, PrefixExpr, SR))
+        ;
+
+MulOp
+        : "*" => (Op.op_mul) | "/" => (Op.op_div) | "%" => (Op.op_mod)
+        | "⊛" => (Op.op_convolve) | "•" => (Op.op_dot) | "×" => (Op.op_cross)
+        | "⊗" => (Op.op_outer) | ":" => (Op.op_colon)
+        ;
+
+PrefixExpr
+        : PowerExpr
+                => (PowerExpr)
+        | "-" PrefixExpr
+                => (markExpr(FULL_SPAN, PT.E_UnaryOp(Op.op_neg, PrefixExpr)))
+        | "!" PrefixExpr
+                => (markExpr(FULL_SPAN, PT.E_UnaryOp(Op.op_not, PrefixExpr)))
+        ;
+
+PowerExpr
+        : SuffixExpr ( "^" SuffixExpr => (Op.op_pow, #1 SuffixExpr_SPAN, SuffixExpr) )*
+                => (mkRBinExp (#1 FULL_SPAN, SuffixExpr, SR, #2 FULL_SPAN))
+        ;
+
+SuffixExpr
+        : DerivExpr Suffix*
+                => (case Suffix
+                     of [] => DerivExpr
+                      | ss => markExpr(FULL_SPAN, List.foldl (fn (f, e) => f e) DerivExpr ss)
+                    (* end case *))
+        | "nan" ( Dimensions )?
+                => (markExpr (FULL_SPAN, PT.E_NaN(getOpt(SR, []))))
+        ;
+
+Suffix
+        : "(" Arguments ")"
+                => (fn e => markExpr(FULL_SPAN, PT.E_Apply(e, Arguments)))
+        | "[" Indices "]"
+                => (fn e => PT.E_Subscript(e, Indices))
+        |  "." ID
+                => (fn e => PT.E_Select(e, ID))
+        | "{" Expr ("|" Iterator)? "}"
+                => (case SR
+                     of NONE => (fn e => PT.E_Subscript(e, [SOME Expr]))
+                      | SOME iter =>
+                        (fn e => PT.E_Apply(e, [PT.E_SeqComp(PT.COMP_Comprehension(Expr, [iter]))]))
+                    (* end case *))
+        ;
+
+Iterator
+        : BindId "in" Expr
+                => (mark PT.I_Mark (FULL_SPAN, PT.I_Iterator(BindId, Expr)))
+        ;
+
+Indices
+        : Index ( "," Index )*
+                => (Index :: SR)
+        ;
+
+Index
+        : ":"
+                => (NONE)
+        | Expr
+                => (SOME Expr)
+        ;
+
+DerivExpr
+        : AtomExpr
+                => (AtomExpr)
+        | "∇" DerivExpr
+                => (markExpr(FULL_SPAN, PT.E_UnaryOp(Op.op_D, DerivExpr)))
+        | "∇⊗" DerivExpr
+                => (markExpr(FULL_SPAN, PT.E_UnaryOp(Op.op_Dotimes, DerivExpr)))
+        | "∇×" DerivExpr
+                => (markExpr(FULL_SPAN, PT.E_UnaryOp(Op.op_curl, DerivExpr)))
+        | "∇•" DerivExpr
+                => (markExpr(FULL_SPAN, PT.E_UnaryOp(Op.op_Ddot, DerivExpr)))
+        ;
+
+AtomExpr
+        : ID
+                => (markExpr(FULL_SPAN, PT.E_Var ID))
+        | "identity" "[" Dimension "]"
+                => (markExpr(FULL_SPAN, PT.E_Id Dimension))
+        | "zeros" Dimensions
+                => (markExpr(FULL_SPAN, PT.E_Zero Dimensions))
+(* should the following be classified as SuffixExprs? *)
+        | "real" "(" Expr ")"
+                => (markExpr(FULL_SPAN, PT.E_Real Expr))
+        | LoadExpr
+                => (LoadExpr)
+        | "(" Expr ")"
+                => (Expr)
+        | "{" "}"
+                => (markExpr(FULL_SPAN, PT.E_Sequence[]))
+        | "{" Expr ("," Expr)* "}"
+                => (markExpr(FULL_SPAN, PT.E_Sequence(Expr::SR)))
+        | "[" Expr ("," Expr)* "]"
+                => (markExpr(FULL_SPAN, PT.E_Cons(Expr::SR)))
+        | INT
+                => (markExpr(FULL_SPAN, PT.E_Lit(L.Int INT)))
+        | REAL
+                => (markExpr(FULL_SPAN, PT.E_Lit(L.Real REAL)))
+        | STRING
+                => (markExpr(FULL_SPAN, PT.E_Lit(L.String STRING)))
+        | "true"
+                => (markExpr(FULL_SPAN, PT.E_Lit(L.Bool true)))
+        | "false"
+                => (markExpr(FULL_SPAN, PT.E_Lit(L.Bool false)))
+        | "|" Expr "|"
+                => (markExpr(FULL_SPAN, PT.E_UnaryOp(Op.op_norm, Expr)))
+        ;
+
+(***** Initializers (constant expressions) *****)
+
+Initializer
+        : KW_identity "[" Dimension "]"
+                => (markExpr(FULL_SPAN, PT.E_Id Dimension))
+        | KW_zeros Dimensions
+                => (markExpr(FULL_SPAN, PT.E_Zero Dimensions))
+        | LoadExpr
+                => (LoadExpr)
+        | "{" Initializer ("," Initializer)* "}"
+                => (markExpr(FULL_SPAN, PT.E_Sequence(Initializer::SR)))
+        | "[" Initializer ("," Initializer)* "]"
+                => (markExpr(FULL_SPAN, PT.E_Cons(Initializer::SR)))
+        | "-" INT
+                => (markExpr(FULL_SPAN, PT.E_Lit(L.Int(~INT))))
+        | "-" REAL
+                => (markExpr(FULL_SPAN, PT.E_Lit(L.Real(RealLit.negate REAL))))
+        | INT
+                => (markExpr(FULL_SPAN, PT.E_Lit(L.Int INT)))
+        | REAL
+                => (markExpr(FULL_SPAN, PT.E_Lit(L.Real REAL)))
+        | STRING
+                => (markExpr(FULL_SPAN, PT.E_Lit(L.String STRING)))
+        | "true"
+                => (markExpr(FULL_SPAN, PT.E_Lit(L.Bool true)))
+        | "false"
+                => (markExpr(FULL_SPAN, PT.E_Lit(L.Bool false)))
+        ;
+
+LoadExpr
+        : "image" "(" Path ")"
+                => (markExpr(FULL_SPAN, PT.E_LoadImage Path))
+        | "load" "(" Path ")"
+                => (markExpr(FULL_SPAN, PT.E_LoadSeq Path))
+        ;
+
+Path
+        : STRING
+                => (markExpr (FULL_SPAN, PT.E_Lit(L.String STRING)))
+        ;
+
+
+(* binding occurrence of an identifier *)
+BindId
+        : ID
+                => ({span=ID_SPAN, tree=ID})
+        ;

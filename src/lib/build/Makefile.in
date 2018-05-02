@@ -1,0 +1,72 @@
+# Makefile
+#
+# This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
+#
+# COPYRIGHT (c) 2016 The University of Chicago
+# All rights reserved.
+#
+# The Makefile for building all versions of the Diderot runtime system
+#
+# @configure_input@
+#
+
+SHELL =			@SHELL@
+INSTALL =		@INSTALL@
+@SET_MAKE@
+
+# clear out unused file suffixes for implicit rules
+#
+.SUFFIXES:
+.SUFFIXES:	.cxx .hxx
+
+#
+# directories for the install target
+#
+PREFIX =		@prefix@
+INSTALL_LIBDIR =	$(PREFIX)/lib
+
+#
+# directories for the local-install target
+#
+LIBDIR =	@DIDEROT_ROOT@/lib
+
+#
+# optional logging support
+#
+ifeq (@LOGGING_ENABLED@,true)
+LOGGING_HXX =		@DIDEROT_SRCDIR@/lib/include/diderot/logging.hxx
+endif
+
+.PHONY:			build local-install install
+
+build:			$(LOGGING_HXX)
+	for dir in $(wildcard rt-*) ; do \
+	  (cd $$dir; $(MAKE) build) || exit $$?; \
+	done
+
+local-install:		$(LOGGING_HXX)
+	$(INSTALL) -d $(LIBDIR)
+	for dir in $(wildcard rt-*); do \
+	  (cd $$dir && $(MAKE) local-install) || exit $$?; \
+	done
+
+install:		$(LOGGING_HXX)
+	$(INSTALL) -d $(INSTALL_LIBDIR)
+	for dir in $(wildcard rt-*); do \
+	  (cd $$dir && $(MAKE) install) || exit $$?; \
+	done
+
+#
+# optional logging support; note that this target is redundant with the
+# logging target in the top-level Makefile
+#
+$(LOGGING_HXX):
+	(cd @DIDEROT_SRCDIR@/logging/gen; log-gen.sh) || exit $$?
+
+#################### Cleanup ####################
+
+CLEAN_SUBDIRS =		$(wildcard rt-*)
+DISTCLEAN_FILES =	$(wildcard rt-*) mk/build.gmk
+DEVCLEAN_FILES =
+
+include @DIDEROT_MKDIR@/clean-rules.gmk

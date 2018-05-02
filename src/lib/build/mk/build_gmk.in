@@ -1,0 +1,112 @@
+# build.gmk
+#
+# This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
+#
+# COPYRIGHT (c) 2016 The University of Chicago
+# All rights reserved.
+#
+# Common definitions shared by all of the runtime-system makefiles.
+#
+# @configure_input@
+#
+
+#
+# determine the build options
+#
+ifeq (,$(findstring debug,$(BUILD_OPTIONS)))
+  ENABLE_DEBUG=false
+else
+  ENABLE_DEBUG=true
+endif
+ifeq (,$(findstring parallel,$(BUILD_OPTIONS)))
+  ENABLE_PARALLEL=false
+else
+  ENABLE_PARALLEL=true
+endif
+ifeq (,$(findstring logging,$(BUILD_OPTIONS)))
+  ENABLE_LOGGING=false
+else
+  ENABLE_LOGGING=true
+endif
+
+# dependency directory
+#
+DEPDIR := .depend
+$(shell mkdir -p $(DEPDIR) >/dev/null)
+
+DEPFLAGS =	-MT $@ -MMD -MP -MF $(DEPDIR)/$*.Td
+
+#
+# tools and flags
+#
+CXX =		@CXX@
+INCLUDES =	-I@DIDEROT_SRCDIR@/lib/include -I@TEEM_DIR@/include
+CXXFLAGS =	$(DEPFLAGS) @CXXFLAGS@ @CXXFLAG_fPIC@
+LDFLAGS =
+CPPFLAGS =	@CPPFLAGS@ $(INCLUDES)
+
+POSTCOMPILE =	mv -f $(DEPDIR)/$*.Td $(DEPDIR)/$*.d
+
+COMMON_SRCS =	options.cxx image.cxx world.cxx nrrd.cxx
+
+SRCS =		$(COMMON_SRCS) $(TARGET_SRCS)
+OBJS =		$(patsubst %.cxx,%.o,$(SRCS))
+
+
+#
+# determine target platform
+#
+ifeq (sequential,$(TARGET_PLATFORM))
+  CPPFLAGS += -DDIDEROT_TARGET_SEQUENTIAL
+else ifeq (opencl,$(TARGET_PLATFORM))
+  CPPFLAGS += -DDIDEROT_TARGET_CL @CPPFLAGS_CL@
+else ifeq (cuda,$(TARGET_PLATFORM))
+  CPPFLAGS += -DDIDEROT_TARGET_CUDA
+else ifeq (parallel,$(TARGET_PLATFORM))
+  CPPFLAGS += -DDIDEROT_TARGET_PARALLEL
+endif
+
+#
+# add source files and flags to support logging (if enabled)
+#
+ifeq ($(ENABLE_LOGGING),true)
+  SRCS += logging.cxx
+  CPPFLAGS += -DDIDEROT_ENABLE_LOGGING
+endif
+
+#
+# set debug flags, if needed
+#
+ifeq ($(ENABLE_DEBUG),true)
+  CXXFLAGS += -g3 -O0
+else
+  CPPFLAGS += -DNDEBUG
+  CXXFLAGS += -O3
+endif
+
+#
+# include pthreads if necessary
+#
+ifeq ($(ENABLE_PARALLEL),true)
+  CXXFLAGS += @PTHREAD_CFLAGS@
+endif
+
+$(TARGET):	$(OBJS)
+	$(LD) -r -o $(TARGET) $(OBJS)
+
+%.o : %.cxx
+%.o : %.cxx $(DEPDIR)/%.d
+	$(CXX) -c $(CPPFLAGS) $(CXXFLAGS) $<
+	$(POSTCOMPILE)
+
+# so that make won’t fail if the dependency file doesn't exist
+$(DEPDIR)/%.d: ;
+
+.PRECIOUS: $(DEPDIR)/%.d
+
+#################### Cleanup ####################
+
+CLEAN_FILES = 		$(OBJS) $(TARGET)
+CLEAN_FILES += 		$(wildcard *.dSYM)
+
+include @DIDEROT_MKDIR@/clean-rules.gmk

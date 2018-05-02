@@ -1,0 +1,4 @@
+
+} // namespace @PREFIX@
+
+#endif // !@HXX_DEFINE@

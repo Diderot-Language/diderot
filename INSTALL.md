@@ -2,8 +2,8 @@
 
 These instructions are organized into two parts.  First is a quick
 guide to installing the Diderot system (including the prerequisite
-software).  Following the quick overview are detailed instructions the
-prerequisite software.
+software).  Following the quick overview are detailed instructions
+for acquiring and installing the prerequisite software.
 
 ## QUICK GUIDE
 
@@ -39,7 +39,7 @@ which you can get from
 >  <http://smlnj.org/dist/working/index.html>
 >
 
-Make sure that you get version 110.80 or later.  More details about
+Make sure that you get version 110.82 or later.  More details about
 installing **SML/NJ** can be found [below](#smlnj-details).
 
 ### Getting the Diderot source
@@ -189,7 +189,7 @@ it's not very useful.
 
 On Ubuntu or Debian Linux, `apt-get` may work to install a sufficiently recent
 version.  `apt-cache policy smlnj` reports what version you can get;
-if that's at or above version 110.80, you can:
+if that's at or above version 110.82, you can:
 
 ````bash
     sudo apt-get install smlnj
@@ -211,7 +211,7 @@ As an alternative you can install SML/NJ from [Homebrew](https://brew.sh)
 using the following commands:
 
 It is also possible to get SML/NJ from [Homebrew](https://brew.sh) for macOS.
-Assuming that `brew info smlnj` mentions version 110.80 or higher, then
+Assuming that `brew info smlnj` mentions version 110.82 or higher, then
 
 ````bash
     brew install smlnj
@@ -230,7 +230,7 @@ directory.  Then run the following command to download and unbundle
 the `config` directory:
 
 ```` bash
-    curl -O http://smlnj.org/dist/working/110.80/config.tgz
+    curl -O http://smlnj.org/dist/working/110.82/config.tgz
     tar -xzf config.tgz
 ````
 
@@ -247,5 +247,5 @@ The path to the **sml** command will be `$SMLDIR/bin/sml`.
 Note that SML/NJ is a 32-bit program, so on Linux systems you must also
 have the 32-bit compatibility libraries installed (the exact libraries/packages
 required will depend on your distribution; details are available in the
-SML/NJ [INSTALL](http://www.smlnj.org/dist/working/110.80/INSTALL)
+SML/NJ [INSTALL](http://www.smlnj.org/dist/working/110.82/INSTALL)
 notes).

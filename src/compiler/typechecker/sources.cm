@@ -1,0 +1,38 @@
+(* sources.cm
+ *
+ * This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
+ *
+ * COPYRIGHT (c) 2015 The University of Chicago
+ * All rights reserved.
+ *)
+
+library
+
+  structure Typechecker
+
+is
+
+  $/basis.cm
+  $/smlnj-lib.cm
+
+  ../common/sources.cm
+  ../ast/sources.cm
+  ../basis/sources.cm
+  ../global-env/sources.cm
+  ../parse-tree/sources.cm
+  ../options/sources.cm
+
+  check-const.sml
+  check-create.sml
+  check-expr.sml
+  check-globals.sml
+  check-params.sml
+  check-stmt.sml
+  check-strand.sml
+  check-type.sml
+  check-var-uses.sml
+  env.sml
+  typechecker.sml
+  type-error.sml
+  unify.sml
+  util.sml

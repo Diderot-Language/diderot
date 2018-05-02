@@ -1,0 +1,68 @@
+(* sources.cm
+ *
+ * This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
+ *
+ * COPYRIGHT (c) 2015 The University of Chicago
+ * All rights reserved.
+ *)
+
+Library
+
+  signature EXPR
+  signature OPERATORS
+  signature OPERATOR_TY
+  signature SSA
+  signature SSA_TYPES
+
+  structure ExitKind
+  structure GlobalVarKind
+  structure Inputs	(* from ../inputs/sources.cm *)
+
+  functor AvailRHSFn
+  functor CheckIRFn
+  functor CensusFn
+  functor DomTreeFn
+  functor ExprFn
+  functor ForwardDFAFn
+  functor PromoteFn
+  functor RewriteFn
+  functor SSAFn
+  functor SSAPPFn
+  functor TranslateEnvFn
+  functor TranslateFn
+  functor UnusedElimFn
+  functor ValueNumberingFn
+
+is
+
+  $/basis.cm
+  $/smlnj-lib.cm
+  $/hash-cons-lib.cm
+
+  ../basis/sources.cm
+  ../common/sources.cm
+  ../ein/sources.cm
+  ../fields/sources.cm
+  ../inputs/sources.cm
+  ../options/sources.cm
+
+  avail-rhs-fn.sml
+  census-fn.sml
+  check-ir-fn.sml
+  domain-sig.sml
+  dom-tree-fn.sml
+  exit-kind.sml
+  expr-fn.sml
+  forward-dfa-fn.sml
+  global-var-kind.sml
+  operators-sig.sml
+  promote-fn.sml
+  rewrite-fn.sml
+  ssa-fn.sml
+  ssa-pp-fn.sml
+  ssa-sig.sml
+  ssa-types-sig.sml
+  translate-env-fn.sml
+  translate-fn.sml
+  unused-elim-fn.sml
+  value-numbering-fn.sml

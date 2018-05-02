@@ -1,0 +1,11 @@
+#define DIDEROT_STANDALONE_EXEC
+#define @DIDEROT_FLOAT_PRECISION@
+#define @DIDEROT_INT_PRECISION@
+#define @DIDEROT_TARGET@
+#include "diderot/diderot.hxx"
+
+#ifdef DIDEROT_ENABLE_LOGGING
+#define IF_LOGGING(...)         __VA_ARGS__
+#else
+#define IF_LOGGING(...)
+#endif

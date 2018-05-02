@@ -1,0 +1,57 @@
+/* helper function for saving output to nrrd file */
+inline bool nrrd_save_helper (std::string const &file, Nrrd *nin)
+{
+    if (nrrdSave (file.c_str(), nin, nullptr)) {
+        std::cerr << "Error saving \"" << file << "\":\n" << biffGetDone(NRRD) << std::endl;
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
+/* Helper function for saving dynamic sequence output to a nrrd file.
+ * Dynamic sequence output is represented by two nrrds: one for lengths
+ * and one for the actual sequence data.  If the sum of the lengths is
+ * zero, then the second nrrd will be empty and should not be output,
+ * since teem barfs on empty nrrds.
+ */
+inline bool dynseq_save_helper (std::string const &prefix, Nrrd *lens, Nrrd *data)
+{
+    if (nrrd_save_helper(prefix + "-len.nrrd", lens)) {
+        return true;
+    }
+  // check for an empty data file; in this case nrrdEmpty will have been called
+  // on the data nrrd, so we can just check for a 0-dimension object.
+    if (data->dim == 0) {
+        std::cerr << "Warning: all sequences in output are empty, so no '"
+            << prefix << "-data.nrrd' file produced\n";
+        return false;
+    }
+  // write the data
+    return nrrd_save_helper(prefix + "-data.nrrd", data);
+}
+
+#ifdef DIDEROT_EXEC_SNAPSHOT
+// version of dynseq_save_helper for snapshots
+inline bool dynseq_save_helper (
+    std::string const &prefix,
+    std::string const &suffix,
+    Nrrd *lens,
+    Nrrd *data)
+{
+    if (nrrd_save_helper(prefix + "-len" + suffix + ".nrrd", lens)) {
+        return true;
+    }
+  // check for an empty data file; in this case nrrdEmpty will have been called
+  // on the data nrrd, so we can just check for a 0-dimension object.
+    std::string dataFile = prefix + "-data" + suffix + ".nrrd";
+    if (data->dim == 0) {
+        std::cerr << "Warning: all sequences in snapshot are empty, so no '"
+            << dataFile << "' file produced\n";
+        return false;
+    }
+  // write the data
+    return nrrd_save_helper(dataFile, data);
+}
+#endif // !DIDEROT_EXEC_SNAPSHOT
