@@ -3,7 +3,7 @@
  * Internal representation of floating-point literals with limited
  * support for arithmetic.
  *
- * COPYRIGHT (c) 2016 John Reppy (http://cs.uchicago.edu/~jhr)
+ * COPYRIGHT (c) 2018 John Reppy (http://cs.uchicago.edu/~jhr)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,7 +23,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  *
- * This file is part of the SML Compiler Utilities, which can be found at
+ * This code is part of the SML Compiler Utilities, which can be found at
  *
  *      https://github.com/JohnReppy/sml-compiler-utils
  *)
@@ -64,8 +64,11 @@ structure RealLit :> sig
     val negInf : t      (* negative infinity *)
 
   (* operations on literals as if they were reals; raise NaN if an argument is a NaN *)
-    val lessThan : t * t -> bool        (* comparison in real ordering *)
+    val lessThan : t * t -> bool        (* comparison in real ordering; note that
+                                         * -0.0 is not less than +0.0.
+                                         *)
     val negate : t -> t                 (* negation *)
+    val abs : t -> t                    (* absolute value *)
 
   (* equality, comparisons, and hashing functions *)
     val same : (t * t) -> bool
@@ -77,10 +80,10 @@ structure RealLit :> sig
    * exponent.  This function may raise Overflow, when the exponent of the
    * normalized representation is too small or too large.
    *)
-    val real : {isNeg : bool, whole : string, frac : string, exp : int} -> t
+    val real : {isNeg : bool, whole : string, frac : string, exp : IntInf.int} -> t
 
   (* create a real literal from a sign, decimal fraction, and exponent *)
-    val fromDigits : {isNeg : bool, digits : int list, exp : int} -> t
+    val fromDigits : {isNeg : bool, digits : int list, exp : IntInf.int} -> t
 
   (* create a real literal from an integer *)
     val fromInt : IntInf.int -> t
@@ -104,17 +107,18 @@ structure RealLit :> sig
    *
    *    [+/-] 0.d0...dn * 10^exp
    *
-   * where the sign is negative if isNeg is true.
+   * where the sign is negative if isNeg is true.  We require that dn <> 0.
+   * +/- zero is represented by the empty digit sequence.
    *)
     datatype t
       = PosInf          (* positive infinity *)
       | NegInf          (* negative infinity *)
       | QNaN            (* some quiet NaN *)
-      | Flt of {isNeg : bool, digits : int list, exp : int}
+      | Flt of {isNeg : bool, digits : int list, exp : IntInf.int}
 
     exception NaN
 
-    fun isZero (Flt{isNeg, digits=[0], exp}) = true
+    fun isZero (Flt{digits=[], ...}) = true
       | isZero _ = false
 
     fun isNeg NegInf = true
@@ -127,7 +131,7 @@ structure RealLit :> sig
     fun isFinite (Flt _) = true
       | isFinite _ = false
 
-    fun zero isNeg = Flt{isNeg = isNeg, digits = [0], exp = 0}
+    fun zero isNeg = Flt{isNeg = isNeg, digits = [], exp = 0}
 
     val one = Flt{isNeg = false, digits = [1], exp = 1}
     val m_one = Flt{isNeg = true, digits = [1], exp = 1}
@@ -150,6 +154,7 @@ structure RealLit :> sig
       | lessThan (NegInf, _) = true
       | lessThan (PosInf, _) = false
       | lessThan (_, PosInf) = false
+      | lessThan (Flt{digits=[], ...}, Flt{digits=[], ...}) = false
       | lessThan (Flt{isNeg=true, ...}, Flt{isNeg=false, ...}) = true
       | lessThan (Flt{isNeg=false, ...}, Flt{isNeg=true, ...}) = false
       | lessThan (Flt{isNeg, digits=d1, exp=e1}, Flt{digits=d2, exp=e2, ...}) =
@@ -168,6 +173,12 @@ structure RealLit :> sig
       | negate QNaN = raise NaN
       | negate (Flt{isNeg, digits, exp}) =
           Flt{isNeg = not isNeg, digits = digits, exp = exp}
+
+  (* return the absolute value of a literal *)
+    fun abs PosInf = PosInf
+      | abs NegInf = PosInf
+      | abs QNaN = raise NaN
+      | abs (Flt{digits, exp, ...}) = Flt{isNeg=false, digits=digits, exp=exp}
 
   (* equality, comparisons, and hashing functions *)
     fun same (NegInf, NegInf) = true
@@ -190,7 +201,7 @@ structure RealLit :> sig
       | compare (Flt f1, Flt f2) = (case (#isNeg f1, #isNeg f2)
            of (false, true) => GREATER
             | (true, false) => LESS
-            | _ => (case Int.compare(#exp f1, #exp f2)
+            | _ => (case IntInf.compare(#exp f1, #exp f2)
                  of EQUAL => let
                       fun cmp ([], []) = EQUAL
                         | cmp ([], _) = LESS
@@ -214,7 +225,7 @@ structure RealLit :> sig
             | hashDigits (d::r, h, i) =
                 hashDigits (r, W.<<(W.fromInt d, i+0w4), W.andb(i+0w1, 0wxf))
           in
-            hashDigits(digits, W.fromInt exp, 0w0)
+            hashDigits(digits, W.fromLargeInt exp, 0w0)
           end
 
     fun real {isNeg, whole, frac, exp} = let
@@ -235,8 +246,23 @@ structure RealLit :> sig
               | digits => normalize {
                     isNeg = isNeg,
                     digits = digits,
-                    exp = exp + SS.size whole
+                    exp = exp + IntInf.fromInt(SS.size whole)
                   }
+            (* end case *)
+          end
+
+  (* helper function to strip trailing zeros from a list of digits *)
+    fun stripZeros {isNeg, digits, exp} = let
+          fun strip [] = []
+            | strip (0::ds) = (case strip ds
+                 of [] => []
+                  | ds => 0::ds
+                (* end case *))
+            | strip (d::ds) = d :: strip ds
+          in
+            case strip digits
+             of [] => zero isNeg
+              | digits => Flt{isNeg=isNeg, digits=digits, exp=exp}
             (* end case *)
           end
 
@@ -246,7 +272,7 @@ structure RealLit :> sig
           fun normalize {isNeg, digits=[], exp} = zero isNeg
             | normalize {isNeg, digits=0::r, exp} =
                 normalize {isNeg=isNeg, digits=r, exp=exp-1}
-            | normalize flt = Flt flt
+            | normalize arg = stripZeros arg
           in
             normalize arg
           end
@@ -254,16 +280,20 @@ structure RealLit :> sig
     fun fromInt 0 = zero false
       | fromInt n = let
           val (isNeg, n) = if (n < 0) then (true, ~n) else (false, n)
-          fun toDigits (n, d) = if n < 10
-                then IntInf.toInt n :: d
-                else toDigits(IntInf.quot(n, 10), IntInf.toInt(IntInf.rem(n, 10)) :: d)
-          fun cvt isNeg = let
-                val digits = toDigits(n, [])
-                in
-                  Flt{isNeg = isNeg, digits = digits, exp = List.length digits}
-                end
+          fun toDigits (n, ds) = if n < 10
+                then IntInf.toInt n :: ds
+                else let
+                  val (q, r) = IntInf.quotRem(n, 10)
+                  in
+                    toDigits(q, IntInf.toInt r :: ds)
+                  end
+          val digits = toDigits(n, [])
           in
-            cvt isNeg
+            stripZeros {
+                isNeg = isNeg,
+                digits = digits,
+                exp = IntInf.fromInt(List.length digits)
+              }
           end
 
     fun toString PosInf = "+inf"
@@ -273,8 +303,8 @@ structure RealLit :> sig
       | toString (Flt{isNeg, digits, exp}) = let
           val s = if isNeg then "-0." else "0."
           val e = if exp < 0
-                then ["e-", Int.toString(~exp)]
-                else ["e", Int.toString exp]
+                then ["e-", IntInf.toString(~exp)]
+                else ["e", IntInf.toString exp]
           in
             concat(s :: List.foldr (fn (d, ds) => Int.toString d :: ds) e digits)
           end
@@ -306,9 +336,9 @@ structure RealLit :> sig
       | toBytes (Flt{isNeg, digits, exp}) = let
           val sign = if isNeg then 0w1 else 0w0
           val digits = List.map Word8.fromInt digits
-          val exp' = W.fromInt exp
+          val exp' = W.fromLargeInt exp
           fun byte i = Word8.fromLargeWord(W.toLargeWord((W.>>(exp', 0w8*i))))
-          val exp = [byte 0w0, byte 0w1, byte 0w2, byte 0w3]
+          val exp = [byte 0w3, byte 0w2, byte 0w1, byte 0w0]
           in
             Word8Vector.fromList(sign :: (digits @ exp))
           end
@@ -326,17 +356,20 @@ structure RealLit :> sig
                 (* end case *))
               else let
                 val ndigits = W8V.length v - 5
-                val _ = if (ndigits < 1) then error() else ()
+                val _ = if (ndigits < 0) then error() else ()
                 val isNeg = (case W8V.sub(v, 0)
                        of 0w0 => false
                         | 0w1 => true
                         | _ => error()
                       (* end case *))
-                fun digit i = Word8.toInt(W8V.sub(v, i+1))
+                fun digit i = let val d = Word8.toInt(W8V.sub(v, i+1))
+                      in
+                        if (d < 10) then d else error()
+                      end
                 fun byte i = W.<<(
                       W.fromLargeWord(Word8.toLargeWord(W8V.sub(v, ndigits+1+i))),
-                      W.fromInt(8*i))
-                val exp = W.toIntX(W.orb(byte 3, W.orb(byte 2, W.orb(byte 1, byte 0))))
+                      W.fromInt(8*(3-i)))
+                val exp = W.toLargeIntX(W.orb(byte 3, W.orb(byte 2, W.orb(byte 1, byte 0))))
                 in
                   Flt{isNeg = isNeg, digits = List.tabulate(ndigits, digit), exp = exp}
                 end

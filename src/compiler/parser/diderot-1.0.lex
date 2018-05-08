@@ -2,7 +2,7 @@
  *
  * This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
  *
- * COPYRIGHT (c) 2015 The University of Chicago
+ * COPYRIGHT (c) 2018 The University of Chicago
  * All rights reserved.
  *)
 
@@ -34,7 +34,10 @@
             T.STRING s
           end
 
-  (* make a REAL token from a substring *)
+  (* make a REAL token from a substring.  The argument should match the RE
+   *
+   *	{num}"."{num}([eE][+-]?{num})?
+   *)
     fun mkReal ss = let
           val (isNeg, rest) = (case Substring.getc ss
                  of SOME(#"-", r) => (true, r)
@@ -49,7 +52,7 @@
                 else let
                   val rest = Substring.triml 1 rest (* remove "e" or "E" *)
                   in
-                    #1(valOf(Int.scan StringCvt.DEC Substring.getc rest))
+                    #1(valOf(IntInf.scan StringCvt.DEC Substring.getc rest))
                   end
           in
             T.REAL(RealLit.real{

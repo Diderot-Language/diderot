@@ -2,7 +2,7 @@
  *
  * This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
  *
- * COPYRIGHT (c) 2015 The University of Chicago
+ * COPYRIGHT (c) 2018 The University of Chicago
  * All rights reserved.
  *
  * TODO: add support for evaluating constants from the command-line
@@ -160,7 +160,7 @@ structure ConstExpr : sig
                             Real(RealLit.real{isNeg = isNeg, whole = whole, frac = frac, exp = exp}),
                             rest)
                       fun getExp (ss, whole, frac) = let
-                            fun getExpVal ss = (case Int.scan StringCvt.DEC SS.getc ss
+                            fun getExpVal ss = (case IntInf.scan StringCvt.DEC SS.getc ss
                                    of NONE => NONE
                                     | SOME(e, rest) => mkReal (whole, frac, e, rest)
                                   (* end case *))
