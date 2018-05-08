@@ -1,0 +1,63 @@
+(* tree-ops.sml
+ *
+ * This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
+ *
+ * COPYRIGHT (c) 2016 The University of Chicago
+ * All rights reserved.
+ *
+ * Operators for Tree IR.
+ *
+ * Note: this file is generated from gen/ir/tree-ops.spec and gen/ir/tree-ops.in.
+ *)
+
+structure TreeOps =
+  struct
+
+  (* required helper functions for types *)
+    type ty = TreeTypes.t
+    val samety = TreeTypes.same
+    val hashty = TreeTypes.hash
+    val tyToString = TreeTypes.toString
+
+  (* required helper functions for type lists *)
+    type tys = ty list
+    fun sametys (tys1, tys2) = ListPair.allEq samety (tys1, tys2)
+    fun hashtys tys = List.foldl (fn (ty, s) => hashty ty + 0w3 * s) 0w0 tys
+    fun tysToString tys = String.concat["[", String.concatWithMap "," tyToString tys, "]" ]
+
+  (* required helper functions for the int type *)
+    fun sameint (i1 : int, i2) = (i1 = i2)
+    fun hashint i = Word.fromInt i
+    fun intToString i = Int.toString i
+
+  (* required helper functions for the string type *)
+    fun samestring (s1 : string, s2) = (s1 = s2)
+    val hashstring = HashString.hashString
+    fun stringToString s = String.concat["\"", s, "\""]
+
+  (* required helper functions for the shape type *)
+    type shape = int list
+    val sameshape : (shape * shape -> bool) = (op =)
+    fun hashshape shp =
+          List.foldl (fn (i, w) => Word.xorb(Word.<<(w, 0w1), Word.fromInt i))
+            (Word.fromInt(List.length shp)) shp
+    fun shapeToString shp = String.concat["[", String.concatWithMap "," Int.toString shp, "]"]
+
+  (* required helper functions for the mask type *)
+    type mask = bool list
+    val samemask : (mask * mask -> bool) = (op =)
+    fun hashmask m =
+          List.foldl (fn (false, w) => w+w | (true, w) => w+w+0w1)
+            (Word.fromInt(List.length m)) m
+    fun maskToString m =
+          String.concat(List.map (fn true => "_" | false => ":") m)
+
+  (* required helper functions for the index control type type *)
+    type idxctl = IndexCtl.t
+    val sameidxctl = IndexCtl.same
+    val hashidxctl = IndexCtl.hash
+    val idxctlToString = IndexCtl.toString
+
+@BODY@
+
+  end

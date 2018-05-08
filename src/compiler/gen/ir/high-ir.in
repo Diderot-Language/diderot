@@ -1,0 +1,53 @@
+(* high-ir.sml
+ *
+ * This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
+ *
+ * COPYRIGHT (c) 2015 The University of Chicago
+ * All rights reserved.
+ *
+ * High-level version of the Diderot CFG IR
+ *
+ * Note: this file is generated from gen/ir/high-ir.spec and gen/ir/high-ir.in.
+ *)
+
+structure HighOps =
+  struct
+
+  (* required helper functions for types *)
+    type ty = HighTypes.ty
+    val samety = HighTypes.same
+    val hashty = HighTypes.hash
+    val tyToString = HighTypes.toString
+
+  (* required helper functions for type lists *)
+    type tys = ty list
+    fun sametys (tys1, tys2) = ListPair.allEq samety (tys1, tys2)
+    fun hashtys tys = List.foldl (fn (ty, s) => hashty ty + 0w3 * s) 0w0 tys
+    fun tysToString tys = String.concat["[", String.concatWithMap "," tyToString tys, "]" ]
+
+  (* required helper functions for the int type *)
+    fun sameint (i1 : int, i2) = (i1 = i2)
+    fun hashint i = Word.fromInt i
+    fun intToString i = Int.toString i
+
+  (* required helper functions for the string type *)
+    fun samestring (s1 : string, s2) = (s1 = s2)
+    val hashstring = HashString.hashString
+    fun stringToString s = String.concat["\"", s, "\""]
+
+  (* required helper functions for the shape type *)
+    type shape = TensorShape.t
+    val sameshape = TensorShape.same
+    val hashshape = TensorShape.hash
+    val shapeToString = TensorShape.toString
+
+@BODY@
+
+  end
+
+structure HighIR = SSAFn(
+  val irName = "high-ir"
+  structure Ty = HighTypes
+  structure Op = HighOps)
+
+structure HighCensus = CensusFn(HighIR)
