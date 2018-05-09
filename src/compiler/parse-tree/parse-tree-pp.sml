@@ -167,8 +167,11 @@ structure ParseTreePP : sig
             | PT.T_String => prNode (strm, "String")
             | PT.T_Id id => prNode' (strm, "Id", Atom.toString id)
             | PT.T_Kernel diff => prNode' (strm, "Kernel", "#" ^ IntInf.toString diff)
-            | PT.T_Field{diff, dim, shape} => (
-                prNode' (strm, "Field", "#" ^ IntInf.toString diff);
+            | PT.T_Field{diff=NONE, dim, shape} => (
+                prNode' (strm, "Field", "#∞");
+                nest strm (fn strm => (expr (strm, dim); prList expr (strm, shape))))
+            | PT.T_Field{diff=SOME k, dim, shape} => (
+                prNode' (strm, "Field", "#" ^ IntInf.toString k);
                 nest strm (fn strm => (expr (strm, dim); prList expr (strm, shape))))
             | PT.T_Tensor shp => (
                 prNode (strm, "Tensor");

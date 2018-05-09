@@ -63,8 +63,9 @@ structure CheckType : sig
                 (* end case *))
             | PT.T_String => Ty.T_String
             | PT.T_Kernel k => Ty.T_Kernel(checkDiff(cxt, k))
-            | PT.T_Field{diff, dim, shape} => Ty.T_Field{
-                  diff = checkDiff (cxt, diff),
+            | PT.T_Field{diff=NONE, dim, shape} => raise Fail "infinity fields not implemented yet"
+            | PT.T_Field{diff=SOME k, dim, shape} => Ty.T_Field{
+                  diff = checkDiff (cxt, k),
                   dim = checkDim (env, cxt, dim),
                   shape = CheckExpr.checkShape (env, cxt, shape)
                 }

@@ -41,6 +41,7 @@ structure ParseTree =
                                                 (* description and optional default value *)
       | GD_Var of var_dcl                       (* global variable declaration *)
       | GD_Func of ty * var_bind * param list * fun_body (* function declaration *)
+      | GD_FieldFunc of ty * var_bind * var_bind * expr (* field defined as function *)
 
     and strand_dcl
       = SD_Mark of strand_dcl mark
@@ -73,7 +74,7 @@ structure ParseTree =
       | T_String
       | T_Id of Atom.atom       (* named type; i.e., strand *)
       | T_Kernel of dim
-      | T_Field of {diff : dim, dim : expr, shape : expr list}
+      | T_Field of {diff : dim option, dim : expr, shape : expr list}
       | T_Tensor of expr list
       | T_Image of {dim : expr, shape : expr list}
       | T_Seq of ty * expr

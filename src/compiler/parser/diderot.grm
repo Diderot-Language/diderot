@@ -184,12 +184,12 @@ CreateStrands
         ;
 
 GlobalDcl
-        : InputDcl
-                => (InputDcl)
-        | ConstDcl
+        : ConstDcl
                 => (ConstDcl)
-        | VarDcl
-                => (markDecl(FULL_SPAN, PT.GD_Var VarDcl))
+        | InputDcl
+                => (InputDcl)
+        | Type BindId VarOrFieldDcl
+                => (markDecl (FULL_SPAN, VarOrFieldDcl (Type, BindId)))
         | FunctionDcl
                 => (FunctionDcl)
         ;
@@ -204,9 +204,21 @@ InputDcl
                 => (markDecl(FULL_SPAN, PT.GD_Input(Type, BindId, SR1, SR2)))
         ;
 
+VarOrFieldDcl
+        : ( "=" Expression )? ";"
+                => (fn (ty, id) => PT.GD_Var(PT.VD_Decl(ty, id, SR)))
+        | "(" BindId ")" "=" Expression ";"
+                => (fn (ty, id) => PT.GD_FieldFunc(ty, id, BindId, Expression))
+        ;
+
 VarDcl
         : Type BindId ( "=" Expression )? ";"
                 => (mark PT.VD_Mark (FULL_SPAN, PT.VD_Decl(Type, BindId, SR)))
+        ;
+
+VarDclPrefix
+        : Type BindId
+                => (Type, BindId)
         ;
 
 FunctionDcl
@@ -331,8 +343,8 @@ AssignOp
 Type
         : "image" "(" ConstExpr ")" Shape
                 => (markTy (FULL_SPAN, PT.T_Image{dim=ConstExpr, shape=Shape}))
-        | "field" "#" Continuity "(" ConstExpr ")" Shape
-                => (markTy (FULL_SPAN, PT.T_Field{diff=Continuity, dim=ConstExpr, shape=Shape}))
+        | "field" ("#" Continuity)? "(" ConstExpr ")" Shape
+                => (markTy (FULL_SPAN, PT.T_Field{diff=SR, dim=ConstExpr, shape=Shape}))
         | "kernel" "#" Continuity
                 => (markTy (FULL_SPAN, PT.T_Kernel Continuity))
         | ConcreteType

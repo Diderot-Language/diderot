@@ -358,7 +358,7 @@ Type    : "image" "(" Dimension ")" Dimensions
                       }))
         | "field" "#" INT "(" Dimension ")" Dimensions
                 => (markTy(FULL_SPAN, PT.T_Field{
-                        diff = INT,
+                        diff = SOME INT,
                         shape = Dimensions,
                         dim = Dimension
                       }))

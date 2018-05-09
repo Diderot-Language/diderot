@@ -157,6 +157,38 @@ structure CheckGlobals : sig
                   E.checkForRedef (env, cxt, f);
                   (OTHER(AST.D_Func(f', params', body')), E.insertFunc(env, cxt, f, f'))
                 end
+            | PT.GD_FieldFunc(ty, bindF, bindX, body) => (case CheckType.check(env, cxt, ty)
+                 of ty' as Ty.T_Field{diff, dim, shape} => let
+                      val f = Var.new(#tree bindF, #span bindF, Var.GlobalVar, ty')
+                      val xTy = Ty.T_Tensor(Ty.Shape[dim])
+                      val resTy = Ty.T_Tensor shape
+(* QUESTION: should we check the arity of dim? *)
+                      val x = Var.new(#tree bindX, #span bindX, Var.FunParam, xTy)
+                      val env' = Env.insertLocal(
+(* QUESTION: should we have a new kind of scope for these field functions? *)
+                            Env.functionScope(env, resTy, #tree bindF),
+                            cxt, #tree bindX, x)
+                      val bodyTy = CheckExpr.check (env', cxt, body)
+                      in
+                        case Util.coerceType (resTy, bodyTy)
+                         of SOME e => (
+                                OTHER(AST.D_DiffFunc(f, [x], e)),
+                                Env.insertGlobal(env, cxt, #tree bindF, f)
+                              )
+                          | NONE => (
+                              err (cxt, [
+                                  S "type of r.h.s. definition for '", A(#tree bindF),
+                                  S "' does not match declaration",
+                                  S "  expected: ", TY resTy, S "\n",
+                                  S "  found:    ", TY(#2 bodyTy)
+                                ]);
+                              (ERROR, env))
+                        (* end case *)
+                      end
+                  | ty' => (
+                      err (cxt, [S "expected field type for '", A(#tree bindF), S "'"]);
+                      (ERROR, env))
+                (* end case *))
           (* end case *))
 
     fun check (defs, env, cxt, globs) = let
