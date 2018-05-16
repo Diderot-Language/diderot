@@ -1,0 +1,193 @@
+DIDEROTC(1)
+===========
+:doctype:	manpage
+:man source:	Diderot
+:man version:	{version}
+
+NAME
+----
+diderotc - compiler for the parallel domain-specific language Diderot
+
+
+SYNOPSIS
+--------
+*diderotc* ['OPTIONS'] 'FILE'
+
+
+DESCRIPTION
+-----------
+The diderotc(1) command compiles Diderot source code into either a library
+(the default) or a stand-alone executable.
+The Diderot language is a parallel domain-specific language for image-analysis
+algorithms that supports a high-level mathematical programming model based
+on the differential tensor calculus.
+
+
+OPTIONS
+-------
+*-h, --help*::
+  Display a list of command-line options and then exit.
+  This list includes additional options used to support development and debugging of
+  the compiler.
+
+*-H*::
+  Display a list of *all* of the command-line options and then exit.  This list
+  includes compiler controls that are meant for debugging the compiler.
+
+*--version*::
+  Show the compiler version and exit.
+
+*--about*::
+  Show information about the Diderot language and compiler and then exit.
+
+*--exec*::
+  Compile the Diderot program to run as a standalone executable.
+
+*--json*::
+  When compiling to a library, this option generates a JSON description of
+  the library's API.  Note that this option is incompatible with the *--exec* flag.
+
+*-o 'OUTFILE', --output*='OUTFILE'::
+  Use the name 'OUTFILE' as the stem for the generated code files.
+  When coupled with the *--exec* flag, 'OUTFILE' will be the name of
+  the executable.
+
+*--namespace*='PREFIX'::
+  Specify a namespace prefix for generated interface to the Diderot program.
+  The default namespace prefix is +Diderot+.
+
+*--snapshot*::
+  Generate code to get a snapshot of strand states (ignored if the *--exec* flag
+  is given).
+
+*-g*, *--debug*::
+  Enable assertions and debugging information in the generated code and runtime system.
+
+*--double*::
+  Use double-precision floating-point for the Diderot +real+ type.
+
+*--long-int*::
+  Use 64-bit integers for the Diderot +int+ type.
+
+*--scalar*::
+  Do not generate vectorized code (*i.e.*, code that uses the **gcc* vector extensions).
+
+*--log*::
+  Emit a log file of the compiler's intermediate representations.
+  This option is mainly used to debug the compiler.
+
+*--stats*::
+  Collect and report statistics about optimizations, etc.
+
+*--verbose*::
+  Print messages to stderr as each compiler stage starts and ends.
+
+*--target*='TARGET'::
+  Specify the target platform for the generated code.
+  The 'TARGET' can be one of the following options:
++
+--
+  *sequential*;;
+    single-threaded sequential implementation.
+  *parallel*;;
+    parallel implementation for shared-memory multiprocessors using pthreads.
+ifdef::debugger_enabled[]
+  *debugger*;;
+    generate a version of the program that can be run under the Diderot debugger.
+endif::debugger_enabled[]
+ifdef::opencl_enabled[]
+  *opencl*;;
+    parallel implementation for GPUs using OpenCL (if supported).
+endif::opencl_enabled[]
+ifdef::cuda_enabled[]
+  *cuda*;;
+    parallel implementation for GPUs using CUDA (if supported).
+endif::cuda_enabled[]
+--
++
+Note that not all targets are supported by all installations.  Use the *--help* command to
+determine which targets are supported by a given instance of the compiler.
+
+*--C*'VAR'='VALUE'::
+  Specify (or override) the value of the constant variable 'VAR' when compiling
+  the program.  Note that constant variables are not available in Version 1 of
+  the Diderot language.
+
+
+OUTPUT FILES
+------------
+The *diderotc* compiler produces one or more output files, depending on the command-line
+options.
+These files will have a common stem, which will either be the stem of the source file (i.e.,
+'foo' for the source file 'foo.diderot') or the name specified by the *--output* option.
+
+
+RUNTIME OPTIONS
+---------------
+The executables produced by the compiler when using the *--exec* option recognize
+a number of standard options.
+
+*-h*, *--help*::
+  Print usage information and then exit.
+
+*-o* 'STR', *--output* 'STR'::
+  Specify the name of the output file (the default is the name of the output
+  variable).  If the Diderot program in question has multiple outputs, then
+  for each output named 'foo', there will be options *-o-foo* and *--output-foo*
+  for overriding the filename of that particular output variable.
+
+*-print* 'FILE'::
+  Specify where to direct printed output.  The default is standard output.
+
+*-l* 'NUM', *--limit* 'NUM'::
+  Specify the limit on the number of super-steps taken by the program to 'NUM'
+  (0 means unlimited). The default is unlimited.
+
+*-v*, *--verbose*::
+  Enable runtime-system messages to standard error.
+
+*-t*, *--timing*::
+  Report execution time to standard output.
+
+*-s* 'NUM', *--snapshot* 'NUM'::
+  Generate a snapshot of the strand state after every 'NUM' super-steps.  This option is
+  only present if the *--snapshot* option was given to the compiler.
+
+*-sp* 'STR', *--snapshot-prefix* 'STR'::
+  Specify a prefix for the snapshot files.  The default is the name of the
+  output variable being captured.  If the Diderot program in question has multiple
+  outputs, then for each output named 'foo', there will be options *-sp-foo* and
+  *--snapshot-prefix-foo* for overriding the snapshot prefix for that particular
+  output variable.
+
+*-n* 'NUM', *--nworkers* 'NUM'::
+  Specify the number of worker threads for parallel execution.  The number of workers
+  is limited to the number of available cores, which is also the default value.
+  This option is only present for the *parallel* target.
+
+In addition, there will be options corresponding to any +input+ globals that
+are declared in the Diderot program.
+
+ENVIRONMENT
+-----------
+
+*DIDEROT_TEEM_DIR*::
+  If this environment variable is present, it is used to specify the path
+  to the Teem installation.
+  The *diderotc* compiler uses this path to find teem executables, libraries, and include
+  files that are used during the compilation process.
+  The default is **{teem_dir}**.
+
+SEE ALSO
+--------
+*diderot-api*(5)
+
+teem -- http://teem.sourceforge.net[]
+
+Diderot home page -- http://diderot-language.cs.uchicago.edu[]
+
+
+AUTHOR
+------
+
+Maintained by the Diderot project (http://diderot-language.cs.uchicago.edu[]).

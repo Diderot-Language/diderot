@@ -1,0 +1,54 @@
+DIDEROT-API(5)
+==============
+:doctype:	manpage
+:man source:	Diderot
+:man version:	{version}
+
+
+NAME
+----
+Diderot API - the library API for Diderot programs.
+
+
+SYNOPSIS
+--------
+
+[source,c]
+----
+typedef struct NS_struct_world NS_World_t;
+
+void NS_SetVerbose (NS_World_t *wrld, bool mode);
+bool NS_GetVerbose (NS_World_t *wrld);
+
+uint32_t NS_NumStrands (NS_World_t *wrld);
+uint32_t NS_NumActive (NS_World_t *wrld);
+uint32_t NS_NumStable (NS_World_t *wrld);
+
+NS_World_t *NS_Init ();
+bool NS_Initially (NS_World_t *wrld);
+uint32_t NS_Run (NS_World_t *wrld, uint32_t maxNSteps);
+void NS_Shutdown (NS_World_t *wrld);
+----
+
+
+DESCRIPTION
+-----------
+
+By default, the *diderotc*(1) compiler generates library represented as an
+object file with a companion C header file that describes the library's
+API.
+The symbols in this header file have a common _namespace_ prefix, which is
+specified by the *--namespace* commandline option (the default namespace is +Diderot+).
+
+
+SEE ALSO
+--------
+  *diderotc*(1)
+
+  teem -- http://teem.sourceforge.net[]
+
+
+AUTHOR
+------
+
+Maintained by the Diderot project (http://diderot-language.cs.uchicago.edu[]).
