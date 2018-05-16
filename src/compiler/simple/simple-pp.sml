@@ -40,7 +40,8 @@ structure SimplePP : sig
           val string = PP.string ppStrm
           fun ppTyArg (_, mv) = (case mv
                  of Ty.TY ty => string(Ty.toString ty)
-                  | Ty.DIFF k => string("#"^Int.toString k)
+                  | Ty.DIFF NONE => string "#∞"
+                  | Ty.DIFF(SOME k) => string("#"^Int.toString k)
                   | Ty.SHAPE shp => string(concat[
                         "$[", String.concatWith "," (List.map Int.toString shp), "]"
                       ])
@@ -257,6 +258,7 @@ structure SimplePP : sig
           fun var x = ppVar (ppStrm, x)
           in
             PP.openHBox ppStrm;
+              if SimpleFunc.isDifferentiable f then (string "field"; sp()) else ();
               string "function"; sp();
               string(Ty.toString(SimpleFunc.resultTypeOf f));
               string("#" ^ Int.toString(SimpleFunc.useCount f));

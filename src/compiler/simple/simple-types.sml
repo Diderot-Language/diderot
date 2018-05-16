@@ -34,7 +34,7 @@ structure SimpleTypes =
           shape : shape                 (* shape of tensors in range; order is length of list *)
         }
 
-    withtype diff = int
+    withtype diff = int option
          and shape = int list
          and dim = int
 
@@ -87,14 +87,18 @@ structure SimpleTypes =
             | T_Strand id => Atom.toString id
             | T_Kernel => "kernel"
             | T_Image info => ImageInfo.toString info
-            | T_Field{diff, dim, shape} => concat[
-                  "field#", Int.toString diff, "(", Int.toString dim,
+            | T_Field{diff=NONE, dim, shape} => concat[
+                  "field", "(", Int.toString dim, ")[", shapeToString shape, "]"
+                ]
+            | T_Field{diff=SOME k, dim, shape} => concat[
+                  "field#", Int.toString k, "(", Int.toString dim,
                   ")[", shapeToString shape, "]"
                 ]
           (* end case *))
 
     fun metaArgToString (TY ty) = toString ty
-      | metaArgToString (DIFF diff) = "#" ^ Int.toString diff
+      | metaArgToString (DIFF NONE) = "#∞"
+      | metaArgToString (DIFF(SOME k)) = "#" ^ Int.toString k
       | metaArgToString (SHAPE shp) = concat["[", shapeToString shp, "]"]
       | metaArgToString (DIM d) = Int.toString d
 

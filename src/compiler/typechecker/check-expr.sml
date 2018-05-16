@@ -677,7 +677,7 @@ structure CheckExpr : sig
             | PT.E_Var x => (case E.findVar (env, x)
                  of SOME x' => (AST.E_Var(useVar(cxt, x')), Var.monoTypeOf x')
                   | NONE => (case E.findKernel (env, x)
-                       of SOME h => (AST.E_Kernel h, Ty.T_Kernel(Ty.DiffConst(Kernel.continuity h)))
+                       of SOME h => (AST.E_Kernel h, TypeOf.kernel h)
                         | NONE => err(cxt, [S "undeclared variable ", A x])
                       (* end case *))
                 (* end case *))
@@ -693,7 +693,7 @@ structure CheckExpr : sig
                 in
                   case E.findVar (env, kern)
                    of SOME h => (case Var.monoTypeOf h
-                         of ty as Ty.T_Kernel(Ty.DiffConst k) =>
+                         of ty as Ty.T_Kernel(Ty.DiffConst(SOME k)) =>
                               mkExp (AST.E_Var(useVar(cxt, h)), k, ty)
                           | _ => err(cxt, [
                                 S "expected kernel, but found ", S(Var.kindToString h)
@@ -703,7 +703,7 @@ structure CheckExpr : sig
                          of SOME h => let
                               val k = Kernel.continuity h
                               in
-                                mkExp (AST.E_Kernel h, k, Ty.T_Kernel(Ty.DiffConst k))
+                                mkExp (AST.E_Kernel h, k, TypeOf.kernel h)
                               end
                           | NONE => err(cxt, [S "unknown kernel ", A kern])
                         (* end case *))

@@ -92,13 +92,14 @@ structure DumpBasis : sig
 
   (* convert a Diderot type to LaTeX *)
     fun tyToTeX (env, ty) = let
-          fun diff2s (Ty.DiffConst k) = Int.toString k
+          fun diff2s (Ty.DiffConst NONE) = ""
+            | diff2s (Ty.DiffConst(SOME k)) = "\\#" ^ Int.toString k
             | diff2s (Ty.DiffVar(dfv, off)) = let
                 val off = if off = 0 then [] else ["+", Int.toString off]
                 in
                   case lookupDiffVar(env, dfv)
-                   of 0 => concat("$k$" :: off)
-                    | k => concat("$k_{" :: Int.toString k :: "}$" :: off)
+                   of 0 => concat("\\#$k$" :: off)
+                    | k => concat("\\#$k_{" :: Int.toString k :: "}$" :: off)
                   (* end case *)
                 end
           fun dim2s' (Ty.DimConst d) = Int.toString d
@@ -126,7 +127,7 @@ structure DumpBasis : sig
                   | Ty.T_Sequence(ty, NONE) => toTeX ty ^ "[]"
                   | Ty.T_Sequence(ty, SOME dim) =>
                       String.concat[toTeX ty, "[", dim2s dim, "]"]
-                  | Ty.T_Kernel diff => "kernel#" ^ diff2s diff
+                  | Ty.T_Kernel diff => "kernel" ^ diff2s diff
                   | Ty.T_Tensor(Ty.Shape[]) => "real"
                   | Ty.T_Tensor(Ty.Shape[Ty.DimConst 2]) => "vec2"
                   | Ty.T_Tensor(Ty.Shape[Ty.DimConst 3]) => "vec3"
@@ -139,7 +140,7 @@ structure DumpBasis : sig
                         "image(", dim2s dim, ")[", shp2s shape, "]"
                       ]
                   | Ty.T_Field{diff, dim, shape} => String.concat[
-                        "field#", diff2s diff, "(", dim2s dim, ")[", shp2s shape, "]"
+                        "field", diff2s diff, "(", dim2s dim, ")[", shp2s shape, "]"
                       ]
                   | Ty.T_Fun([], ty) => "() $\\rightarrow$ " ^ toTeX ty
                   | Ty.T_Fun(tys, ty) => String.concat[

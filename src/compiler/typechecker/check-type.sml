@@ -24,10 +24,11 @@ structure CheckType : sig
     datatype token = datatype TypeError.token
 
   (* check a differentiation level, which must be >= 0 *)
-    fun checkDiff (cxt, k) =
+    fun checkDiff (ctx, NONE) = Ty.DiffConst NONE
+      | checkDiff (cxt, SOME k) =
           if (k < 0)
-            then (TypeError.error (cxt, [S "differentiation must be >= 0"]); Ty.DiffConst 0)
-            else Ty.DiffConst(IntInf.toInt k)
+            then (TypeError.error (cxt, [S "differentiation must be >= 0"]); Ty.DiffConst NONE)
+            else Ty.DiffConst(SOME(IntInf.toInt k))
 
   (* check a sequence dimension, which must be > 0 *)
     fun checkSeqDim (env, cxt, dim) = (case CheckExpr.checkDim (env, cxt, dim)
@@ -62,10 +63,9 @@ structure CheckType : sig
                       Ty.T_Error)
                 (* end case *))
             | PT.T_String => Ty.T_String
-            | PT.T_Kernel k => Ty.T_Kernel(checkDiff(cxt, k))
-            | PT.T_Field{diff=NONE, dim, shape} => raise Fail "infinity fields not implemented yet"
-            | PT.T_Field{diff=SOME k, dim, shape} => Ty.T_Field{
-                  diff = checkDiff (cxt, k),
+            | PT.T_Kernel k => Ty.T_Kernel(checkDiff(cxt, SOME k))
+            | PT.T_Field{diff, dim, shape} => Ty.T_Field{
+                  diff = checkDiff (cxt, diff),
                   dim = checkDim (env, cxt, dim),
                   shape = CheckExpr.checkShape (env, cxt, shape)
                 }

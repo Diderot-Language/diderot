@@ -121,6 +121,9 @@ structure ParseTreePP : sig
                 prNode' (strm, "Func", Atom.toString f);
                 nest strm (fn strm => (
                   ty (strm, t); prList param (strm, params); funBody (strm, body))))
+            | PT.GD_FieldFunc(ty, {tree=f, ...}, {tree=x, ...}, body) => (
+                prNode' (strm, "Func", concat[Atom.toString f, " (", Atom.toString x, ")"]);
+                nest strm (fn strm => (expr (strm, body))))
           (* end case *))
 
     and strandDcl (strm, obj) = (case obj

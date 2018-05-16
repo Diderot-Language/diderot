@@ -124,11 +124,16 @@ structure Simplify : sig
 
   (* a property to map AST function variables to SimpleAST functions *)
     local
-      fun cvt x = let
-            val Ty.T_Fun(paramTys, resTy) = Var.monoTypeOf x
-            in
-              SimpleFunc.new (Var.nameOf x, cvtTy resTy, List.map cvtTy paramTys)
-            end
+      fun cvt f = (case Var.monoTypeOf f
+             of Ty.T_Fun(paramTys, resTy) =>
+                  SimpleFunc.new (Var.nameOf f, cvtTy resTy, List.map cvtTy paramTys)
+              | ty as Ty.T_Field _ => let
+                  val ty' as STy.T_Field{dim, shape, ...} = cvtTy ty
+                  in
+                    SimpleFunc.newDiff (Var.nameOf f, STy.T_Tensor shape, [STy.T_Tensor[dim]])
+                  end
+              | ty => raise Fail "expected function or field type"
+            (* end case *))
     in
     val {getFn = cvtFunc, ...} = Var.newProp cvt
     end
@@ -486,7 +491,7 @@ structure Simplify : sig
                     if STy.same(cvtTy dstTy', cvtTy srcTy')
                       then (* static-size to dynamic coercion *)
                         doCoerce (srcTy, dstTy, e, stms)
-                      else let 
+                      else let
                       (* distribute the coercion over the sequence elements *)
                         val es = List.map
                               (fn e => AST.E_Coerce{dstTy=dstTy', srcTy=srcTy', e=e})
@@ -726,6 +731,7 @@ structure Simplify : sig
                   inputs' := inp :: !inputs';
                   constInit := S.S_Assign(x', e') :: (stms @ !constInit)
                 end
+        (* simplify a global declaration *)
           fun simplifyGlobalDcl (AST.D_Var(x, NONE)) = globals' := cvtVar x :: !globals'
             | simplifyGlobalDcl (AST.D_Var(x, SOME e)) = let
                 val (stms, e') = simplifyExp (cxt, e, [])
@@ -738,6 +744,13 @@ structure Simplify : sig
                 val f' = cvtFunc f
                 val params' = cvtVars params
                 val body' = simplifyAndPruneBlock cxt body
+                in
+                  funcs := S.Func{f=f', params=params', body=body'} :: !funcs
+                end
+            | simplifyGlobalDcl (AST.D_DiffFunc(f, params, body)) = let
+                val f' = cvtFunc f
+                val params' = cvtVars params
+                val body' = simplifyAndPruneBlock cxt (AST.S_Return body)
                 in
                   funcs := S.Func{f=f', params=params', body=body'} :: !funcs
                 end

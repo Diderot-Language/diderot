@@ -256,7 +256,6 @@ structure BasisVars =
 
   (* curl on 2d and 3d vector fields *)
     local
-      val diff0 = Ty.DiffConst 0
       fun field' (k, d, dd) = field(k, Ty.DimConst d, Ty.Shape(List.map Ty.DimConst dd))
     in
     val curl2D = polyVar (N.op_curl, all([DK], fn [Ty.DIFF k] => let

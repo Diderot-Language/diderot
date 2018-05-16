@@ -2,7 +2,7 @@
  *
  * This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
  *
- * COPYRIGHT (c) 2015 The University of Chicago
+ * COPYRIGHT (c) 2018 The University of Chicago
  * All rights reserved.
  *)
 
@@ -13,6 +13,9 @@ structure TypeOf : sig
 
   (* return the type of an AST expression *)
     val expr : AST.expr -> Types.ty
+
+  (* return the type of a kernel *)
+    val kernel : Kernel.t -> Types.ty
 
   end = struct
 
@@ -27,10 +30,12 @@ structure TypeOf : sig
 
     fun varUse (x, _) = Var.monoTypeOf x
 
+    fun kernel h = Ty.T_Kernel(Ty.DiffConst(SOME(Kernel.continuity h)))
+
     fun expr e = (case e
            of AST.E_Var x => varUse x
             | AST.E_Lit lit => literal lit
-            | AST.E_Kernel h => Ty.T_Kernel(Ty.DiffConst(Kernel.continuity h))
+            | AST.E_Kernel h => kernel h
             | AST.E_Select(_, f) => varUse f
             | AST.E_Prim(_, _, _, ty) => ty
             | AST.E_Apply(_, _, ty) => ty

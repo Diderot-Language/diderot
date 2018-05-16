@@ -319,6 +319,13 @@ structure ASTPP : sig
                  of AST.S_Block stms => ppBlock (ppStrm, stms)
                   | stm => ppBlock (ppStrm, [stm])
                 (* end case *))
+             | AST.D_DiffFunc(f, params, body) => (
+                PP.openHBox ppStrm;
+                  string(TU.toString(Var.monoTypeOf f));
+                  sp(); var f; sp(); ppParams (ppStrm, params);
+                  sp(); string "="; sp(); ppExp(ppStrm, body); string ";";
+                PP.closeBox ppStrm;
+                nl())
           end
 
     fun ppCreate (ppStrm, cr) = (

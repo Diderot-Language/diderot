@@ -54,7 +54,7 @@ structure Types =
 
   (* levels of differentiation *)
     and diff
-      = DiffConst of int                (* i (i >= 0) *)
+      = DiffConst of int option         (* i (i >= 0); NONE means infinity differentiation *)
       | DiffVar of (diff_var * int)     (* d + i *)
 
   (* differentiation meta variable *)

@@ -268,6 +268,11 @@ structure CheckVarUses : sig
                 in
                   (undef, VSet.add(unused, f), bound)
                 end
+            | chkGlobalDecl (AST.D_DiffFunc(f, params, body), (undef, unused, bound)) = let
+                val unused = chkExpr(cxt, body, undef, VSet.addList(unused, params))
+                in
+                  (undef, VSet.add(unused, f), bound)
+                end
         (* first process the global declarations *)
 (* FIXME: constant variables that are used solely to define other constants are reported
  * as unused.
