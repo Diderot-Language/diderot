@@ -109,6 +109,9 @@ structure Simple =
                                                  * simplify-fields pass. The third argument is
                                                  * the maximum support of the image.
                                                  *)
+      | E_FieldFn of func                       (* lift a differentiable field function to a
+                                                 * field value.
+                                                 *)
 
     fun typeOf (E_Var x) = SimpleVar.typeOf x
       | typeOf (E_Lit lit) = (case lit
@@ -135,6 +138,14 @@ structure Simple =
       | typeOf (E_LoadSeq(ty, _)) = ty
       | typeOf (E_LoadImage(ty, _, _)) = ty
       | typeOf (E_InsideImage _) = SimpleTypes.T_Bool
+      | typeOf (E_FieldFn f) = let
+          val (dim, shp) = (case SimpleFunc.typeOf f
+                 of (SimpleTypes.T_Tensor shp, [SimpleTypes.T_Tensor[]]) => (1, shp)
+                  | (SimpleTypes.T_Tensor shp, [SimpleTypes.T_Tensor[d]]) => (d, shp)
+                (* end case *))
+          in
+            SimpleTypes.T_Field{diff = NONE, dim = dim, shape = shp}
+          end
 
     fun newProp initFn = PropList.newProp (fn (Block{props, ...}) => props, initFn)
     fun newFlag () = PropList.newFlag (fn (Block{props, ...}) => props)

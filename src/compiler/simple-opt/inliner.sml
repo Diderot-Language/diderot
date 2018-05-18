@@ -201,6 +201,7 @@ structure Inliner : sig
                   | S.E_LoadSeq _ => exp
                   | S.E_LoadImage _ => exp
                   | S.E_InsideImage _ => raise Fail "unexpected InsideImage during inlining"
+                  | S.E_FieldFn _ => exp
                 (* end case *))
         (* build the initial environment by mapping parameters to arguments *)
           val env = ListPair.foldlEq

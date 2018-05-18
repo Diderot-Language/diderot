@@ -77,6 +77,11 @@ structure Unify : sig
 (* FIXME: what about the bounds? *)
     fun equalDiff (pl, diff1, diff2) = (case (TU.pruneDiff diff1, TU.pruneDiff diff2)
            of (Ty.DiffConst NONE, Ty.DiffConst NONE) => true
+(* QUESTION: what if we unify infinity with dv+i? *)
+            | (Ty.DiffConst NONE, Ty.DiffVar(dv, 0)) => (
+                bindDiffVar(pl, dv, Ty.DiffConst NONE); true)
+            | (Ty.DiffVar(dv, 0), Ty.DiffConst NONE) => (
+                bindDiffVar(pl, dv, Ty.DiffConst NONE); true)
             | (Ty.DiffConst(SOME k1), Ty.DiffConst(SOME k2)) => (k1 = k2)
             | (Ty.DiffConst(SOME k), Ty.DiffVar(dv, i)) => let
                 val k' = k+i

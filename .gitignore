@@ -37,3 +37,6 @@
 # SML/NJ
 .cm/
 
+# Makefile dependencies
+.depend
+

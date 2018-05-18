@@ -136,6 +136,7 @@ structure SimpleContract : sig
                   | S.E_LoadSeq _ => ()
                   | S.E_LoadImage _ => ()
                   | S.E_InsideImage(pos, img, _) => (markUsed pos; markUsed img)
+                  | S.E_FieldFn _ => ()
                 (* end case *))
           in
             analyzeBlk blk
@@ -196,6 +197,7 @@ structure SimpleContract : sig
             | S.E_LoadSeq _ => ()
             | S.E_LoadImage _ => ()
             | S.E_InsideImage(pos, img, _) => (unuse pos; unuse img)
+            | S.E_FieldFn f => ignore(SimpleFunc.decCnt f)
           (* end case *))
 
   (* delete a block of code and decrement use counts of the variables in it *)

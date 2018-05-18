@@ -686,7 +686,7 @@ structure CheckExpr : sig
                 fun mkExp (e, k, ty) = if (k = k')
                       then (e, ty)
                       else let
-                        val ty' = Ty.T_Kernel(Ty.DiffConst k')
+                        val ty' = Ty.T_Kernel(Ty.DiffConst(SOME k'))
                         in
                           (AST.E_Coerce{srcTy = ty, dstTy = ty', e = e}, ty')
                         end

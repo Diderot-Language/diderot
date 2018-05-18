@@ -38,6 +38,17 @@ structure Translate : sig
   (* maps from SimpleAST variables to the current corresponding SSA variable *)
     datatype env = E of context * IR.var VMap.map
 
+  (* mapping from differentiable field functions to their translated definitions *)
+    local
+      val {getFn : SimpleFunc.t -> IR.func_def, setFn, ...} =
+            SimpleFunc.newProp (fn f => raise Fail(concat[
+                "no binding for field function '", SimpleFunc.uniqueNameOf f, "'"
+              ]))
+    in
+    val getFieldFnDef = getFn
+    val setFieldFnDef = setFn
+    end (* local *)
+
 (* +DEBUG *)
     fun prEnv (prefix, E(_, env)) = let
           val wid = ref 0
@@ -183,9 +194,9 @@ structure Translate : sig
           fun doVar (y, (env', phiMap)) = let
                 val y' = lookup env y
                 val y'' = newVar y
-		in
-		  (insert(env', y, y''), VMap.insert(phiMap, y, (y'', [y', y''])))
-		end
+                in
+                  (insert(env', y, y''), VMap.insert(phiMap, y, (y'', [y', y''])))
+                end
           val (env', phiMap) = List.foldl doVar (env, VMap.empty) phiVars
           in
             JOIN{
@@ -395,6 +406,11 @@ print(concat["doVar (", SV.uniqueNameOf srcVar, ", ", IR.phiToString phi, ", _) 
                 val Ty.T_Image info = SV.typeOf img
                 in
                   [IR.ASSGN(lhs, IR.OP(Op.Inside(info, s), [lookup env pos, lookup env img]))]
+                end
+            | S.E_FieldFn f => let
+                val IR.Func{params, body, ...} = getFieldFnDef f
+                in
+                  raise Fail "FIXME"
                 end
           (* end case *))
 
@@ -673,8 +689,10 @@ print(concat["doVar (", SV.uniqueNameOf srcVar, ", ", IR.phiToString phi, ", _) 
           val (bodyCFG, _) = cvtBlock (([], []), env, [], body)
           val cfg = IR.CFG.prependNode (IR.Node.mkENTRY(), loadBlk)
           val cfg = IR.CFG.concat(cfg, bodyCFG)
+          val fdef = IR.Func{name = cvtFuncVar f, params = params, body = cfg}
           in
-            IR.Func{name = cvtFuncVar f, params = params, body = cfg}
+            if (SimpleFunc.isDifferentiable f) then setFieldFnDef(f, fdef) else ();
+            fdef
           end
 
   (* lift functions used in map-reduce expressions *)

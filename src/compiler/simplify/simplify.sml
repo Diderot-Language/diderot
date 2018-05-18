@@ -748,11 +748,17 @@ structure Simplify : sig
                   funcs := S.Func{f=f', params=params', body=body'} :: !funcs
                 end
             | simplifyGlobalDcl (AST.D_DiffFunc(f, params, body)) = let
-                val f' = cvtFunc f
+              (* differentiable field function: we map it to both a function definition and
+               * a field variable.
+               *)
+                val vf = cvtVar f
+                val f' = SimpleFunc.use(cvtFunc f)
                 val params' = cvtVars params
                 val body' = simplifyAndPruneBlock cxt (AST.S_Return body)
                 in
-                  funcs := S.Func{f=f', params=params', body=body'} :: !funcs
+                  funcs := S.Func{f=f', params=params', body=body'} :: !funcs;
+                  globals' := vf :: !globals';
+                  globalInit := S.S_Assign(vf, S.E_FieldFn f') :: !globalInit
                 end
           val () = (
                 List.app simplifyInputDcl input_dcls;

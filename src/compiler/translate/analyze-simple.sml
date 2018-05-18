@@ -174,6 +174,7 @@ structure AnalyzeSimple : sig
                         | S.E_LoadSeq _ => []
                         | S.E_LoadImage _ => []
                         | S.E_InsideImage(pos, img, _) => [pos, img]
+                        | S.E_FieldFn f => []
                       (* end case *))
                 in
                   addList (u, vs)

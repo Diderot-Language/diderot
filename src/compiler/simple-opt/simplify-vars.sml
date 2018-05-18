@@ -84,6 +84,7 @@ structure SimplifyVars : sig
                   | S.E_LoadSeq _ => ()
                   | S.E_LoadImage _ => ()
                   | S.E_InsideImage(pos, img, _) => (chkVar bvs pos; chkVar bvs img)
+                  | S.E_FieldFn _ => ()
                 (* end case *))
           in
             fn blk => analyzeBlk (blk, VSet.empty)
@@ -244,6 +245,7 @@ structure SimplifyVars : sig
                   | S.E_LoadSeq _ => exp
                   | S.E_LoadImage _ => exp
                   | S.E_InsideImage(pos, img, s) => S.E_InsideImage(rename pos, rename img, s)
+                  | S.E_FieldFn _ => exp
                 (* end case *))
           in
             renameBlk
