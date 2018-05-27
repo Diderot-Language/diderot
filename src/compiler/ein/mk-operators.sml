@@ -140,6 +140,8 @@ structure MkOperators : sig
     val gradConstant : shape -> Ein.ein
     val dotimes : dim * shape -> Ein.ein (* ?? *)
     val divergence : dim * shape -> Ein.ein
+    
+    val cfexpMix:  shape * shape list * shape list -> Ein.ein
 
   end = struct
 
@@ -1177,5 +1179,31 @@ structure MkOperators : sig
                 body = E.Sum([(sid, 0, dim-1)], E.Apply(E.Partial sumIndexL, E.Field(0, S)))
               }
           end
+          
+	fun cfexpMix (alpha_f, alphas_tf,alphas_tt) =
+        let
+        
+            
+            val n_tf = length(alphas_tf)
+            val tterm_tf = List.tabulate(n_tf, fn id => (id+1, E.F))
+            
+            val n_tt = length(alphas_tt)
+            val shift_tf = n_tf+1
+            val tterm_tt = List.tabulate(n_tt, fn id => (id+shift_tf,E.T))
+            
+            val fldtem = E.Tensor(0, specialize(alpha_f, 0))
+            val bodyterm  = E.OField(E.CFExp (tterm_tf@tterm_tt), fldtem ,  E.Partial [])
+           
+           val param_f = [mkTEN alpha_f]
+           val param_tt = List.map (fn talpha => mkNoSubstTEN  talpha)  alphas_tt
+           val param_tf = List.map (fn talpha => mkNoSubstTEN  talpha)  alphas_tf
+           in 
+                E.EIN {
+                    params = param_f@param_tf@param_tt,
+                    index  = alpha_f,
+                    body   = bodyterm
+                }
+	       end
+        
 
   end (* mkOperators *)

@@ -74,6 +74,13 @@ structure Apply : sig
                   | E.Value _ => raise Fail "expression before expand"
                   | E.Img _ => raise Fail "expression before expand"
                   | E.Krn _ => raise Fail "expression before expand"
+                  | E.OField(E.CFExp es, e2,dx)
+                    =>  
+                    let
+						val es =  List.map (fn (id, inputTy) => (mapParam id, inputTy)) es
+						val e2 = apply e2
+						val dx = apply dx
+                    in E.OField(E.CFExp es, e2,dx) end
                   | E.Sum(c, esum) => E.Sum(mapSum c, apply esum)
                   | E.Op1(op1, e1) => E.Op1(op1, apply e1)
                   | E.Op2(op2, e1, e2) => E.Op2(op2, apply e1, apply e2)
@@ -135,6 +142,10 @@ structure Apply : sig
                   | E.Value _ => raise Fail "expression before expand"
                   | E.Img _ => raise Fail "expression before expand"
                   | E.Krn _ => raise Fail "expression before expand"
+                  | E.OField(E.CFExp es, e2, E.Partial alpha) => let
+                        val ps = List.map (fn (id, inputTy) => (mapId(id, origId, 0), inputTy)) es
+                        in E.OField(E.CFExp ps, apply e2, E.Partial alpha) end
+                  | E.Poly _ => raise Fail "expression before expand"
                   | E.Sum(indices, esum) => let
                       val (ix, _, _) = List.last indices
                       in
