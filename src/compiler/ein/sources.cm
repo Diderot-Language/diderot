@@ -14,6 +14,7 @@ Library
   structure EinSums
   structure EinUtil
   structure MkOperators
+  structure DerivativeEin
 
 is
 
@@ -29,4 +30,5 @@ is
   ein-sums.sml
   ein-util.sml
   mk-operators.sml
+  deriv-ein.sml
 

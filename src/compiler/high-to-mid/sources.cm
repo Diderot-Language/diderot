@@ -31,11 +31,8 @@ is
   high-to-mid.sml
   handle-ein.sml
   probe-ein.sml
-
-(*
-  Transform.sml
-  split.sml
-  testcases.sml
-  einSet.sml
-  sweep.sml
-*)
+  translate-ofield.sml
+  poly-ein.sml
+  poly-ein-step2.sml
+  poly-ein-step3.sml
+  helper.sml
