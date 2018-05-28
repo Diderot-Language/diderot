@@ -129,7 +129,6 @@ val differentiate: Ein.mu list * Ein.ein_exp -> Ein.ein_exp
     (*note would need to keep track of change*)
     fun differentiate (px, body) =
         let
-        val _ = print(String.concat["\n\ndiff:",EinPP.expToString(body)])
         val body' =(case body
             of E.Const _            => E.Const 0
             | E.ConstR _            => E.Const 0

@@ -33,7 +33,6 @@ structure PolyEin : sig
         	val E.Probe(E.OField(E.CFExp cfexp_ids, e, E.Partial dx), expProbe) = body 
         	val probe_ids = List.map (fn E.Tensor(tid, _) => tid)  [expProbe]
         	(*Note that Dev branch allows multi-probe which is why we use a list of ids*)
-            
             (*check that the number of into parameters matches number of probed arguments*)
             val n_pargs = length(cfexp_ids)
             val n_probe = length(probe_ids)
@@ -45,8 +44,7 @@ structure PolyEin : sig
             (* need to flatten before merging polynomials in product *)
             val e = P3.rewriteMerge(e)
            (* normalize ein by cleaning it up and differntiating*)
-            val e = P3.rewriteDifferentiate(E.Apply(E.Partial dx, e))
-       
+            val e = P3.rewriteDifferentiate(E.Apply(E.Partial dx, e))       
          in (args, params, e) end 
             
             

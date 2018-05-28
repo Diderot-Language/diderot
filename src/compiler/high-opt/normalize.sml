@@ -83,7 +83,7 @@ structure Normalize : sig
           case List.nth(origParams, place)
            of Ein.TEN(false, _) => (
                 (changed, origEinOp, place+1, origArgs@[newLHS]))
-            | _ => (case Apply.apply (origEinOp, place, newEinOp)
+            | _ => (case Apply.apply (origEinOp, place, newEinOp, newArgs, origArgs)
                  of SOME einOp => ( (* einOp is the result of the beta-reduction *)
                       decUse newLHS; List.app incUse newArgs;
                       (true, einOp, place + length newArgs, origArgs @ newArgs))

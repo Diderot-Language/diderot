@@ -99,6 +99,7 @@ structure MkOperators : sig
     val expT : Ein.ein
 
     val powFI : dim * int -> Ein.ein
+    val powTI : int -> Ein.ein
     val sqrtR : Ein.ein
     val sqrtF : dim -> Ein.ein
     val cosR  : Ein.ein
@@ -900,6 +901,7 @@ structure MkOperators : sig
             params = [E.FLD dim],
             index = [], body = E.Op1(E.PowInt n, E.Field(0, []))
           }
+    fun powTI n = E.EIN{ params = [mkTEN []],index = [], body = E.Op1(E.PowInt n, E.Tensor(0, []))}
     val sqrtR = tensorFn E.Sqrt
     val sqrtF = liftFn E.Sqrt
     val cosR  = tensorFn E.Cosine
@@ -1109,7 +1111,7 @@ structure MkOperators : sig
           val expindex = specialize(alpha, 0)
           in
             E.EIN{
-                params = [E.FLD dim, mkNoSubstTEN []], index = alpha,
+                params = [E.FLD dim, mkNoSubstTEN [dim]], index = alpha,
                 body = E.Probe(E.Field(0, expindex), E.Tensor(1, []))
               }
           end
@@ -1197,7 +1199,7 @@ structure MkOperators : sig
            val param_f = [mkTEN alpha_f]
            val param_tt = List.map (fn talpha => mkNoSubstTEN  talpha)  alphas_tt
            val param_tf = List.map (fn talpha => mkNoSubstTEN  talpha)  alphas_tf
-           in 
+           in
                 E.EIN {
                     params = param_f@param_tf@param_tt,
                     index  = alpha_f,

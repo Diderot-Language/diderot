@@ -10,7 +10,7 @@
 
 structure Apply : sig
 
-    val apply : Ein.ein * int * Ein.ein -> Ein.ein option
+    val apply : Ein.ein * int * Ein.ein  * HighIR.var list * HighIR.var list -> Ein.ein option
 
   end = struct
 
@@ -35,7 +35,7 @@ structure Apply : sig
             | SOME j => j
          (* end case *))
 
-    fun rewriteSubst (e, subId, mx, paramShift, sumShift) = let
+    fun rewriteSubst (e, subId, mx, paramShift, sumShift, newArgs, done) = let
           fun insertIndex ([], _, dict, shift) = (dict, shift)
             | insertIndex (e::es, n, dict, _) = let
                 val shift = (case e of E.V ix => ix - n | E.C i => i - n)
@@ -56,7 +56,17 @@ structure Apply : sig
                   v
                 end
           fun mapSum l = List.map (fn (a, b, c) => (mapSingle a, b, c)) l
-          fun mapParam id = mapId2(id, subId, 0)
+          (*fun mapParam id = mapId2(id, subId, 0)
+          *)
+          fun mapParam id =
+           let
+        		val vA = List.nth(newArgs, id)
+            	fun iter([], _) = mapId2(id, subId, 0)
+             	 | iter(e1::es, n)=
+					 if(HighIR.Var.same(e1, vA))
+               		then n else iter(es, n+1)
+            in iter(done@newArgs, 0) end
+
           fun apply e = (case e
                  of E.Const _ => e
                   | E.ConstR _ => e
@@ -110,7 +120,7 @@ structure Apply : sig
           end
 
   (* Looks for params id that match substitution *)
-    fun apply (e1 as E.EIN{params, index, body}, place, e2) = let
+    fun apply (e1 as E.EIN{params, index, body}, place, e2, newArgs, done) = let
           val E.EIN{params=params2, index=index2, body=body2} = e2
           val changed = ref false
           val (params', origId, substId, paramShift) = rewriteParams(params, params2, place)
@@ -122,7 +132,7 @@ structure Apply : sig
                     then if (length mx = length index2)
                       then (
                         changed := true;
-                        rewriteSubst (body2, substId, mx, paramShift, x))
+                        rewriteSubst (body2, substId, mx, paramShift, x, newArgs, done))
                       else raise Fail "argument/parameter mismatch"
                     else (case e
                        of E.Tensor(id, mx) => E.Tensor(mapId(id, origId, 0), mx)

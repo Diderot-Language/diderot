@@ -83,11 +83,12 @@ structure CleanParams : sig
     *rewrite ids in exp using mapp
     *)
     fun rewriteParam (mapp, e) = let
-          fun getId id = lookupSingleIndex(id, mapp, "Mapp doesn't have Param Id ")
+          fun getId id =  lookupSingleIndex(id, mapp, "Mapp doesn't have Param Id ")
           fun rewrite b = (case b
                  of E.Tensor(id, alpha) => E.Tensor(getId id, alpha)
-                  | E.Probe(E.Conv(v, alpha, h, dx), t) =>
-                      E.Probe(E.Conv(getId v, alpha, getId h, dx), rewrite t)
+                  | E.Conv(v, alpha, h, dx) =>
+                      E.Conv(getId v, alpha, getId h, dx)
+                  | E.Probe(f, t) => E.Probe(rewrite f, rewrite t)
                   | E.OField(E.CFExp es, e2, dx)
                     => E.OField(E.CFExp (List.map (fn (id, inputTy)=>(getId id, inputTy)) es), rewrite e2, rewrite  dx)
                   | E.Sum(sx ,e1) => E.Sum(sx, rewrite e1)
