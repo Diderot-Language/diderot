@@ -1,6 +1,9 @@
 (* derivative.sml
  *
+ * Takes derivative of EIN terms including polynomials
+ *
  * This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
+ *
  *
  * COPYRIGHT (c) 2015 The University of Chicago
  * All rights reserved.
@@ -8,9 +11,9 @@
  *)
 
 structure DerivativeEin : sig
-    val applyOp1Single: Ein.unary * Ein.ein_exp * Ein.ein_exp -> Ein.ein_exp
-    val applyOp2Single: Ein.binary * Ein.ein_exp * Ein.ein_exp * Ein.ein_exp * Ein.ein_exp -> Ein.ein_exp
+
     val differentiate: Ein.mu list * Ein.ein_exp -> Ein.ein_exp
+
   end  = struct
 
     structure E = Ein
@@ -128,8 +131,7 @@ structure DerivativeEin : sig
     (* differentiate *)
     (*note would need to keep track of change*)
     fun differentiate (px, body) =
-        let
-        val body' =(case body
+        (case body
             of E.Const _            => E.Const 0
             | E.ConstR _            => E.Const 0
             | E.Zero _              => E.Const 0
@@ -166,7 +168,6 @@ structure DerivativeEin : sig
                 in iterAA(xx) end
             | _    => raise Fail(EinPP.expToString(body))
         (* end case*))
-        val _ = (String.concat["\n\ndiff:",EinPP.expToString(body),"\n\t-->",EinPP.expToString(body')])
-        in body' end
+        end
 
    end

@@ -1,17 +1,16 @@
-(* poly-ein.sml
+(* translate-cfexp.sml
  *
+ * Translation for EIN Term that represents closed form expressions
+ * 
  * This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
  *
  * COPYRIGHT (c) 2016 The University of Chicago
  * All rights reserved.
  *)
+structure TranslateCFExp : sig
 
-structure PolyEin2 : sig
-
-    val polyArgs :  Ein.param_kind list * Ein.ein_exp * MidIR.var list 
-          * (int * Ein.inputTy) list * int list
-          -> MidIR.var list * Ein.param_kind list * Ein.ein_exp
-
+    val transform_CFExp : MidIR.var * Ein.ein * MidIR.var list -> MidIR.var list * Ein.param_kind list * Ein.ein_exp
+    
   end = struct
 
     structure IR = MidIR
@@ -22,12 +21,36 @@ structure PolyEin2 : sig
     structure ISet = IntRedBlackSet
     structure SrcIR = HighIR
     structure DstIR = MidIR
-    structure H = Helper
-    val paramToString = H.paramToString
-    val iterP = H.iterP
-    val iterA = H.iterA
     
-
+    val i2s = Int.toString
+    val shp2s = String.concatWithMap " " i2s
+    fun paramToString (i, E.TEN(t, shp)) = concat["T", i2s i, "[", shp2s shp, "]"]
+      | paramToString (i, E.FLD d) = concat["F", i2s i, "(", i2s d, ")"]
+      | paramToString (i, E.KRN) = "H" ^ i2s i
+      | paramToString (i, E.IMG(d, shp)) = concat["V", i2s i, "(", i2s d, ")[", shp2s shp, "]"]
+      
+    fun iterP es =  let 
+        fun iterPP([], [r]) = r
+        | iterPP ([], rest) = E.Opn(E.Prod, rest)
+        | iterPP (E.Const 0::es, rest) = E.Const(0)
+        | iterPP (E.Const 1::es, rest) = iterPP(es, rest)
+        | iterPP (E.Delta(E.C c1, E.V v1)::E.Delta(E.C c2, E.V v2)::es, rest) = 
+            (* variable can't be 0 and 1 '*)
+            if(c1 = c2 orelse (not (v1 = v2)))
+            then iterPP (es, E.Delta(E.C c1, E.V v1)::E.Delta(E.C c2, E.V v2)::rest)
+            else  E.Const(0)
+        | iterPP(E.Opn(E.Prod, ys)::es, rest) = iterPP(ys@es, rest)
+        | iterPP (e1::es, rest)   = iterPP(es, e1::rest)
+        in iterPP(es, []) end
+    fun iterA es =  let
+        fun iterAA([], []) = E.Const 0
+        | iterAA([], [r]) = r
+        | iterAA ([], rest) = E.Opn(E.Add, rest)
+        | iterAA (E.Const 0::es, rest) = iterAA(es, rest)
+        | iterAA (E.Opn(E.Add, ys)::es, rest) = iterAA(ys@es, rest)
+        | iterAA (e1::es, rest)   = iterAA(es, e1::rest)
+        in iterAA(es, []) end   
+    
     (* The terms with a param_id in the mapp are replaced
     * body - ein expression
     * args - variable arguments
@@ -93,7 +116,7 @@ structure PolyEin2 : sig
     *)
     fun polyArgs(params, e, args, cfexp_ids, probe_ids) = 
         let
-            (*does rewritement of a single variable 
+            (*rewrites a single variable 
             * rewritement instances of arg at pid position with arg at idx position 
             *)
             fun single_TF (pid, args, params, idx, e)  = 
@@ -103,7 +126,7 @@ structure PolyEin2 : sig
                     val dim = (case List.nth(params, idx)
                             of E.TEN (_, []) => 1
                             | E.TEN (_, [i]) => i
-                            | p => raise Fail("unsupported argument type:"^H.paramToString(idx, p))
+                            | p => raise Fail("unsupported argument type:"^paramToString(idx, p))
                         (* end case *))                     
                     (*variable arg, and param*)
                     val arg_new = List.nth(args, idx)
@@ -138,5 +161,40 @@ structure PolyEin2 : sig
             val (args, params, e) = iter(cfexp_ids, args, params, probe_ids, e)
         in (args, params, e) end
         
+    (*apply differentiation*)
+    fun rewriteDifferentiate body = (case body
+        of E.Apply (E.Partial [], e)       => e  
+        | E.Apply(E.Partial (d1::dx), e)   =>
+            let 
+                (* differentiate *)
+                val e = DerivativeEin.differentiate ([d1], e)
+            in rewriteDifferentiate (E.Apply(E.Partial dx, e)) end      
+        | E.Op1(op1, e1)                => E.Op1(op1, rewriteDifferentiate e1)
+        | E.Op2(op2, e1, e2)             => E.Op2(op2, rewriteDifferentiate e1, rewriteDifferentiate e2)
+        | E.Opn(opn, es)                => E.Opn(opn, List.map rewriteDifferentiate es)
+        | _                             => body
+        (* end case*))
+        
+    (* main function 
+    * translate probe of cfexp to  poly terms 
+    *)
+    fun transform_CFExp  (y, ein as Ein.EIN{body, index, params} , args) = 
+        let
+            val E.Probe(E.OField(E.CFExp cfexp_ids, e, E.Partial dx), expProbe) = body 
+            val probe_ids = List.map (fn E.Tensor(tid, _) => tid)  [expProbe]
+            (*Note that Dev branch allows multi-probe which is why we use a list of ids*)
+            (*check that the number of into parameters matches number of probed arguments*)
+            val n_pargs = length(cfexp_ids)
+            val n_probe = length(probe_ids)
+            val _ = if(not(n_pargs = n_probe))
+                    then raise  Fail(concat[" n_pargs:", Int.toString( n_pargs), "n_probe:", Int.toString(n_probe)])
+                    else 1
+            (* replace polywrap args/params with probed position(s) args/params *)        
+            val (args, params, e) = polyArgs(params, e, args, cfexp_ids, probe_ids)
+            (*merging polynomials in product *)
+            (*val e = P3.rewriteMerge(e)*)
+           (* normalize ein by cleaning it up and differntiating*)
+            val e = rewriteDifferentiate(E.Apply(E.Partial dx, e))       
+         in (args, params, e) end
 
   end

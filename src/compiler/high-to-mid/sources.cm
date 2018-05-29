@@ -32,7 +32,5 @@ is
   handle-ein.sml
   probe-ein.sml
   translate-ofield.sml
-  poly-ein.sml
-  poly-ein-step2.sml
-  poly-ein-step3.sml
-  helper.sml
+  translate-cfexp.sml
+
