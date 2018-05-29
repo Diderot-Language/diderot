@@ -168,6 +168,5 @@ structure DerivativeEin : sig
                 in iterAA(xx) end
             | _    => raise Fail(EinPP.expToString(body))
         (* end case*))
-        end
 
    end
