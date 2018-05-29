@@ -30,9 +30,9 @@ structure PolyEin : sig
     *)
     fun transform_Core (y, ein as Ein.EIN{body, index, params} , args) = 
         let
-        	val E.Probe(E.OField(E.CFExp cfexp_ids, e, E.Partial dx), expProbe) = body 
-        	val probe_ids = List.map (fn E.Tensor(tid, _) => tid)  [expProbe]
-        	(*Note that Dev branch allows multi-probe which is why we use a list of ids*)
+            val E.Probe(E.OField(E.CFExp cfexp_ids, e, E.Partial dx), expProbe) = body 
+            val probe_ids = List.map (fn E.Tensor(tid, _) => tid)  [expProbe]
+            (*Note that Dev branch allows multi-probe which is why we use a list of ids*)
             (*check that the number of into parameters matches number of probed arguments*)
             val n_pargs = length(cfexp_ids)
             val n_probe = length(probe_ids)
@@ -55,19 +55,19 @@ structure PolyEin : sig
         let
             val Ein.EIN{body, index, params} = ein
             val (sx, body) = (case body
-            		of  (E.Sum(sx, e)) => (sx, e)
-      				| _ => ([], body)
-      				(* end case*))
+                    of  (E.Sum(sx, e)) => (sx, e)
+                    | _ => ([], body)
+                    (* end case*))
             val ein = Ein.EIN{body = body, index = index, params = params}
             val (args, params, body)  = transform_Core (y, ein, args) 
             (* Add summation wrapper back to ein expression *)
             val body = (case sx
-            		of [] => body
-                	|  _  => E.Sum(sx, body)
-            	(* end case *))
+                    of [] => body
+                    |  _  => E.Sum(sx, body)
+                (* end case *))
             val ein = Ein.EIN{body = body, index = index, params = params}
         in  
-        	[(y, IR.EINAPP(ein, args))]
+            [(y, IR.EINAPP(ein, args))]
         end
 
 
