@@ -8,14 +8,14 @@
  *)
 
 structure DerivativeEin : sig
-val applyOp1Single: Ein.unary * Ein.ein_exp * Ein.ein_exp -> Ein.ein_exp
-val applyOp2Single: Ein.binary * Ein.ein_exp * Ein.ein_exp* Ein.ein_exp* Ein.ein_exp -> Ein.ein_exp
-val differentiate: Ein.mu list * Ein.ein_exp -> Ein.ein_exp
+    val applyOp1Single: Ein.unary * Ein.ein_exp * Ein.ein_exp -> Ein.ein_exp
+    val applyOp2Single: Ein.binary * Ein.ein_exp * Ein.ein_exp * Ein.ein_exp * Ein.ein_exp -> Ein.ein_exp
+    val differentiate: Ein.mu list * Ein.ein_exp -> Ein.ein_exp
   end  = struct
 
     structure E = Ein
 
-    fun err str=raise Fail (String.concat["Ill-formed EIN Operator: ", str])
+    fun err str = raise Fail (String.concat["Ill-formed EIN Operator: ", str])
 
     fun mkAdd exps = E.Opn(E.Add, exps)
     fun mkSub (e1, e2) = E.Op2(E.Sub, e1, e2)
@@ -109,7 +109,7 @@ val differentiate: Ein.mu list * Ein.ein_exp -> Ein.ein_exp
 (*---------------------------------------------------------------------------------------------------------*)
     fun applyOp2Single (op2, e1, dele1, e2, dele2) = (case op2
         of E.Sub    => E.Op2(E.Sub, dele1, dele2)
-        | E.Div     => let
+         | E.Div    => let
             val num = E.Op2(E.Sub, iterPP([dele1,e2]),iterPP ([e1, dele2]))
             in
                 E.Op2(E.Div, num, iterPP([e2, e2]))
