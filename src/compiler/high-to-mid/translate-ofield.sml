@@ -22,10 +22,10 @@ structure translateField : sig
 
 
     fun transform (y, IR.EINAPP(ein as E.EIN{body,...}, args)) = 
-    	(case (body)
-        	of E.Probe(E.OField _, _) => PolyEin.transform(y, ein, args)
-       	 	|  E.Sum(_, E.Probe(E.OField _,  _)) => PolyEin.transform(y, ein, args)
-        	| _ =>   [(y, IR.EINAPP(ein, args))]
+        (case (body)
+            of E.Probe(E.OField _, _) => PolyEin.transform(y, ein, args)
+            |  E.Sum(_, E.Probe(E.OField _,  _)) => PolyEin.transform(y, ein, args)
+            | _ =>   [(y, IR.EINAPP(ein, args))]
          (* end case*))
       | transform (y, e) =  [(y, e)]
 

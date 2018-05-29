@@ -30,7 +30,7 @@ structure EinPP : sig
 
     fun delta (a, b) = concat["δ_{", index2s a, ",", index2s b,"}"]
     fun deltaKrn (a, b) = concat["δ_{", index2s a, ",", index2s b,"}"]
-	fun deriv [] = ""
+    fun deriv [] = ""
       | deriv alpha = concat["∇",multiIndex2s alpha]
     fun expToString e = (case e
            of E.Const r => i2s r

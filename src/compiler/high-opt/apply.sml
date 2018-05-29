@@ -60,11 +60,11 @@ structure Apply : sig
           *)
           fun mapParam id =
            let
-        		val vA = List.nth(newArgs, id)
-            	fun iter([], _) = mapId2(id, subId, 0)
-             	 | iter(e1::es, n)=
-					 if(HighIR.Var.same(e1, vA))
-               		then n else iter(es, n+1)
+                val vA = List.nth(newArgs, id)
+                fun iter([], _) = mapId2(id, subId, 0)
+                 | iter(e1::es, n)=
+                     if(HighIR.Var.same(e1, vA))
+                    then n else iter(es, n+1)
             in iter(done@newArgs, 0) end
 
           fun apply e = (case e
@@ -87,9 +87,9 @@ structure Apply : sig
                   | E.OField(E.CFExp es, e2,dx)
                     =>  
                     let
-						val es =  List.map (fn (id, inputTy) => (mapParam id, inputTy)) es
-						val e2 = apply e2
-						val dx = apply dx
+                        val es =  List.map (fn (id, inputTy) => (mapParam id, inputTy)) es
+                        val e2 = apply e2
+                        val dx = apply dx
                     in E.OField(E.CFExp es, e2,dx) end
                   | E.Sum(c, esum) => E.Sum(mapSum c, apply esum)
                   | E.Op1(op1, e1) => E.Op1(op1, apply e1)

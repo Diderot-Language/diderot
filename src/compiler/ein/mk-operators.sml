@@ -1182,7 +1182,7 @@ structure MkOperators : sig
               }
           end
           
-	fun cfexpMix (alpha_f, alphas_tf,alphas_tt) =
+    fun cfexpMix (alpha_f, alphas_tf,alphas_tt) =
         let
         
             
@@ -1205,7 +1205,7 @@ structure MkOperators : sig
                     index  = alpha_f,
                     body   = bodyterm
                 }
-	       end
+           end
         
 
   end (* mkOperators *)
