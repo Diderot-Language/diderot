@@ -99,6 +99,7 @@ structure MkOperators : sig
     val expT : Ein.ein
 
     val powFI : dim * int -> Ein.ein
+    val powTI : int -> Ein.ein
     val sqrtR : Ein.ein
     val sqrtF : dim -> Ein.ein
     val cosR  : Ein.ein
@@ -140,6 +141,8 @@ structure MkOperators : sig
     val gradConstant : shape -> Ein.ein
     val dotimes : dim * shape -> Ein.ein (* ?? *)
     val divergence : dim * shape -> Ein.ein
+    
+    val cfexpMix:  shape * shape list * shape list -> Ein.ein
 
   end = struct
 
@@ -898,6 +901,7 @@ structure MkOperators : sig
             params = [E.FLD dim],
             index = [], body = E.Op1(E.PowInt n, E.Field(0, []))
           }
+    fun powTI n = E.EIN{ params = [mkTEN []],index = [], body = E.Op1(E.PowInt n, E.Tensor(0, []))}
     val sqrtR = tensorFn E.Sqrt
     val sqrtF = liftFn E.Sqrt
     val cosR  = tensorFn E.Cosine
@@ -1107,7 +1111,7 @@ structure MkOperators : sig
           val expindex = specialize(alpha, 0)
           in
             E.EIN{
-                params = [E.FLD dim, mkNoSubstTEN []], index = alpha,
+                params = [E.FLD dim, mkNoSubstTEN [dim]], index = alpha,
                 body = E.Probe(E.Field(0, expindex), E.Tensor(1, []))
               }
           end
@@ -1177,5 +1181,31 @@ structure MkOperators : sig
                 body = E.Sum([(sid, 0, dim-1)], E.Apply(E.Partial sumIndexL, E.Field(0, S)))
               }
           end
+          
+    fun cfexpMix (alpha_f, alphas_tf,alphas_tt) =
+        let
+        
+            
+            val n_tf = length(alphas_tf)
+            val tterm_tf = List.tabulate(n_tf, fn id => (id+1, E.F))
+            
+            val n_tt = length(alphas_tt)
+            val shift_tf = n_tf+1
+            val tterm_tt = List.tabulate(n_tt, fn id => (id+shift_tf,E.T))
+            
+            val fldtem = E.Tensor(0, specialize(alpha_f, 0))
+            val bodyterm  = E.OField(E.CFExp (tterm_tf@tterm_tt), fldtem ,  E.Partial [])
+           
+           val param_f = [mkTEN alpha_f]
+           val param_tt = List.map (fn talpha => mkNoSubstTEN  talpha)  alphas_tt
+           val param_tf = List.map (fn talpha => mkNoSubstTEN  talpha)  alphas_tf
+           in
+                E.EIN {
+                    params = param_f@param_tf@param_tt,
+                    index  = alpha_f,
+                    body   = bodyterm
+                }
+           end
+        
 
   end (* mkOperators *)

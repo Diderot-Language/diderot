@@ -105,6 +105,7 @@ structure FloatEin : sig
                   | E.Probe(E.Conv(_, [E.C _ ], _, [E.V 0, E.V 1, E.V 2]), _) =>
                       cut ("cut", exp, params, index, sx, args, avail, 3)
                   | E.Probe _ => lift ("probe", exp, params, index, sx, args, avail)
+                  | E.OField _ => lift ("probe", exp, params, index, sx, args, avail)
                   | E.Sum(_, E.Probe _) => lift ("probe", exp, params, index, sx, args, avail)
                   | E.Op1(op1, e1) => let
                       val (e1', params', args') = rewrite (sx, e1, params, args)

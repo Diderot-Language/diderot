@@ -10,7 +10,7 @@
 
 structure Apply : sig
 
-    val apply : Ein.ein * int * Ein.ein -> Ein.ein option
+    val apply : Ein.ein * int * Ein.ein  * HighIR.var list * HighIR.var list -> Ein.ein option
 
   end = struct
 
@@ -35,7 +35,7 @@ structure Apply : sig
             | SOME j => j
          (* end case *))
 
-    fun rewriteSubst (e, subId, mx, paramShift, sumShift) = let
+    fun rewriteSubst (e, subId, mx, paramShift, sumShift, newArgs, done) = let
           fun insertIndex ([], _, dict, shift) = (dict, shift)
             | insertIndex (e::es, n, dict, _) = let
                 val shift = (case e of E.V ix => ix - n | E.C i => i - n)
@@ -56,7 +56,17 @@ structure Apply : sig
                   v
                 end
           fun mapSum l = List.map (fn (a, b, c) => (mapSingle a, b, c)) l
-          fun mapParam id = mapId2(id, subId, 0)
+          (*fun mapParam id = mapId2(id, subId, 0)
+          *)
+          fun mapParam id =
+           let
+                val vA = List.nth(newArgs, id)
+                fun iter([], _) = mapId2(id, subId, 0)
+                 | iter(e1::es, n)=
+                     if(HighIR.Var.same(e1, vA))
+                    then n else iter(es, n+1)
+            in iter(done@newArgs, 0) end
+
           fun apply e = (case e
                  of E.Const _ => e
                   | E.ConstR _ => e
@@ -74,6 +84,13 @@ structure Apply : sig
                   | E.Value _ => raise Fail "expression before expand"
                   | E.Img _ => raise Fail "expression before expand"
                   | E.Krn _ => raise Fail "expression before expand"
+                  | E.OField(E.CFExp es, e2,dx)
+                    =>  
+                    let
+                        val es =  List.map (fn (id, inputTy) => (mapParam id, inputTy)) es
+                        val e2 = apply e2
+                        val dx = apply dx
+                    in E.OField(E.CFExp es, e2,dx) end
                   | E.Sum(c, esum) => E.Sum(mapSum c, apply esum)
                   | E.Op1(op1, e1) => E.Op1(op1, apply e1)
                   | E.Op2(op2, e1, e2) => E.Op2(op2, apply e1, apply e2)
@@ -103,7 +120,7 @@ structure Apply : sig
           end
 
   (* Looks for params id that match substitution *)
-    fun apply (e1 as E.EIN{params, index, body}, place, e2) = let
+    fun apply (e1 as E.EIN{params, index, body}, place, e2, newArgs, done) = let
           val E.EIN{params=params2, index=index2, body=body2} = e2
           val changed = ref false
           val (params', origId, substId, paramShift) = rewriteParams(params, params2, place)
@@ -115,7 +132,7 @@ structure Apply : sig
                     then if (length mx = length index2)
                       then (
                         changed := true;
-                        rewriteSubst (body2, substId, mx, paramShift, x))
+                        rewriteSubst (body2, substId, mx, paramShift, x, newArgs, done))
                       else raise Fail "argument/parameter mismatch"
                     else (case e
                        of E.Tensor(id, mx) => E.Tensor(mapId(id, origId, 0), mx)
@@ -135,6 +152,10 @@ structure Apply : sig
                   | E.Value _ => raise Fail "expression before expand"
                   | E.Img _ => raise Fail "expression before expand"
                   | E.Krn _ => raise Fail "expression before expand"
+                  | E.OField(E.CFExp es, e2, E.Partial alpha) => let
+                        val ps = List.map (fn (id, inputTy) => (mapId(id, origId, 0), inputTy)) es
+                        in E.OField(E.CFExp ps, apply e2, E.Partial alpha) end
+                  | E.Poly _ => raise Fail "expression before expand"
                   | E.Sum(indices, esum) => let
                       val (ix, _, _) = List.last indices
                       in

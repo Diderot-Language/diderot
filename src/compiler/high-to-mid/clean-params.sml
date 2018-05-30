@@ -39,6 +39,12 @@ structure CleanParams : sig
                  of E.Tensor(id, _) => ISet.add(mapp, id)
                   | E.Conv(v, _, h, _) => ISet.add(ISet.add(mapp, h), v)
                   | E.Probe(e1, e2) => walk (e2, walk (e1, mapp))
+                  | E.OField(E.CFExp es, e2, dx) =>
+                    let
+                        val es = List.map (fn (id, _) => E.Tensor(id, [])) (es)
+                    in 
+                        walk(dx, walk (e2, (List.foldl walk mapp es)))
+                     end
                   | E.Value _ => raise Fail "unexpected Value"
                   | E.Img _ => raise Fail "unexpected Img"
                   | E.Krn _ => raise Fail "unexpected Krn"
@@ -77,11 +83,14 @@ structure CleanParams : sig
     *rewrite ids in exp using mapp
     *)
     fun rewriteParam (mapp, e) = let
-          fun getId id = lookupSingleIndex(id, mapp, "Mapp doesn't have Param Id ")
+          fun getId id =  lookupSingleIndex(id, mapp, "Mapp doesn't have Param Id ")
           fun rewrite b = (case b
                  of E.Tensor(id, alpha) => E.Tensor(getId id, alpha)
-                  | E.Probe(E.Conv(v, alpha, h, dx), t) =>
-                      E.Probe(E.Conv(getId v, alpha, getId h, dx), rewrite t)
+                  | E.Conv(v, alpha, h, dx) =>
+                      E.Conv(getId v, alpha, getId h, dx)
+                  | E.Probe(f, t) => E.Probe(rewrite f, rewrite t)
+                  | E.OField(E.CFExp es, e2, dx)
+                    => E.OField(E.CFExp (List.map (fn (id, inputTy)=>(getId id, inputTy)) es), rewrite e2, rewrite  dx)
                   | E.Sum(sx ,e1) => E.Sum(sx, rewrite e1)
                   | E.Op1(op1, e1) => E.Op1(op1, rewrite e1)
                   | E.Op2(op2, e1,e2) => E.Op2(op2, rewrite e1, rewrite e2)

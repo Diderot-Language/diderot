@@ -59,6 +59,11 @@ structure Ein =
 
     and opn = Add | Prod
 
+    and input_ty = T | F (*treat as a tensor or field during differentiaton *)
+
+  (* other kinds of fields *)
+    and ofield = CFExp of (param_id * input_ty) list      (* input variables TT and TF*)
+        
     and ein_exp
     (* Basic terms *)
       = Const of int
@@ -76,10 +81,12 @@ structure Ein =
       | Partial of alpha
       | Apply of ein_exp * ein_exp
       | Probe of ein_exp * ein_exp
+      | OField of ofield * ein_exp * ein_exp (* field arg T, exp, E.Partial dx *) (* FIXME: need more info *)
     (* Mid-IL Terms *)
       | Value of index_id (* Lift index *)
       | Img of param_id * alpha * pos list * int
       | Krn of param_id * (mu * mu) list * int
+      | Poly of ein_exp * int * alpha  (* ein_exp^n dx *)
     (* Ops *)
       | Sum of sumrange list * ein_exp
       | Op1 of unary * ein_exp

@@ -35,7 +35,41 @@ structure EinToScalar : sig
            of SOME x => x
             | NONE => raise Fail(concat["mapIndex(_, V ", Int.toString id, "): out of bounds"])
           (* end case *))
-
+    fun unwrap_poly (mapp, E.Poly(t, n, dx)) = 
+        let
+            val zero = E.Const 0
+            val one = E.Const 1
+            val ec = E.Const n
+            val ecc = E.Const (n-1)
+            val eccc = E.Const (n-2)
+            val ndel = length(dx)
+            fun mkProd es = E.Opn(E.Prod, es)
+            (*Take a certain number of derivatives*)
+            fun getDel () = 
+                if(n<ndel) then zero
+                else (case (ndel,n)
+                    of (0, _) => mkProd (List.tabulate (n, fn _ => t))
+                    | (1, 1) => one 
+                    | (1, _) => mkProd (ec::(List.tabulate (n-1, fn _ => t)))   
+                    | (2, 2) => ec
+                    | (2, _) => mkProd (ec::ecc::(List.tabulate (n-2, fn _ => t)))
+                    | (3, 3) => mkProd ([ec,ecc]) 
+                    | (3, _) => mkProd ([ec,ecc,eccc]@(List.tabulate (n-3, fn _ => t)))
+                    | _ =>  raise Fail"add more cases for derivative"
+                    (*end case*))
+            val E.Tensor(_, shape) = t
+        in 
+         (case (shape, dx)
+            of ([],_) =>  getDel () 
+             | ([E.C c], _) =>
+                let
+                    fun iter [] = getDel () 
+                    | iter (vx::es) = if(Mk.lookupMu (mapp, vx)=c) then iter(es) else zero
+                in 
+                    iter (dx)
+                end
+            (*end case*))
+        end 
     fun expand {avail, mapp, body, lowArgs} = let
           fun gen (mapp, body) = let
               (*********sumexpression ********)
@@ -76,6 +110,7 @@ structure EinToScalar : sig
                     | E.Eps2(i, j) => Mk.epsilon2 (avail, mapp, i, j)
                     | E.Tensor(id, ix) => Mk.tensorIndex (avail, mapp, List.nth(lowArgs, id), ix)
                     | E.Zero _ =>  Mk.intToRealLit (avail, 0)
+                    | E.Poly _ =>   gen(mapp, unwrap_poly(mapp, body))
                     | E.Op1(op1, e1) => let
                         val arg = gen (mapp, e1)
                         in

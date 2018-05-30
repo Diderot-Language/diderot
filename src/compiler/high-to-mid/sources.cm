@@ -31,11 +31,6 @@ is
   high-to-mid.sml
   handle-ein.sml
   probe-ein.sml
+  translate-ofield.sml
+  translate-cfexp.sml
 
-(*
-  Transform.sml
-  split.sml
-  testcases.sml
-  einSet.sml
-  sweep.sml
-*)
