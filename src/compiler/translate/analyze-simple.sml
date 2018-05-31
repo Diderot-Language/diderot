@@ -164,6 +164,7 @@ structure AnalyzeSimple : sig
                         | S.E_Apply(_, xs) => xs
                         | S.E_Prim(_, _, xs, _) => xs
                         | S.E_Tensor(xs, _) => xs
+                        | S.E_Field(xs, _) => xs
                         | S.E_Seq(xs, _) => xs
                         | S.E_Tuple xs => xs
                         | S.E_Project(x, i) => [x]

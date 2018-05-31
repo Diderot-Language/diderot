@@ -126,6 +126,7 @@ structure SimpleContract : sig
                   | S.E_Apply(f, xs) => List.app markUsed xs
                   | S.E_Prim(_, _, xs, _) => List.app markUsed xs
                   | S.E_Tensor(xs, _) => List.app markUsed xs
+                  | S.E_Field(xs, _) => List.app markUsed xs
                   | S.E_Seq(xs, _) => List.app markUsed xs
                   | S.E_Tuple xs => List.app markUsed xs
                   | S.E_Project(x, _) => markUsed x
@@ -187,6 +188,7 @@ structure SimpleContract : sig
             | S.E_Apply(f, xs) => (SimpleFunc.decCnt f; List.app unuse xs)
             | S.E_Prim(_, _, xs, _) => List.app unuse xs
             | S.E_Tensor(xs, _) => List.app unuse xs
+            | S.E_Field(xs, _) => List.app markUsed xs
             | S.E_Seq(xs, _) => List.app unuse xs
             | S.E_Tuple xs => List.app unuse xs
             | S.E_Project(x, _) => unuse x

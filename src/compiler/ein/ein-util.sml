@@ -15,6 +15,9 @@ structure EinUtil : sig
   (* compute a hash for an Ein function *)
     val hash : Ein.ein -> Word.word
 
+    val iterPP: Ein.ein_exp list -> Ein.ein_exp
+    val iterAA: Ein.ein_exp list -> Ein.ein_exp
+        
   end = struct
 
     structure E = Ein
@@ -161,5 +164,27 @@ structure EinUtil : sig
         in
           hash' body
         end
+        
+    fun iterPP es = let
+        fun iterP([], [r]) = r
+        | iterP ([], rest) = E.Opn(E.Prod, rest)
+        | iterP (E.Const 0::es, rest) = E.Const(0)
+        | iterP (E.Const 1::es, rest) = iterP(es, rest)
+        | iterP (E.Delta(E.C c1, E.V v1)::E.Delta(E.C c2, E.V v2)::es, rest) =
+            (* variable can't be 0 and 1 '*)
+            if(c1=c2)
+            then iterP (es, E.Delta(E.C c1, E.V v1)::E.Delta(E.C c2, E.V v2)::rest)
+            else E.Const(0)
+        | iterP(E.Opn(E.Prod, ys)::es, rest) = iterP(ys@es, rest)
+        | iterP (e1::es, rest)   = iterP(es, e1::rest)
+        in iterP(es, []) end
 
+    fun iterAA(es) = let
+        fun iterA([], []) = E.Const 0
+        | iterA([], [r]) = r
+        | iterA ([], rest) = E.Opn(E.Add, rest)
+        | iterA (E.Const 0::es, rest) = iterA(es, rest)
+        | iterA (E.Opn(E.Add, ys)::es, rest) = iterA(ys@es, rest)
+        | iterA (e1::es, rest)   = iterA(es, e1::rest)
+        in iterA(es, []) end
   end

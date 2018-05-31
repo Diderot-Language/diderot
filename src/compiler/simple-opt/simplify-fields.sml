@@ -134,6 +134,7 @@ structure SimplifyFields : sig
                       end
                     else unionArgs (List.filter isField args)
               | S.E_Tensor _ => NONE
+              | S.E_Field(args, _) => unionArgs (List.filter isField args)
               | S.E_Seq _ => NONE
 (* WARNING: if tuples become a surface-language feature, then we will need to track tuples
  * that contain fields or images.

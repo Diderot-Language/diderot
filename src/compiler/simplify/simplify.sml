@@ -421,6 +421,11 @@ structure Simplify : sig
                   in
                     (stms, S.E_Tensor(xs, cvtTy ty))
                   end
+              | AST.E_Field(es, ty) => let
+                  val (stms, xs) = simplifyExpsToVars (cxt, es, stms)
+                  in
+                    (stms, S.E_Field(xs, cvtTy ty))
+                  end
               | AST.E_Seq(es, ty) => let
                   val (stms, xs) = simplifyExpsToVars (cxt, es, stms)
                   in

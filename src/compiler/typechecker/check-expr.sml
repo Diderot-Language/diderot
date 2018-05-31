@@ -773,6 +773,7 @@ structure CheckExpr : sig
                               | NONE => (
                                   TypeError.error(cxt, [
                                       S "arguments of tensor construction must have same type"
+                                      (* FIXME: add types to error message *)
                                     ]);
                                   chkArgs (args, tys, bogusExp::args'))
                             (* end case *))
@@ -780,10 +781,27 @@ structure CheckExpr : sig
                       in
                         chkArgs (args, tys, [])
                       end
+                fun chkArgsF (ty, diff, dim, shape) = let
+                      val Ty.Shape dd = TU.pruneShape shape
+                      val resTy = Ty.T_Field{diff=diff ,dim=dim, shape=Ty.Shape(Ty.DimConst(List.length args) :: dd)}
+                      fun chkArgsF (arg::args, argTy::tys, args') = (case Util.coerceType(ty, (arg, argTy))
+                             of SOME arg' => chkArgsF (args, tys, arg'::args')
+                              | NONE => (
+                                  TypeError.error(cxt, [
+                                      S "arguments of tensor construction must have same type"
+                                      (* FIXME: add types to error message *)
+                                    ]);
+                                  chkArgsF (args, tys, bogusExp::args'))
+                            (* end case *))
+                        | chkArgsF (_, _, args') = (AST.E_Field(List.rev args', resTy), resTy)
+                      in
+                        chkArgsF (args, tys, [])
+                      end
                 in
                   case TU.pruneHead ty
                    of Ty.T_Int => chkArgs(Ty.realTy, Ty.Shape[]) (* coerce integers to reals *)
                     | ty as Ty.T_Tensor shape => chkArgs(ty, shape)
+                    | ty as Ty.T_Field{diff, dim, shape} => chkArgsF(ty, diff, dim, shape)
                     | _ => err(cxt, [S "Invalid argument type for tensor construction"])
                   (* end case *)
                 end

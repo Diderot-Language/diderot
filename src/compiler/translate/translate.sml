@@ -345,6 +345,12 @@ print(concat["doVar (", SV.uniqueNameOf srcVar, ", ", IR.phiToString phi, ", _) 
                 end
             | S.E_Tensor(args, _) =>
                 [IR.ASSGN(lhs, IR.CONS(List.map (lookup env) args, IR.Var.ty lhs))]
+            | S.E_Field(args, Ty.T_Field{diff, dim, shape}) => let
+                val rator = MkOperators.concatField(dim, List.tl shape, List.length(args))
+                val ein = IR.EINAPP(rator, List.map (lookup env) args)
+                in
+                  [IR.ASSGN(lhs, ein)]
+                end
             | S.E_Seq(args, _) => [IR.ASSGN(lhs, IR.SEQ(List.map (lookup env) args, IR.Var.ty lhs))]
             | S.E_Tuple xs => raise Fail "FIXME: E_Tuple"
             | S.E_Project(x, i) => raise Fail "FIXME: E_Project"
