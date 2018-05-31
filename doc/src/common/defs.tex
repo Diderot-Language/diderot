@@ -1,0 +1,234 @@
+%!TEX root = report.tex
+%
+
+%BEGIN LATEX
+\setlength{\textwidth}{6in}
+\oddsidemargin 0.25in
+\evensidemargin 0.25in
+\addtolength{\textheight}{1.0in}
+\addtolength{\topmargin}{-0.5in}
+\parskip 5pt
+%END LATEX
+
+\usepackage{times}
+%BEGIN LATEX
+%-------------------------
+% the following magic makes the tt font in math mode be the same as the
+% normal tt font (i.e., Courier)
+%
+\SetMathAlphabet{\mathtt}{normal}{OT1}{pcr}{m}{n}
+\SetMathAlphabet{\mathtt}{bold}{OT1}{pcr}{bx}{n}
+%-------------------------
+%END LATEX
+
+%BEGIN LATEX
+\usepackage{hevea}
+\usepackage{grammar}
+\renewcommand{\term}[1]{\textsc{#1}}
+%END LATEX
+
+\usepackage[newpage,toc]{manpage}
+\usepackage{graphicx}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{stmaryrd}
+
+\usepackage{color}
+\definecolor{Red}{rgb}{0.9,0.0,0.0}  % fixme
+\definecolor{Green}{rgb}{0.0,0.4,0.0}
+\definecolor{Blue}{rgb}{0.0,0.0,0.9}
+\definecolor{DarkBlue}{rgb}{0.0,0.0,0.75}
+\definecolor{Midnight}{rgb}{0.0,0.0,0.5}
+\definecolor{Purple}{rgb}{0.5,0.0,0.4}
+\definecolor{Black}{rgb}{0.0,0.0,0.0}
+\definecolor{Yellow}{rgb}{1.0,1.0, 0.25}
+\definecolor{Cyan}{rgb}{0.25,1.0, 1.0}
+
+\newcommand{\cdColor}{Black}
+\newcommand{\kwColor}{DarkBlue}
+\newcommand{\comColor}{Red}
+
+% code listings
+%
+\usepackage{listings}
+\lstset{
+  basicstyle=\ttfamily\scriptsize\color{\cdColor},
+  keywordstyle=\color{\kwColor}\bfseries,
+  commentstyle=\color{\comColor}\itshape}
+\lstdefinelanguage{Diderot}{%
+  otherkeywords={|,\#},
+  morekeywords={%
+    bool,%
+    die,%
+    else,%
+    false,field,function,%
+    identity,if,image,in,inf,initially,input,int,%
+    kernel,%
+    nan,new,%
+    output,%
+    real,%
+    stabilize,strand,string,%
+    tensor,true,%
+    update,%
+    vec2,vec3,vec4,%
+    zeros},
+  morekeywords=[2]{D},
+  sensitive,%
+  morecomment=[s]{/*}{*/},%
+  morecomment=[l]//,
+  morestring=[b]"}%
+
+\lstset{
+  language=Diderot
+}
+
+\newcommand{\CD}[1]{\textcolor{\cdColor}{\texttt{#1}}}
+\newcommand{\KW}[1]{\textcolor{\kwColor}{\kw{#1}}}
+\newcommand{\MKW}[1]{\textcolor{\kwColor}{\mkw{#1}}}
+
+\newcommand{\appref}[1]{Appendix~\ref{#1}}
+\newcommand{\chapref}[1]{Chapter~\ref{#1}}
+\newcommand{\secref}[1]{Section~\ref{#1}}
+\newcommand{\tblref}[1]{Table~\ref{#1}}
+\newcommand{\figref}[1]{Figure~\ref{#1}}
+\newcommand{\pref}[1]{{page~\pageref{#1}}}
+\newcommand{\defref}[1]{Definition~\ref{#1}}
+\newcommand{\lemmaref}[1]{Lemma~\ref{#1}}
+\newcommand{\thmref}[1]{Theorem~\ref{#1}}
+
+\newcommand{\eg}{{\em e.g.}}
+\newcommand{\cf}{{\em cf.}}
+\newcommand{\ie}{{\em i.e.}}
+\newcommand{\etc}{{\em etc.\/}}
+\newcommand{\naive}{na\"{\i}ve}
+\newcommand{\ala}{{\em \`{a} la\/}}
+\newcommand{\role}{r\^{o}le}
+
+%
+% font commands
+\providecommand{\bftt}[1]{{\ttfamily\bfseries{}#1}}
+\providecommand{\ittt}[1]{{\ttfamily\itshape{}#1}}
+\providecommand{\kw}[1]{\bftt{\color{Purple}#1}}
+\providecommand{\nt}[1]{{\rmfamily\itshape{#1}}}
+\providecommand{\term}[1]{{\sffamily{#1}}}
+\providecommand{\tyvar}[1]{#1}
+\providecommand{\comment}[1]{#1}
+\providecommand{\literal}[1]{#1}
+%
+% math-mode versions
+\providecommand{\mkw}[1]{\ensuremath{\text{\kw{#1}}}}
+\providecommand{\mnt}[1]{\ensuremath{\text{\nt{#1}}}}
+\providecommand{\mterm}[1]{\ensuremath{\text{\term{#1}}}}
+
+% braces
+\newcommand{\LCB}{\sym{\char`\{}}
+\newcommand{\RCB}{\sym{\char`\}}}
+
+% special symbols
+\newcommand{\DS}{\sym{\$}}
+\newcommand{\PCT}{\sym{\%}}
+\newcommand{\HASH}{\sym{\#}}
+\newcommand{\BS}{\sym{\char`\\}}
+\newcommand{\US}{\sym{\char`\_}}
+
+% example code
+%BEGIN LATEX
+\newenvironment{EXAMPLE}{\begin{quote}\begin{lstlisting}}{\end{lstlisting}\end{quote}}
+%END LATEX
+%HEVEA \newenvironment{EXAMPLE}{\begin{alltt}}{\end{alltt}}
+%HEVEA \usepackage{alltt}
+
+%%%%%
+% Some common math notation
+%
+
+% double brackets
+\newcommand{\LDB}{\ensuremath{[\mskip -3mu [}}
+\newcommand{\RDB}{\ensuremath{]\mskip -3mu ]}}
+
+\newcommand{\dom}{\ensuremath{\mathrm{dom}}}
+\newcommand{\rng}{\ensuremath{\mathrm{rng}}}
+
+% sets
+\newcommand{\SET}[1]{\ensuremath{\{#1\}}}
+\newcommand{\Fin}{\textrm{Fin}}     % finite power set
+\newcommand{\DISJOINT}[2]{\ensuremath{#1 \pitchfork #2}}
+\newcommand{\finsubset}{\mathrel{\stackrel{\textrm{fin}}{\subset}}}
+
+% finite maps
+\newcommand{\finmap}{\mathrel{\stackrel{\textrm{fin}}{\rightarrow}}}
+\newcommand{\MAP}[2]{\SET{#1 \mapsto #2}}
+\newcommand{\EXTEND}[2]{\ensuremath{#1{\pm}#2}}
+\newcommand{\EXTENDone}[3]{\EXTEND{#1}{\MAP{#2}{#3}}}
+\newcommand{\SUBST}[3]{\ensuremath{#1[#2\mapsto{}#3]}}
+\newcommand{\SUBSTTWO}[5]{\ensuremath{#1[#2\mapsto{}#3,#4\mapsto{}#5]}}
+
+% typing judgments
+%
+\newcommand{\HasTy}[3]{#1 \vdash #2 : #3}
+\newcommand{\UnopTy}[4]{\HasTy{#1}{#2}{#3 \rightarrow #4}}
+\newcommand{\BinopTy}[5]{\HasTy{#1}{#2}{#3 \times #4 \rightarrow #5}}
+
+% inference rules
+\newcommand{\infer}[2]{\frac{\;{#2}\;}{\;{#1}\;}}
+%
+% labeled inference rule:
+%   \INFER{name}{label}{conclusion}{assumption}
+%
+\newcommand{\INFER}[2]{%                                                      
+  \begin{equation*}
+    \infer{#1}{#2}                                                            
+  \end{equation*}}                                                               
+
+% natural numbers
+%
+\newcommand{\Nat}{\mathcal{N}}
+
+% environments for type checking
+%
+\newcommand{\ENV}{\Gamma}
+
+% Diderot types
+%
+\newcommand{\TYconst}{\iota}
+\newcommand{\TYbool}{\mathbf{bool}}
+\newcommand{\TYint}{\mathbf{int}}
+\newcommand{\TYreal}{\mathbf{real}}
+\newcommand{\TYrawten}[2]{\mathbf{rawten}\langle{}#1,#2\rangle{}}
+\newcommand{\TYtensor}[1]{\mathbf{tensor}\langle{}#1\rangle{}}
+\newcommand{\TYmatrix}[2]{\mathbf{matrix}\langle{}#1,#2\rangle{}}
+\newcommand{\TYimage}[2]{\mathbf{image}_{#1}\langle{}#2\rangle{}}
+\newcommand{\TYkern}[1]{\mathbf{kern}^{#1}}
+\newcommand{\TYfield}[3]{\mathbf{field}^{#1}_{#2}\langle{}#3\rangle{}}
+\newcommand{\TYvec}[1]{\mathbf{vec}_{#1}}
+
+\newcommand{\Seq}[1]{\vec{#1}}
+
+% notes
+%BEGIN LATEX
+\newcommand{\NOTE}[1]{%
+  \par\leavevmode\noindent\textbf{[[ #1 ]]}\par\leavevmode\noindent}
+%END LATEX
+\newcommand{\CUT}[1]{}
+
+%BEGIN LATEX
+% timestamp
+\newcount\timeHH
+\newcount\timeMM
+\timeHH=\time
+\divide\timeHH by 60
+\timeMM=\time
+\count255=\timeHH
+\multiply\count255 by -60 \advance\timeMM by \count255
+\newcommand{\timestamp}{%
+  \today{} ---
+  \ifnum\timeHH<10 0\fi\number\timeHH\,:\,\ifnum\timeMM<10 0\fi\number\timeMM}
+%END LATEX
+%HAVEA \newcommand{\timestamp}{\today}
+
+%
+% A command to input code produced by extract-code.
+
+\usepackage{ifthen}
+\newcommand{\inputCode}[1]{%
+  \ifthenelse{\boolean{hevea}}{\input{#1.hva}}{\input{#1.tex}}}
