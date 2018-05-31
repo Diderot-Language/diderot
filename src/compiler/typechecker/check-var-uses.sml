@@ -97,6 +97,7 @@ structure CheckVarUses : sig
                       end
                   | AST.E_ParallelMap(e, x, xs, _) => chkForUnused cxt (x, chk (e, unused))
                   | AST.E_Tensor(args, _) => chk' (args, unused)
+                  | AST.E_Field(args, _) => chk' (args, unused)
                   | AST.E_Seq(args, _) => chk' (args, unused)
                   | AST.E_Slice(e, indices, _) =>
                       List.foldl (fn (SOME e, unu) => chk(e, unu) | (NONE, unu) => unu)

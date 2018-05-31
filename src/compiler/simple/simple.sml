@@ -97,6 +97,7 @@ structure Simple =
       | E_Prim of AST.var * meta_arg list * var list * ty
                                                 (* Diderot builtin operator *)
       | E_Tensor of var list * ty
+      | E_Field of var list * ty
       | E_Seq of var list * ty                  (* sequence (ty is result type) *)
       | E_Tuple of var list                     (* tuple of values *)
       | E_Project of var * int                  (* project out tuple member *)
@@ -125,6 +126,7 @@ structure Simple =
       | typeOf (E_Apply(f, _)) = SimpleFunc.resultTypeOf f
       | typeOf (E_Prim(f, _, _, ty)) = ty
       | typeOf (E_Tensor(_, ty)) = ty
+      | typeOf (E_Field(_, ty)) = ty
       | typeOf (E_Seq(_, ty)) = ty
       | typeOf (E_Tuple xs) = SimpleTypes.T_Tuple(List.map SimpleVar.typeOf xs)
       | typeOf (E_Project(x, i)) = let

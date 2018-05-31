@@ -74,6 +74,7 @@ structure SimplifyVars : sig
                   | S.E_Apply(f, xs) => List.app (chkVar bvs) xs
                   | S.E_Prim(_, _, xs, _) => List.app (chkVar bvs) xs
                   | S.E_Tensor(xs, _) => List.app (chkVar bvs) xs
+                  | S.E_Field(xs, _) => List.app (chkVar bvs) xs
                   | S.E_Tuple xs => List.app (chkVar bvs) xs
                   | S.E_Project(x, _) => chkVar bvs x
                   | S.E_Seq(xs, _) => List.app (chkVar bvs) xs
@@ -235,6 +236,7 @@ structure SimplifyVars : sig
                   | S.E_Prim(f, tys, xs, ty) =>
                       S.E_Prim(f, tys, renameList xs, ty)
                   | S.E_Tensor(xs, ty) => S.E_Tensor(renameList xs, ty)
+                  | S.E_Field(xs, ty) => S.E_Field(renameList xs, ty)
                   | S.E_Seq(xs, ty) => S.E_Seq(renameList xs, ty)
                   | S.E_Tuple xs => S.E_Tuple(List.map rename xs)
                   | S.E_Project(x, i) => S.E_Project(rename x, i)

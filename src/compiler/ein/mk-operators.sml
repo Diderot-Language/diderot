@@ -124,7 +124,9 @@ structure MkOperators : sig
     val zeros : shape -> Ein.ein
     val sliceT : bool list * int list * Ein.index_bind list * int list -> Ein.ein
     val sliceF : bool list * int list * Ein.index_bind list * int -> Ein.ein
- 
+    val concatTensor: shape * int -> Ein.ein
+    val concatField: int * shape * int -> Ein.ein
+    
     val lerp3 : shape -> Ein.ein
     val lerp5 : shape -> Ein.ein
     val clampRRT: shape -> Ein.ein
@@ -990,6 +992,25 @@ structure MkOperators : sig
             E.EIN{params = [E.FLD dim], index = rstTy, body = E.Field(0, ix)}
           end
           
+    fun concatBody (expression, shape, nflds, idshift) = let
+          val expindex = specialize(shape, 1)
+          val exps = List.tabulate (nflds, fn n =>  E.Opn(E.Prod, [expression(n+idshift, expindex), E.Delta(E.C n, E.V 0)]))
+          in E.Opn(E.Add, exps) end
+          
+    fun concatTensor(shape, nflds) =
+        E.EIN{
+            params = List.tabulate (nflds, fn _=> mkTEN shape),
+            index = nflds::shape,
+            body = concatBody (E.Tensor, shape, nflds, 0)
+          }
+          
+    fun concatField (dim, shape, nflds) =
+         E.EIN{
+            params = List.tabulate (nflds, fn _=> E.FLD (dim)),
+            index = nflds::shape,
+            body = concatBody (E.Field, shape, nflds, 0)
+        }
+
   (* Lerp<ty>(a, b, t) -- computes a + t*(b-a), where a and b have type ty
    * and t has type real
    *)
