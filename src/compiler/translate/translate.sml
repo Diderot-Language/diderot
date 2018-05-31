@@ -345,10 +345,9 @@ print(concat["doVar (", SV.uniqueNameOf srcVar, ", ", IR.phiToString phi, ", _) 
                 end
             | S.E_Tensor(args, _) =>
                 [IR.ASSGN(lhs, IR.CONS(List.map (lookup env) args, IR.Var.ty lhs))]
-            | S.E_Field(args, Ty.T_Field{diff, dim, shape}) =>
-                let
-                    val rator  = MkOperators.concatField(dim, List.tl shape,List.length(args))
-                    val ein = IR.EINAPP(rator, List.map (lookup env) args)
+            | S.E_Field(args, Ty.T_Field{diff, dim, shape}) => let
+                val rator = MkOperators.concatField(dim, List.tl shape, List.length(args))
+                val ein = IR.EINAPP(rator, List.map (lookup env) args)
                 in
                   [IR.ASSGN(lhs, ein)]
                 end
