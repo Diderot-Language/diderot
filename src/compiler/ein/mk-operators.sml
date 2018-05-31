@@ -995,7 +995,9 @@ structure MkOperators : sig
     fun concatBody (expression, shape, nflds, idshift) = let
           val expindex = specialize(shape, 1)
           val exps = List.tabulate (nflds, fn n =>  E.Opn(E.Prod, [expression(n+idshift, expindex), E.Delta(E.C n, E.V 0)]))
-          in E.Opn(E.Add, exps) end
+          in
+            E.Opn(E.Add, exps)
+          end
           
     fun concatTensor (shape, nflds) =
           E.EIN{
