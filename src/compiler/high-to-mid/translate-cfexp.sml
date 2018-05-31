@@ -27,29 +27,7 @@ structure TranslateCFExp : sig
     fun paramToString (i, E.TEN(t, shp)) = concat["T", i2s i, "[", shp2s shp, "]"]
       | paramToString (i, E.FLD d) = concat["F", i2s i, "(", i2s d, ")"]
       | paramToString (i, E.KRN) = "H" ^ i2s i
-      | paramToString (i, E.IMG(d, shp)) = concat["V", i2s i, "(", i2s d, ")[", shp2s shp, "]"]
-      
-    fun iterP es =  let 
-        fun iterPP([], [r]) = r
-        | iterPP ([], rest) = E.Opn(E.Prod, rest)
-        | iterPP (E.Const 0::es, rest) = E.Const(0)
-        | iterPP (E.Const 1::es, rest) = iterPP(es, rest)
-        | iterPP (E.Delta(E.C c1, E.V v1)::E.Delta(E.C c2, E.V v2)::es, rest) = 
-            (* variable can't be 0 and 1 '*)
-            if(c1 = c2 orelse (not (v1 = v2)))
-            then iterPP (es, E.Delta(E.C c1, E.V v1)::E.Delta(E.C c2, E.V v2)::rest)
-            else  E.Const(0)
-        | iterPP(E.Opn(E.Prod, ys)::es, rest) = iterPP(ys@es, rest)
-        | iterPP (e1::es, rest)   = iterPP(es, e1::rest)
-        in iterPP(es, []) end
-    fun iterA es =  let
-        fun iterAA([], []) = E.Const 0
-        | iterAA([], [r]) = r
-        | iterAA ([], rest) = E.Opn(E.Add, rest)
-        | iterAA (E.Const 0::es, rest) = iterAA(es, rest)
-        | iterAA (E.Opn(E.Add, ys)::es, rest) = iterAA(ys@es, rest)
-        | iterAA (e1::es, rest)   = iterAA(es, e1::rest)
-        in iterAA(es, []) end   
+      | paramToString (i, E.IMG(d, shp)) = concat["V", i2s i, "(", i2s d, ")[", shp2s shp, "]"]  
     
     (* The terms with a param_id in the mapp are replaced
     * body - ein expression
@@ -90,17 +68,17 @@ structure TranslateCFExp : sig
                 | E.Op1(E.PowInt n, e1) => 
                     let
                         val tmp = rewrite e1
-                        in iterP (List.tabulate(n, fn _ => tmp))
+                        in EinUtil.iterPP (List.tabulate(n, fn _ => tmp))
                     end
                 | E.Op1(op1, e1)                       => E.Op1(op1, rewrite e1)
                 | E.Op2(op2, e1, e2)                   => E.Op2(op2, rewrite e1, rewrite e2) 
                 | E.Opn(E.Prod, E.Opn(E.Add, ps)::es)  =>
                     let
-                        val ps = List.map (fn  e1 =>  iterP(e1::es)) ps
+                        val ps = List.map (fn  e1 =>  EinUtil.iterPP(e1::es)) ps
                         val body = E.Opn(E.Add, ps)
                     in  rewrite body end
-                | E.Opn(E.Prod, ps)             => iterP(List.map rewrite  ps)
-                | E.Opn(E.Add , ps)             => iterA(List.map rewrite  ps)  
+                | E.Opn(E.Prod, ps)             => EinUtil.iterPP(List.map rewrite  ps)
+                | E.Opn(E.Add , ps)             => EinUtil.iterAA(List.map rewrite  ps)  
                 | _    => body
             (* end case*))
         in rewrite body end
@@ -144,7 +122,7 @@ structure TranslateCFExp : sig
                     (* rewrite position tensor with deltas in body *)
                     val e = replace (e, dim, mapp)
                 in (args, params, e) end                                
-            (*iterate over all the input tensor variable expressions *)
+            (*EinUtil.iterAAte over all the input tensor variable expressions *)
             fun iter([], args, params, _, e) = (args, params, e)
               | iter((pid, E.T)::es, args, params, idx::idxs, e) = let
                 (*variable is treated as a tensor so a simple variable swap is sufficient *)

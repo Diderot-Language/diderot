@@ -35,30 +35,6 @@ structure DerivativeEin : sig
     fun rewriteProd [a] = a
       | rewriteProd exps = E.Opn(E.Prod, exps)
 
-    fun iterPP es = let
-        fun iterP([], [r]) = r
-        | iterP ([], rest) = rewriteProd rest
-        | iterP (E.Const 0::es, rest) = E.Const(0)
-        | iterP (E.Const 1::es, rest) = iterP(es, rest)
-        | iterP (E.Delta(E.C c1, E.V v1)::E.Delta(E.C c2, E.V v2)::es, rest) =
-            (* variable can't be 0 and 1 '*)
-            if(c1=c2)
-            then iterP (es, E.Delta(E.C c1, E.V v1)::E.Delta(E.C c2, E.V v2)::rest)
-            else E.Const(0)
-        | iterP(E.Opn(E.Prod, ys)::es, rest) = iterP(ys@es, rest)
-        | iterP (e1::es, rest)   = iterP(es, e1::rest)
-        in iterP(es, []) end
-
-    fun iterAA(es) = let
-        fun iterA([], []) = E.Const 0
-        | iterA([], [r]) = r
-        | iterA ([], rest) = E.Opn(E.Add, rest)
-        | iterA (E.Const 0::es, rest) = iterA(es, rest)
-        | iterA (E.Opn(E.Add, ys)::es, rest) = iterA(ys@es, rest)
-        | iterA (e1::es, rest)   = iterA(es, e1::rest)
-        in iterA(es, []) end
-
-
   (* chain rule *)
     fun prodAppPartial ([], _) = err "Empty App Partial"
       | prodAppPartial ([e1], p0) = E.Apply(p0, e1)
@@ -113,9 +89,9 @@ structure DerivativeEin : sig
     fun applyOp2Single (op2, e1, dele1, e2, dele2) = (case op2
         of E.Sub    => E.Op2(E.Sub, dele1, dele2)
          | E.Div    => let
-            val num = E.Op2(E.Sub, iterPP([dele1,e2]),iterPP ([e1, dele2]))
+            val num = E.Op2(E.Sub, EinUtil.iterPP([dele1,e2]),EinUtil.iterPP ([e1, dele2]))
             in
-                E.Op2(E.Div, num, iterPP([e2, e2]))
+                E.Op2(E.Div, num, EinUtil.iterPP([e2, e2]))
             end
         (* end case*))
     fun applyOp2 (op2, e1, e2, dx) = let
@@ -145,7 +121,7 @@ structure DerivativeEin : sig
             | E.Sum(op1, e1)        => let
                 val e2 = differentiate(px, e1)
                 in (case e2
-                    of E.Opn(E.Add, ps) => iterAA(List.map (fn e1=>E.Sum(op1, e1)) ps)
+                    of E.Opn(E.Add, ps) => EinUtil.iterAA(List.map (fn e1=>E.Sum(op1, e1)) ps)
                     | _                 => E.Sum(op1, e2)
                 (*end case*))
                 end
@@ -157,15 +133,15 @@ structure DerivativeEin : sig
             | E.Opn(E.Prod, e1::es)        =>  let
                 val (d0::dn) = px
                 val e1' = differentiate ([d0], e1)
-                val es' = differentiate ([d0], iterPP(es))
-                val A = iterPP([e1,es'])
-                val B = iterPP(e1'::es)
-                val e = iterAA([A,B])
+                val es' = differentiate ([d0], EinUtil.iterPP(es))
+                val A = EinUtil.iterPP([e1,es'])
+                val B = EinUtil.iterPP(e1'::es)
+                val e = EinUtil.iterAA([A,B])
                 fun iterDn e2 = if null dn then e2 else E.Apply(E.Partial dn, e2)
                 in iterDn e  end
             | E.Opn(opn, es)        =>             let
                 val xx = List.map (fn e1=> differentiate (px, e1)) es
-                in iterAA(xx) end
+                in EinUtil.iterAA(xx) end
             | _    => raise Fail(EinPP.expToString(body))
         (* end case*))
 
