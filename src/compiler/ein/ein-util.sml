@@ -17,7 +17,7 @@ structure EinUtil : sig
 
     val iterPP: Ein.ein_exp list -> Ein.ein_exp
     val iterAA: Ein.ein_exp list -> Ein.ein_exp
-        
+
   end = struct
 
     structure E = Ein
@@ -73,9 +73,9 @@ structure EinUtil : sig
                 | (E.Krn(id1, ix1, dim1), E.Krn(id2, ix2, dim2)) =>
                     (id1 = id2) andalso sameKx(ix1, ix2) andalso (dim1 =  dim2)
                 | (E.OField(E.CFExp (es1), e1, ix1), E.OField(E.CFExp (es2), e2, ix2)) =>
-                    same(e1,e2) andalso same(ix1, ix2) andalso ListPair.allEq (op =)  (es1,es2)
+                    same(e1, e2) andalso same(ix1, ix2) andalso ListPair.allEq (op =) (es1, es2)
                 | (E.Poly(e1, n1,alpha1), E.Poly(e2, n2, alpha2)) =>
-                     same(e1,e2)  andalso  (n1=n2) andalso sameIndex(alpha1,alpha2)
+                     same(e1, e2) andalso (n1 = n2) andalso sameIndex(alpha1, alpha2)
                 | (E.Sum(c1, e1), E.Sum(c2, e2)) => sameSx(c1, c2) andalso same(e1, e2)
                 | (E.Op1(op1, e1), E.Op1(op2, e2)) => sameOp1(op1, op2) andalso same(e1, e2)
                 | (E.Op2(op1, e11, e12), E.Op2(op2, e21, e22)) =>
@@ -137,8 +137,8 @@ structure EinUtil : sig
                 | E.Value _ => 0w11
                 | E.Img (_, alpha, es, _) => 0w43 + hashAlpha alpha + iter es
                 | E.Krn (_, dels, dim) => 0w41 + hashDels dels + hashInt dim
-                | E.OField(ofld, e2, alpha) =>    0w141 +hash' e2  + hash' alpha
-                | E.Poly(e1, n1, alpha2) =>    0w143 + hash' e1+ hashInt n1 + hashAlpha alpha2
+                | E.OField(ofld, e2, alpha) => 0w141 +hash' e2  + hash' alpha
+                | E.Poly(e1, n1, alpha2) => 0w143 + hash' e1 + hashInt n1 + hashAlpha alpha2
                 | E.Sum(c,e1) => 0w53 + hash' e1
                 | E.Op1(e1,e2) => (case e1
                      of E.Cosine => 0w113 + hash' e2
@@ -164,27 +164,32 @@ structure EinUtil : sig
         in
           hash' body
         end
-        
-    fun iterPP es = let
-        fun iterP([], [r]) = r
-        | iterP ([], rest) = E.Opn(E.Prod, rest)
-        | iterP (E.Const 0::es, rest) = E.Const(0)
-        | iterP (E.Const 1::es, rest) = iterP(es, rest)
-        | iterP (E.Delta(E.C c1, E.V v1)::E.Delta(E.C c2, E.V v2)::es, rest) =
-            (* variable can't be 0 and 1 '*)
-            if(c1=c2)
-            then iterP (es, E.Delta(E.C c1, E.V v1)::E.Delta(E.C c2, E.V v2)::rest)
-            else E.Const(0)
-        | iterP(E.Opn(E.Prod, ys)::es, rest) = iterP(ys@es, rest)
-        | iterP (e1::es, rest)   = iterP(es, e1::rest)
-        in iterP(es, []) end
 
-    fun iterAA(es) = let
-        fun iterA([], []) = E.Const 0
-        | iterA([], [r]) = r
-        | iterA ([], rest) = E.Opn(E.Add, rest)
-        | iterA (E.Const 0::es, rest) = iterA(es, rest)
-        | iterA (E.Opn(E.Add, ys)::es, rest) = iterA(ys@es, rest)
-        | iterA (e1::es, rest)   = iterA(es, e1::rest)
-        in iterA(es, []) end
+    fun iterPP es = let
+          fun iterP ([], [r]) = r
+	    | iterP ([], rest) = E.Opn(E.Prod, rest)
+	    | iterP (E.Const 0::es, rest) = E.Const(0)
+	    | iterP (E.Const 1::es, rest) = iterP(es, rest)
+	    | iterP (E.Delta(E.C c1, E.V v1)::E.Delta(E.C c2, E.V v2)::es, rest) =
+	      (* variable can't be 0 and 1 '*)
+		if (c1 = c2)
+		  then iterP (es, E.Delta(E.C c1, E.V v1)::E.Delta(E.C c2, E.V v2)::rest)
+		  else E.Const(0)
+	    | iterP (E.Opn(E.Prod, ys)::es, rest) = iterP(ys@es, rest)
+	    | iterP (e1::es, rest)   = iterP(es, e1::rest)
+          in
+            iterP (es, [])
+          end
+
+    fun iterAA es = let
+	  fun iterA ([], []) = E.Const 0
+	    | iterA ([], [r]) = r
+	    | iterA ([], rest) = E.Opn(E.Add, rest)
+	    | iterA (E.Const 0::es, rest) = iterA(es, rest)
+	    | iterA (E.Opn(E.Add, ys)::es, rest) = iterA(ys@es, rest)
+	    | iterA (e1::es, rest) = iterA(es, e1::rest)
+	  in
+            iterA (es, [])
+          end
+
   end

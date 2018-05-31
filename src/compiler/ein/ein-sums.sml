@@ -34,7 +34,7 @@ structure EinSums : sig
 
     fun findIndex (v, searchspace) = List.find (fn x => x = E.V v) searchspace
 
-  (* findSx : sum_indexid list*ein_exp -> index_id option 
+  (* findSx : sum_indexid list*ein_exp -> index_id option
    * Is c in e?. Simple lookup in the searchspace
    *)
     fun findSx (c, b) = let
@@ -66,7 +66,7 @@ structure EinSums : sig
               | E.Img _                   => raise Fail "Img used pre expansion"
               | E.Krn _                   => raise Fail "Krn used pre expansion"
               | E.OField(_, e1, _)        => findSx(c,e1)
-              | E.Poly (_, _,shape)       => raise Fail "Poly used pre expansion"
+              | E.Poly(_, _,shape)       => raise Fail "Poly used pre expansion"
               | E.Sum(_, e1)              => findSx (c, e1)
               | E.Op1(_, e1)              => findSx (c, e1)
               | E.Op2(_, e1, e2)          => sort [e1, e2]
@@ -95,7 +95,7 @@ structure EinSums : sig
    * Two summation indices sorts what the binding.
    * Check Tex file for clarity
    * Sum([c1,c2],pre*post)
-   * pre  Σ_c2 post 
+   * pre  Σ_c2 post
    * return pre, outer Sum, post
    *)
     fun splitMultipleSum (c1, c2, pre, post) = (case (pre, post)
@@ -145,7 +145,7 @@ structure EinSums : sig
           end
 
   (* clean : EIN -> EIN
-   * Rewrites body by moving summation indices around 
+   * Rewrites body by moving summation indices around
    *)
     fun clean (Ein.EIN{params, index, body}) = let
           fun rewriteBody body = (case body
@@ -155,7 +155,7 @@ structure EinSums : sig
                   | E.Value _             => raise Fail"Value before Expand"
                   | E.Img _               => raise Fail"Img before Expand"
                   | E.Krn _               => raise Fail"Krn before Expand"
-                  | E.OField(ofld, e1, ix)=>E.OField(ofld, rewriteBody e1, ix)
+                  | E.OField(ofld, e1, ix) => E.OField(ofld, rewriteBody e1, ix)
                   | E.Sum(sx, E.Opn(E.Prod, [e1])) =>
                       merge (shiftSum(sx, [ rewriteBody e1]))
                   | E.Sum(sx, E.Opn(E.Prod, [e1,e2])) =>
@@ -218,7 +218,7 @@ structure EinSums : sig
                             val e3 = mkProd[e2, E.Tensor(id1,[i1])]
                             in
                               changed := true; e3
-                            end 
+                            end
                         | _ => E.Opn(E.Prod, List.map rewrite es)
                       (* end case *))
                   | E.Opn(opn, es) => E.Opn(opn, List.map rewrite es)

@@ -11,7 +11,7 @@ structure HandleEin : sig
     val expand : MidIR.var * Ein.ein * MidIR.var list -> MidIR.assignment list
 
   end = struct
-   
+
     structure E = Ein
     structure SrcIR = HighIR
     structure DstIR = MidIR
@@ -24,7 +24,7 @@ structure HandleEin : sig
         (* **************** split phase ************* *)
           val newbies = FloatEin.transform (lhs, ein', args)
         (* **************** translate of fields ************* *)
-          val newbies  = List.foldr (fn (e,acc)=>  TranslateOField.transform(e)@acc ) []  newbies
+          val newbies = List.foldr (fn (e, acc) => TranslateOField.transform e @ acc) [] newbies
         (* ************** ProbeEIN *********** *)
           val avail = AvailRHS.new()
           val _ = List.app (ProbeEin.expand avail) (newbies);

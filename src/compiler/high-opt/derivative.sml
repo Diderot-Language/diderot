@@ -160,7 +160,7 @@ structure Derivative : sig
             | E.Value _ => err "Value used before expand"
             | E.Img _ => err "Probe used before expand"
             | E.Krn _ => err "Krn used before expand"
-            | E.OField(ofld, e2,  E.Partial alpha) => SOME(E.OField(ofld, e2,  E.Partial (alpha@dx)))
+            | E.OField(ofld, e2, E.Partial alpha) => SOME(E.OField(ofld, e2, E.Partial(alpha @ dx)))
             | E.Sum(sx, e1) => SOME(E.Sum(sx, E.Apply(E.Partial dx, e1)))
             | E.Op1(op1, e1) => SOME(applyOp1(op1, e1, dx))
             | E.Op2(op2, e1, e2) => SOME(applyOp2(op2, e1, e2, dx))

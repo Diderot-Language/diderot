@@ -30,6 +30,7 @@ structure Operators =
     val op_mod = Atom.atom "%"
     val op_pow = Atom.atom "^"
     val op_at = Atom.atom "@"
+    val op_compose = Atom.atom "∘"              (* u2218 *)
 
   (* assignment operators *)
     val asgn_add = Atom.atom "+="

@@ -39,12 +39,11 @@ structure CleanParams : sig
                  of E.Tensor(id, _) => ISet.add(mapp, id)
                   | E.Conv(v, _, h, _) => ISet.add(ISet.add(mapp, h), v)
                   | E.Probe(e1, e2) => walk (e2, walk (e1, mapp))
-                  | E.OField(E.CFExp es, e2, dx) =>
-                    let
-                        val es = List.map (fn (id, _) => E.Tensor(id, [])) (es)
-                    in 
-                        walk(dx, walk (e2, (List.foldl walk mapp es)))
-                     end
+                  | E.OField(E.CFExp es, e2, dx) => let
+                      val es = List.map (fn (id, _) => E.Tensor(id, [])) es
+                      in
+                        walk(dx, walk (e2, List.foldl walk mapp es))
+                      end
                   | E.Value _ => raise Fail "unexpected Value"
                   | E.Img _ => raise Fail "unexpected Img"
                   | E.Krn _ => raise Fail "unexpected Krn"
@@ -77,7 +76,7 @@ structure CleanParams : sig
             | m (_, _, _, _, [], _, _) = raise Fail "too many args"
           in
             m (0, 0, IMap.empty, [], params, [], args)
-          end 
+          end
 
     (*rewriteParam:dict*ein_exp ->ein_exp
     *rewrite ids in exp using mapp
@@ -89,8 +88,10 @@ structure CleanParams : sig
                   | E.Conv(v, alpha, h, dx) =>
                       E.Conv(getId v, alpha, getId h, dx)
                   | E.Probe(f, t) => E.Probe(rewrite f, rewrite t)
-                  | E.OField(E.CFExp es, e2, dx)
-                    => E.OField(E.CFExp (List.map (fn (id, inputTy)=>(getId id, inputTy)) es), rewrite e2, rewrite  dx)
+                  | E.OField(E.CFExp es, e2, dx) => E.OField(
+                      E.CFExp(List.map (fn (id, inputTy) => (getId id, inputTy)) es),
+                      rewrite e2,
+                      rewrite dx)
                   | E.Sum(sx ,e1) => E.Sum(sx, rewrite e1)
                   | E.Op1(op1, e1) => E.Op1(op1, rewrite e1)
                   | E.Op2(op2, e1,e2) => E.Op2(op2, rewrite e1, rewrite e2)
@@ -99,7 +100,7 @@ structure CleanParams : sig
                   | _ => b
                 (* end case *))
           in
-            rewrite e 
+            rewrite e
           end
 
     (* cleanParams:var*ein_exp*param*index* var list ->code
