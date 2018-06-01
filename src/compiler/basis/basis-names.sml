@@ -50,6 +50,7 @@ structure BasisNames =
     val fn_concat = Atom.atom "concat"
 
   (* standard math functions *)
+    val fn_abs = Atom.atom "abs"
     val fn_acos = Atom.atom "acos"
     val fn_asin = Atom.atom "asin"
     val fn_atan = Atom.atom "atan"

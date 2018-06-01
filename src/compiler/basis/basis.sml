@@ -135,6 +135,7 @@ structure Basis : sig
           ]
 
     val overloadFunctions = [
+          (N.fn_abs, [BV.fn_abs_s]),
           (N.fn_acos, [BV.fn_acos_r, BV.fn_acos_s]),
           (N.fn_asin, [BV.fn_asin_r, BV.fn_asin_s]),
           (N.fn_atan, [BV.fn_atan_r, BV.fn_atan_s]),

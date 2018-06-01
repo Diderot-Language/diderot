@@ -215,6 +215,8 @@ structure TranslateBasis : sig
                                           [assignEin(y, Mk.dotimes(d1, dd@[d2]), xs)]),
                 (BV.op_Ddot,            fn (y, [_, Ty.DIM d1,  Ty.SHAPE dd, Ty.DIM d2], xs) =>
                                           [assignEin(y, Mk.divergence(d1, dd), xs)] ),
+                (BV.fn_abs_s,          fn (y, [ _,Ty.DIM d1], xs) =>
+                                           [assignEin(y, Mk.absF(d1), xs)]),
                 (BV.op_norm_i,          simpleOp Op.IAbs),
                 (BV.op_norm_t,          fn (y, [sv], xs) => (case sv
                                            of Ty.SHAPE dd => [assignEin(y, Mk.normT dd, xs)]
