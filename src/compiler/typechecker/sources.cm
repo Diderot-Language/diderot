@@ -25,6 +25,7 @@ is
   check-const.sml
   check-create.sml
   check-expr.sml
+  check-fieldfunc.sml
   check-globals.sml
   check-params.sml
   check-stmt.sml

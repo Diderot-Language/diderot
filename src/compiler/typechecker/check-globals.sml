@@ -169,6 +169,7 @@ structure CheckGlobals : sig
                             Env.functionScope(env, resTy, #tree bindF),
                             cxt, #tree bindX, x)
                       val bodyTy = CheckExpr.check (env', cxt, body)
+                      val _ = CheckFieldFunc.check (env', cxt, body)
                       in
                         case Util.coerceType (resTy, bodyTy)
                          of SOME e => (
