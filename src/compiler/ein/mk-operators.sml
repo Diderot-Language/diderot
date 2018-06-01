@@ -72,10 +72,9 @@ structure MkOperators : sig
     val colonFT : dim * shape * ids -> Ein.ein
     val colonTF : dim * shape * ids -> Ein.ein
 
-    val absT : Ein.ein
-    val absF : dim -> Ein.ein 
     val normT : shape -> Ein.ein
     val normF : dim * shape -> Ein.ein
+
     val normalizeTT : shape -> Ein.ein
     val normalizeFF : dim * shape -> Ein.ein
 
@@ -689,21 +688,12 @@ structure MkOperators : sig
               }
           end
 
-  (******************** absolute, norm, and normalize  ********************************)
-    val absT =
-        E.EIN{
-            params = [mkTEN []],
-            index = [],
-            body = E.Op1(E.Abs, E.Tensor(0, []))
-        }        
-    fun absF (dim) = 
-        E.EIN{
-            params = [E.FLD (dim)],
-            index = [],
-            body = E.Op1(E.Abs, E.Field(0, []))
-        }  
-    fun normT [] = absT
-      | normT alpha = let
+  (******************** Norm  ********************************)
+
+        fun normT [] = E.EIN{
+                params = [mkTEN []], index = [], body = E.Op1(E.Abs, E.Tensor(0, []))
+              }
+          | normT alpha = let
               val expIdx = specialize(alpha, 0)
               val sx = sumIds(length alpha, 0, alpha)
               in
@@ -715,7 +705,8 @@ structure MkOperators : sig
                   }
               end
 
-    fun normF (dim, []) = absF dim
+    fun normF (dim, []) =
+          E.EIN{params = [E.FLD dim],index = [], body = E.Op1(E.Abs, E.Field(0, []))}
       | normF (dim, alpha) = let
           val expIdx = specialize(alpha, 0)
           val sx = sumIds(length alpha, 0, alpha)

@@ -402,13 +402,6 @@ structure BasisVars =
             end))
 
   (* vector-norm and absolute value *)
-    val fn_abs_s = polyVar (N.fn_abs, all([DK,NK], fn [Ty.DIFF k, Ty.DIM d] => let
-            val k' = Ty.DiffVar(k, 0)
-            val d' = Ty.DimVar d
-            val f = field(k', d', Ty.Shape[])
-            in
-              [f] --> f
-            end))
     val op_norm_i = monoVar (N.op_norm, [Ty.T_Int] --> Ty.T_Int)
     val op_norm_t = polyVar (N.op_norm, all([SK],
           fn [Ty.SHAPE dd] => [Ty.T_Tensor(Ty.ShapeVar dd)] --> Ty.realTy))
