@@ -319,6 +319,7 @@ print(concat["doVar (", SV.uniqueNameOf srcVar, ", ", IR.phiToString phi, ", _) 
         (case kind 
             of IR.ASSIGN{stm,pred,...} => (IR.ASSGN stm)::gather(!pred)
             |  IR.ENTRY _    => []
+            | _ => raise Fail "Node kind not supported"
         (* end case*))
     fun tensorSize v = (case IR.Var.ty(v)
         of DstTy.TensorTy alpha => alpha

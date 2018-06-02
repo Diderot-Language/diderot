@@ -21,7 +21,8 @@ structure CheckFieldFunc : sig
     structure Ty = Types
     structure BV = BasisVars
     structure TU = TypeUtil
-
+   structure ISet = IntRedBlackSet
+   
   (* an expression to return when there is a type error *)
     fun err arg = (TypeError.error arg; ())
     val warn = TypeError.warning
@@ -31,95 +32,67 @@ structure CheckFieldFunc : sig
   (* mark a variable use with its location *)
     fun useVar (cxt : Env.context, x) = (x, #2 cxt)
 
-  (* resolve overloading: we use a simple scheme that selects the first operator in the
-   * list that matches the argument types.
-   *)
-   (*
-    fun resolveOverload (_, rator, _, _, []) = raise Fail(concat[
-            "resolveOverload: \"", Atom.toString rator, "\" has no candidates"
-          ])
-      | resolveOverload (cxt, rator, argTys, args, candidates) = let
-(* FIXME: we could be more efficient by just checking for coercion matchs the first pass
- * and remembering those that are not pure EQ matches.
- *)
-        (* build the result *)
-          fun done (rator, tyArgs, args, rngTy) = if Var.same(rator, BV.pow_si)
-                then let (* check that the second argument is a constant expression *)
-                  val [e1, e2] = args
-                  in
-                    case CheckConst.eval (cxt, false, e2)
-                     of SOME e2' =>
-                          (AST.E_Prim(rator, tyArgs, [e1, ConstExpr.valueToExpr e2'], rngTy), rngTy)
-                      | NONE => err(cxt, [
-                            S "constant-integer exponent is required when lhs of '^' is a field"
-                          ])
-                  end
-                else (AST.E_Prim(rator, tyArgs, args, rngTy), rngTy)
-        (* try to match candidates while allowing type coercions *)
-          fun tryMatchCandidates [] = err(cxt, [
-                  S "unable to resolve overloaded operator ", A rator, S "\n",
-                  S "  argument type is: ", TYS argTys, S "\n"
-                ])
-            | tryMatchCandidates (x::xs) = let
-                val (tyArgs, Ty.T_Fun(domTy, rngTy)) = TU.instantiate(Var.typeOf x)
-                in
-                  case Unify.tryMatchArgs (domTy, args, argTys)
-                   of SOME args' => done(x, tyArgs, args', rngTy)
-                    | NONE => tryMatchCandidates xs
-                  (* end case *)
-                end
-        (* try to match candidates without type coercions *)
-          fun tryCandidates [] = tryMatchCandidates candidates
-            | tryCandidates (x::xs) = let
-                val (tyArgs, Ty.T_Fun(domTy, rngTy)) = TU.instantiate(Var.typeOf x)
-                in
-                  if Unify.tryEqualTypes(domTy, argTys)
-                    then done(x, tyArgs, args, rngTy)
-                    else tryCandidates xs
-                end
-          in
-            tryCandidates candidates
-          end
-     *)     
+  (* strip any marks that enclose an expression and return the span and the expression *)
+    fun stripMark (_, PT.E_Mark{span, tree}) = stripMark(span, tree)
+      | stripMark (span, e) = (span, e)
+         
+    (* 
+    * In order to differentiate an unary-input defined field the entire 
+    * function expression needs to be represented as an EIN operator. 
+    * The following is a list of operators that are later represented in EIN
+    *)
+   val ops_ein1 = [BasisNames.op_add, BasisNames.op_sub, BasisNames.op_mul, BasisNames.op_dot]
+   val ops_ein2 = [BasisNames.op_cross, BasisNames.op_convolve, BasisNames.op_outer, BasisNames.op_colon]
+   val ops_ein3 = [BasisNames.op_div, BasisNames.op_pow, BasisNames.op_at ,BasisNames.op_neg]
+   val ops_ein4 = [BasisNames.op_D, BasisNames.op_Ddot, BasisNames.op_Dotimes, BasisNames.op_curl, BasisNames.op_norm]
+   val ops_ein5 = [BasisNames.fn_inv, BasisNames.fn_modulate, BasisNames.fn_normalize, BasisNames.fn_trace]
+   val ops_ein6 = [BasisNames.fn_transpose, BasisNames.fn_acos, BasisNames.fn_asin, BasisNames.fn_atan]
+   val ops_ein7 = [BasisNames.fn_cos, BasisNames.fn_exp, BasisNames.fn_sin, BasisNames.fn_sqrt, BasisNames.fn_tan]
+   val ops_ein = ops_ein1 @ ops_ein2 @ ops_ein3 @ ops_ein4 @ ops_ein5 @ ops_ein6 @ ops_ein7
+   
    fun funcErr (cxt, exp) = err(cxt, [S "Field definition is invalid: ", exp,  S " is not yet supported inside field definition"])
-
+   fun checkRator (cxt, rator) = 
+        (case (List.find (fn e => Atom.same(rator, e)) ops_ein)
+            of SOME _ => ()
+             | NONE => funcErr (cxt, A rator)          
+        (* end case *))            
   (* check the type of an expression *)
     fun check (env, cxt, e) = (case e
            of PT.E_Mark m => check (E.withEnvAndContext (env, cxt, m))
             | PT.E_Cond(e1, cond, e2) => funcErr (cxt, S "conditional expression")
-            | PT.E_Range(e1, e2) =>  funcErr (cxt, S "range expression")
-            | PT.E_OrElse(e1, e2) =>  funcErr (cxt, S "or else expression")
-            | PT.E_AndAlso(e1, e2) =>  funcErr (cxt, S "andalso expression")
-            (*
+            | PT.E_Range(e1, e2) => funcErr (cxt, S "range expression")
+            | PT.E_OrElse(e1, e2) => funcErr (cxt, S "orelse expression")
+            | PT.E_AndAlso(e1, e2) => funcErr (cxt, S "andalso expression")
             | PT.E_BinOp (e1, rator, e2) => 
-                  case Env.findFunc (env, rator)
-                     of Env.PrimFun[rator] =>  funcErr (cxt, V rator)
-                      | _ =>  raise Fail "impossible"
-                      *)
+                let
+                    val _ = check(env, cxt, e1)
+                    val _ = check(env, cxt, e2)
+                in checkRator (cxt, rator) end
             | PT.E_UnaryOp(rator, e) =>  
                 let 
-                    val _ = print"found unary"
-                    val eTy = check(env, cxt, e)
-                    in   case Env.findFunc (env, rator)
-                        of Env.PrimFun[rator] => funcErr (cxt, V rator)
-                         (* | Env.PrimFun ovldList => (resolveOverload (cxt, rator, [#2 eTy], [#1 eTy], ovldList);())*)
-                        | _ => raise Fail "impossible"
-                    end
-            | PT.E_Apply(e, args) => (print "found apply";List.map (fn e1 => check (env, cxt, e1)) (e::args);())
+                    val _ = check(env, cxt, e)
+                in checkRator (cxt, rator) end
+            | PT.E_Apply(e, args) => 
+                let
+                    val _ = List.map (fn e1 => check (env, cxt, e1)) (e::args)
+                    in case stripMark(#2 cxt, e)
+                        of (span, PT.E_Var rator) => checkRator (cxt, rator)
+                        | _ => funcErr (cxt, S "application expression")
+                    end 
             | PT.E_Subscript(e, indices) => funcErr (cxt, S "subscript expression")
             | PT.E_Select(e, field) => funcErr (cxt, S "select expression")
             | PT.E_Real e => funcErr (cxt, S "real expression")
-            | PT.E_LoadSeq nrrd =>funcErr (cxt, S "load Seq")
+            | PT.E_LoadSeq nrrd=> funcErr (cxt, S "load Seq")
             | PT.E_LoadImage nrrd => funcErr (cxt, S "load Image")
-            | PT.E_Var x => (print "found var";())
+            | PT.E_Var x => ()
             | PT.E_Kernel(kern, dim) => funcErr (cxt, S "select expression")
             | PT.E_Lit lit => ()
             | PT.E_Id d => ()
             | PT.E_Zero dd => funcErr (cxt, S "zero matrix")
             | PT.E_NaN dd => funcErr (cxt, S "NaN")
-            | PT.E_Sequence exps => funcErr (cxt, S "Sequence")
-            | PT.E_SeqComp comp => funcErr (cxt, S "Sequence Comp")
-            | PT.E_Cons args => funcErr (cxt, S "CONS construction")
+            | PT.E_Sequence exps => funcErr (cxt, S "sequence")
+            | PT.E_SeqComp comp => funcErr (cxt, S "sequence comp")
+            | PT.E_Cons args => funcErr (cxt, S "cons construction")
           (* end case *))
 
 
