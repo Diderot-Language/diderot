@@ -77,6 +77,7 @@
   | OP_mod                      ("%")
   | OP_exp                      ("^")
   | OP_at                       ("@")
+  | OP_compose                  ("∘")
   | OP_D                        ("∇")
   | OP_Dotimes                  ("∇⊗")
   | OP_curl                     ("∇×")
@@ -452,8 +453,8 @@ AddOp
         ;
 
 MultiplyExpr
-        : PrefixExpr ( MultiplyOp PrefixExpr => (MultiplyOp, PrefixExpr, #2 PrefixExpr_SPAN) )*
-                => (mkLBinExp (#1 PrefixExpr_SPAN, PrefixExpr, SR))
+        : ComposeExpr ( MultiplyOp ComposeExpr => (MultiplyOp, ComposeExpr, #2 ComposeExpr_SPAN) )*
+                => (mkLBinExp (#1 ComposeExpr_SPAN, ComposeExpr, SR))
         ;
 
 MultiplyOp
@@ -465,6 +466,11 @@ MultiplyOp
         | "×"   => (Op.op_cross)
         | "⊗"   => (Op.op_outer)
         | ":"   => (Op.op_colon)
+        ;
+
+ComposeExpr
+        : PrefixExpr ( "∘" PrefixExpr => (Op.op_compose, PrefixExpr, #2 PrefixExpr_SPAN) )*
+                => (mkLBinExp (#1 PrefixExpr_SPAN, PrefixExpr, SR))
         ;
 
 PrefixExpr

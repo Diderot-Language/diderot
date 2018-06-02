@@ -40,6 +40,7 @@ structure Simple =
         update : block option           (* global update block *)
       }
 
+  (* user-function definition and differentiable functions *)
     and func_def = Func of {
         f : func,
         params : var list,

@@ -59,18 +59,18 @@ structure Ein =
 
     and opn = Add | Prod
 
-    and input_ty = T | F (*treat as a tensor or field during differentiaton *)
+    and input_ty = T | F (* treat as a tensor or field during differentiaton *)
 
   (* other kinds of fields *)
     and ofield = CFExp of (param_id * input_ty) list      (* input variables TT and TF*)
-        
+
     and ein_exp
     (* Basic terms *)
       = Const of int
 (* QUESTION: should this be RealLit.t? *)
       | ConstR of Rational.t
       | Tensor of param_id * alpha
-      | Zero of alpha 
+      | Zero of alpha
       | Delta of mu * mu
       | Epsilon of mu * mu * mu
       | Eps2 of mu * mu

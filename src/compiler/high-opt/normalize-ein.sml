@@ -130,11 +130,11 @@ structure NormalizeEin : sig
                   | E.Apply _ => err "Ill-formed Apply expression"
                   | E.Probe(e1, e2) => mkProbe(rewrite e1, rewrite e2)
                 (************** Field Terms **************)
-                  | E.OField(ofld, e, alpha)      => E.OField(ofld, rewrite e, alpha)
+                  | E.OField(ofld, e, alpha) => E.OField(ofld, rewrite e, alpha)
                   | E.Value _ => err "Value before Expand"
                   | E.Img _ => err "Img before Expand"
                   | E.Krn _ => err "Krn before Expand"
-                  | E.Poly  _   =>  err "Poly before Expand"
+                  | E.Poly _ => err "Poly before Expand"
                 (************** Sum **************)
                   | E.Sum(sx, e) => mkSum (sx, rewrite e)
                 (************* Algebraic Rewrites Op1 **************)

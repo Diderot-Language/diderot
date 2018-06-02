@@ -97,8 +97,8 @@ structure CleanIndex : sig
                   | E.Partial alpha => addMus(ixs, alpha)
                   | E.Apply(E.Partial alpha, e1) => shape (e1, addMus(ixs, alpha))
                   | E.Probe(e, _) => shape (e, ixs)
-                  | E.OField(_, e2,E.Partial alpha) => shape (e2, addMus(ixs, alpha))
-                  | E.Poly (_, _, alpha) => addMus(ixs, alpha)
+                  | E.OField(_, e2, E.Partial alpha) => shape (e2, addMus(ixs, alpha))
+                  | E.Poly(_, _, alpha) => addMus (ixs, alpha)
                   | E.Value e1 => raise Fail "Error in Ashape"
                   | E.Img _ => raise Fail "Error in Ashape"
                   | E.Krn _ => raise Fail "Error in Ashape"
@@ -253,7 +253,8 @@ structure CleanIndex : sig
                   | E.Probe(E.Conv(v, alpha, h,dx), t) =>
                       E.Probe(E.Conv(v, getAlpha alpha, h, getAlpha dx), rewrite t)
                   | E.Probe (e1, e2) => E.Probe(rewrite e1, rewrite e2)
-                  | E.OField (opn, e1, E.Partial dx) => E.OField (opn, rewrite e1, E.Partial (getAlpha dx))
+                  | E.OField (opn, e1, E.Partial dx) =>
+                      E.OField(opn, rewrite e1, E.Partial(getAlpha dx))
                   | E.Poly(e1, n, dx) => E.Poly(rewrite e1, n, getAlpha dx)
                   | E.Value e1 => raise Fail "unexpected Value"
                   | E.Img _ => raise Fail "unexpected Img"

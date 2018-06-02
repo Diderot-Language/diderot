@@ -36,7 +36,7 @@
 
   (* make a REAL token from a substring.  The argument should match the RE
    *
-   *	{num}"."{num}([eE][+-]?{num})?
+   *    {num}"."{num}([eE][+-]?{num})?
    *)
     fun mkReal ss = let
           val (isNeg, rest) = (case Substring.getc ss
@@ -129,6 +129,7 @@
 <INITIAL> "⋅"           => (T.OP_dot);          (* u22c5 *)
 <INITIAL> "×"           => (T.OP_cross);        (* u00d7 *)
 <INITIAL> "⊗"           => (T.OP_outer);        (* u2297 *)
+<INITIAL> "∘"           => (T.OP_compose);      (* u2218 *)
 <INITIAL> "("           => (T.LP);
 <INITIAL> ")"           => (T.RP);
 <INITIAL> "["           => (T.LB);
@@ -150,8 +151,8 @@
 <INITIAL> "."           => (T.DOT);
 <INITIAL> ".."          => (T.DOTDOT);
 
-<INITIAL> "∞"           => (T.REAL RealLit.posInf);   (* u221e *)
-<INITIAL> "π"           => (T.REAL RealLit.pi);       (* u03c0 *)
+<INITIAL> "∞"           => (T.REAL RealLit.posInf);     (* u221e *)
+<INITIAL> "π"           => (T.REAL RealLit.pi);         (* u03c0 *)
 
 <INITIAL> {id}          => (Keywords.idToken yytext);
 

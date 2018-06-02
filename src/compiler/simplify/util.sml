@@ -266,6 +266,7 @@ structure Util : sig
                       in
                         (env, S.E_InsideImage(pos', img', s))
                       end
+                  | S.E_FieldFn _ => (env, exp)
                 (* end case *))
         (* the initial environment always includes the strand variable *)
           val (env, _) = cvtVar (VMap.empty, strand)

@@ -1,0 +1,71 @@
+%!TEX root = report.tex
+%
+
+\chapter{Introduction}
+
+Diderot is a parallel domain-specific language for programming image analysis and
+visualization algorithms.
+It supports a high-level programming model based on the mathematics of continuous
+tensor fields.
+These fields are reconstructed from discrete image-data sets (\eg{}, MRI data) using
+separable convolution kernels.
+We use \emph{tensors} to refer collectively to scalars,
+vectors, and matrices, which encompasses the types of values produced
+by the imaging modalities mentioned above, as well as values produced
+by taking spatial derivatives of images.
+Diderot permits programmers to express algorithms directly in terms of
+tensors, tensor fields, and tensor field operations, using the same
+mathematical notation that would be used in vector and tensor calculus
+(such as $\nabla$ for the gradient).
+Diderot is indended to be useful for prototyping image
+analysis and visualization methods in contexts where a meaningful
+evaluation of the methods requires its application to real image data,
+but the real data volumes are of a size that requires efficient
+parallel computation.
+Diderot is also suited for educational contexts where the conceptual
+transparency of the implementation is of primary importance.
+In addition to providing a high-level mathematical programming model,
+Diderot is also designed to be implemented on a range of parallel hardware,
+including shared-memory multiprocessors and GPUs.
+
+\section{Basic concepts}
+The design of Diderot is based on three core concepts: image data, the continuous fields
+that are reconstructed from them, and the strands that represent the computations over
+the fields.
+We give a high-level overview of these in this section.
+
+\subsection{Images}
+
+\subsection{Fields}
+Computing with continuous tensor fields is one of the unique characteristics of Diderot.
+Field values are constructed by convolving image data with
+kernels (\CD{img${\color{\kwColor}\circledast}$bspln3}), but they can also be defined
+by using higher-order operations, such as addition, subtraction, and scaling of fields.
+Most importantly, Diderot supports differentiation of fields using the operators $\nabla$
+(for scalar fields) and $\nabla\otimes$ (for higher-order tensor fields).
+Two operations on fields are testing whether a point \CD{x} lies within the domain
+of a field \CD{F} (\CD{inside(x, F)}) and \emph{probing} a field \CD{F} at a point \CD{x}
+(\CD{F(x)}).
+Probing and differentiating are fundamental to extracting geometric
+information from fields.
+
+\subsection{Strands}
+The class of applications that Diderot targets are characterized as consisting of many
+largely independent subcomputations.
+For example, the rays in a volume renderer, the paths from fiber tractography, and
+the particles in a particle system.
+In Diderot, these mostly independent computations are modeled as \emph{strands}, which
+execute in a \emph{bulk synchronous}
+fashion~\cite{valiant:bridging-model-for-parallel,q-n-a-about-bsp}.
+
+
+\section{Diderot by example}
+% include VR-lite example here
+\begin{figure}[p]
+  \begin{quote}
+    \lstset{language=Diderot}
+    \input{vr-lite}
+  \end{quote}%
+  \caption{A simple volume renderer in Diderot}
+  \label{fig:vr-lite}
+\end{figure}%

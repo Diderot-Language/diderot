@@ -20,8 +20,10 @@ structure EinPP : sig
 
     val i2s = Int.toString
     val shp2s = String.concatWithMap " " i2s
-    fun ti2s (id, E.T) = "t_"^Int.toString(id)
-      | ti2s (id, E.F) = "f_"^Int.toString(id)
+
+    fun ti2s (id, E.T) = "t_"^Int.toString id
+      | ti2s (id, E.F) = "f_"^Int.toString id
+
     fun index2s (E.C cx) = concat["'", i2s cx, "'"]
       | index2s (E.V ix) = "i" ^ i2s ix
 
@@ -30,8 +32,10 @@ structure EinPP : sig
 
     fun delta (a, b) = concat["δ_{", index2s a, ",", index2s b,"}"]
     fun deltaKrn (a, b) = concat["δ_{", index2s a, ",", index2s b,"}"]
+
     fun deriv [] = ""
       | deriv alpha = concat["∇",multiIndex2s alpha]
+
     fun expToString e = (case e
            of E.Const r => i2s r
             | E.ConstR r => Rational.toString r
@@ -61,13 +65,16 @@ structure EinPP : sig
             | E.Krn(tid, betas, dim) => concat[
                   "H", i2s tid, "^{", String.concatWithMap "" deltaKrn betas, "}(", Int.toString dim, ")"
                 ]
-            | E.OField(E.CFExp es, e1,  E.Partial [])
-                => concat ["CFExp[Tids:", String.concatWithMap " ," ti2s  es, "](exp:",expToString e1,")"]
-            | E.OField(E.CFExp(es), e1,  E.Partial alpha)
-                => concat [  expToString(E.OField(E.CFExp(es), e1, E.Partial  [])) ,"dx",multiIndex2s alpha, ")"]
+            | E.OField(E.CFExp es, e1, E.Partial []) => concat [
+                  "CFExp[Tids:", String.concatWithMap " ," ti2s es, "](exp:", expToString e1, ")"
+                ]
+            | E.OField(E.CFExp(es), e1, E.Partial alpha) => concat [
+                  expToString (E.OField(E.CFExp(es), e1, E.Partial [])),
+                  "dx", multiIndex2s alpha, ")"
+                ]
             | E.Poly(E.Tensor(tid, cx), 1, dx) => concat [deriv dx,"(P", i2s tid, multiIndex2s  cx, ")"]
             | E.Poly(E.Tensor(tid, cx), n, dx) => concat [deriv dx,"(P", i2s tid, multiIndex2s  cx, ")^",  i2s n]
-             | E.Sum(sx, e) => let
+            | E.Sum(sx, e) => let
                 val sx = List.map
                       (fn (v, lb, ub) => concat ["(i", i2s v, "=", i2s lb, "..", i2s ub, ")"])
                         sx
