@@ -131,7 +131,8 @@ structure Basis : sig
                 BV.op_cross2_tt, BV.op_cross3_tt, BV.op_cross2_ff, BV.op_cross3_ff,
                 BV.op_cross2_tf, BV.op_cross3_tf, BV.op_cross2_ft, BV.op_cross3_ft
               ]),
-            (N.op_norm, [BV.op_norm_i, BV.op_norm_t, BV.op_norm_f])
+            (N.op_norm, [BV.op_norm_i, BV.op_norm_t, BV.op_norm_f]),
+            (N.op_compose, [BV.comp])
           ]
 
     val overloadFunctions = [
