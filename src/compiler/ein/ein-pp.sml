@@ -65,12 +65,6 @@ structure EinPP : sig
             | E.Krn(tid, betas, dim) => concat[
                   "H", i2s tid, "^{", String.concatWithMap "" deltaKrn betas, "}(", Int.toString dim, ")"
                 ]
-            | E.Comp(e1, es) => 
-                let
-                  fun f(e2, n1) = concat ["[", expToString e2, "{", shp2s n1, "}", "]"]
-                in 
-                  concat ["Cmp(", expToString e1,")", String.concatWithMap ", " f es] 
-                end    
             | E.OField(E.CFExp es, e1, E.Partial []) => concat [
                   "CFExp[Tids:", String.concatWithMap " ," ti2s es, "](exp:", expToString e1, ")"
                 ]

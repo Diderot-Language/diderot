@@ -72,8 +72,6 @@ structure EinUtil : sig
                     (id1 = id2) andalso sameList(pos1, pos2) andalso sameIndex(ix1, ix2) andalso (s1 = s2)
                 | (E.Krn(id1, ix1, dim1), E.Krn(id2, ix2, dim2)) =>
                     (id1 = id2) andalso sameKx(ix1, ix2) andalso (dim1 =  dim2)
-                | (E.Comp(e11, es1), E.Comp(e21, es2)) =>
-                    same(e11, e21) andalso sameSubEin(es1, es2)
                 | (E.OField(E.CFExp (es1), e1, ix1), E.OField(E.CFExp (es2), e2, ix2)) =>
                     same(e1, e2) andalso same(ix1, ix2) andalso ListPair.allEq (op =) (es1, es2)
                 | (E.Poly(e1, n1,alpha1), E.Poly(e2, n2, alpha2)) =>
@@ -88,9 +86,6 @@ structure EinUtil : sig
                     (op1 = op2) andalso sameList(es1, es2)
                 | _ => false
               (* end case *))
-        and sameSubEin([], []) = true
-          | sameSubEin((e1 ,_)::es1, (e2 ,_)::es2) = same(e1, e2) andalso sameSubEin(es1, es2)
-          | sameSubEin _ = false
         and sameList ([], []) = true
           | sameList (e1::es1, e2::es2) = same(e1, e2) andalso sameList(es1, es2)
           | sameList _ = false
@@ -117,8 +112,6 @@ structure EinUtil : sig
             fun hashInt i = Word.fromInt i
             fun iter [e] = hash' e
               | iter (e1::es) = hash' e1 + iter es
-            fun iterS [(e, _)] = hash' e
-              | iterS ((e1, _)::es) = hash' e1 + iterS es
             fun hashMu (E.C c) = hashInt c + 0w17
               | hashMu (E.V v) = hashInt v
             fun hashAlpha [] = 0w3
@@ -144,7 +137,6 @@ structure EinUtil : sig
                 | E.Value _ => 0w11
                 | E.Img (_, alpha, es, _) => 0w43 + hashAlpha alpha + iter es
                 | E.Krn (_, dels, dim) => 0w41 + hashDels dels + hashInt dim
-                | E.Comp(e1, es) => 0w141 + hash' e1 + iterS es
                 | E.OField(ofld, e2, alpha) => 0w141 +hash' e2  + hash' alpha
                 | E.Poly(e1, n1, alpha2) => 0w143 + hash' e1 + hashInt n1 + hashAlpha alpha2
                 | E.Sum(c,e1) => 0w53 + hash' e1
@@ -175,28 +167,28 @@ structure EinUtil : sig
 
     fun iterPP es = let
           fun iterP ([], [r]) = r
-        | iterP ([], rest) = E.Opn(E.Prod, rest)
-        | iterP (E.Const 0::es, rest) = E.Const(0)
-        | iterP (E.Const 1::es, rest) = iterP(es, rest)
-        | iterP (E.Delta(E.C c1, E.V v1)::E.Delta(E.C c2, E.V v2)::es, rest) =
-          (* variable can't be 0 and 1 '*)
-        if (c1 = c2)
-          then iterP (es, E.Delta(E.C c1, E.V v1)::E.Delta(E.C c2, E.V v2)::rest)
-          else E.Const(0)
-        | iterP (E.Opn(E.Prod, ys)::es, rest) = iterP(ys@es, rest)
-        | iterP (e1::es, rest)   = iterP(es, e1::rest)
+	    | iterP ([], rest) = E.Opn(E.Prod, rest)
+	    | iterP (E.Const 0::es, rest) = E.Const(0)
+	    | iterP (E.Const 1::es, rest) = iterP(es, rest)
+	    | iterP (E.Delta(E.C c1, E.V v1)::E.Delta(E.C c2, E.V v2)::es, rest) =
+	      (* variable can't be 0 and 1 '*)
+		if (c1 = c2)
+		  then iterP (es, E.Delta(E.C c1, E.V v1)::E.Delta(E.C c2, E.V v2)::rest)
+		  else E.Const(0)
+	    | iterP (E.Opn(E.Prod, ys)::es, rest) = iterP(ys@es, rest)
+	    | iterP (e1::es, rest)   = iterP(es, e1::rest)
           in
             iterP (es, [])
           end
 
     fun iterAA es = let
-      fun iterA ([], []) = E.Const 0
-        | iterA ([], [r]) = r
-        | iterA ([], rest) = E.Opn(E.Add, rest)
-        | iterA (E.Const 0::es, rest) = iterA(es, rest)
-        | iterA (E.Opn(E.Add, ys)::es, rest) = iterA(ys@es, rest)
-        | iterA (e1::es, rest) = iterA(es, e1::rest)
-      in
+	  fun iterA ([], []) = E.Const 0
+	    | iterA ([], [r]) = r
+	    | iterA ([], rest) = E.Opn(E.Add, rest)
+	    | iterA (E.Const 0::es, rest) = iterA(es, rest)
+	    | iterA (E.Opn(E.Add, ys)::es, rest) = iterA(ys@es, rest)
+	    | iterA (e1::es, rest) = iterA(es, e1::rest)
+	  in
             iterA (es, [])
           end
 

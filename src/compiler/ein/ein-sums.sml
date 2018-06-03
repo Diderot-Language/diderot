@@ -65,7 +65,6 @@ structure EinSums : sig
               | E.Value _                 => NONE
               | E.Img _                   => raise Fail "Img used pre expansion"
               | E.Krn _                   => raise Fail "Krn used pre expansion"
-              | E.Comp(e1, _)              => findSx(c, e1)
               | E.OField(_, e1, _)        => findSx(c,e1)
               | E.Poly(_, _,shape)       => raise Fail "Poly used pre expansion"
               | E.Sum(_, e1)              => findSx (c, e1)
@@ -156,7 +155,6 @@ structure EinSums : sig
                   | E.Value _             => raise Fail"Value before Expand"
                   | E.Img _               => raise Fail"Img before Expand"
                   | E.Krn _               => raise Fail"Krn before Expand"
-                  | E.Comp(e1, es)        => E.Comp(rewriteBody e1, es)
                   | E.OField(ofld, e1, ix) => E.OField(ofld, rewriteBody e1, ix)
                   | E.Sum(sx, E.Opn(E.Prod, [e1])) =>
                       merge (shiftSum(sx, [ rewriteBody e1]))
