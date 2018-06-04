@@ -48,7 +48,90 @@ structure FloatEin : sig
           in
             (Re, Rparams, Rargs)
           end
-
+    
+    fun err str = raise Fail(String.concat["Ill-formed EIN Operator", str]) 
+    
+    fun mkProbe (exp as E.Probe(fld, x)) =
+       (case fld
+            of E.Tensor _        => fld (*in case cfexp of tensor*)
+            | E.Lift e           => e
+            | E.Zero _           => fld
+            | E.Partial _        => err "Probe Partial"
+            | E.Probe _          => err "Probe of a Probe"
+            | E.Value _          => err "Value used before expand"
+            | E.Img _            => err "Probe used before expand"
+            | E.Krn _            => err "Krn used before expand"
+            | E.Conv _           => exp 
+            | E.Comp _           => exp (* expanded in the next stage*)
+            | E.Epsilon _        => fld
+            | E.Eps2 _           => fld
+            | E.Const _          => fld
+            | E.Delta _          => fld
+            | E.Sum(sx1, e)      => (E.Sum(sx1, mkProbe(E.Probe(e, x))))
+            | E.Op1(op1, e)      => (E.Op1(op1, mkProbe (E.Probe(e, x))))
+            | E.Op2(op2, e1, e2) => (E.Op2(op2, mkProbe(E.Probe(e1, x)), mkProbe(E.Probe(e2, x))))
+            | E.Opn(opn, [])     => err "Probe of empty operator"
+            | E.Opn(opn, es)     => (E.Opn(opn, List.map (fn e => mkProbe (E.Probe(e, x))) es))
+            | _                  => exp
+        (* end case*))
+       |  mkProbe ( E.Sum(sx, E.Probe(fld, x))) = E.Sum(sx, mkProbe(E.Probe(fld, x)))
+       |  mkProbe e = e
+    (*
+    * sx- outside summation, sx2-wrapped around probe
+    *)
+    fun compSingle (name, params, sx, sx2, args, avail, innerVar, A, index, index2, fld) = 
+        let
+            (* outer term in composition: newP, innerVar*)
+            val id2 = length params
+            val args2 = args@[innerVar]
+            val newP2 = params@[E.TEN(true, index2)]
+            val exp_pos = E.Tensor(id2, [])
+            val exp_fld =(case fld
+                of E.OField(E.CFExp tterm, _, dx) => E.OField(E.CFExp tterm, A, dx)
+                | _  => A
+                (*end case*))
+            val exp_probe = mkProbe(E.Probe(exp_fld, exp_pos)) (*mkProbe function*)
+            val _ = print(String.concat["\n",EinPP.expToString(E.Probe(exp_fld, exp_pos)) , "\n\t->", EinPP.expToString(exp_probe)])
+            val outerExp2 = (case sx2 
+                of [] => exp_probe
+                | _   => E.Sum(sx2, exp_probe)
+                (* end case*))
+            val (tshape2, sizes2, body2) = CleanIndex.clean(outerExp2, index, sx)
+            val einapp2 = CleanParams.clean (body2, newP2, sizes2, args2)
+            val lhs = AvailRHS.addAssign (avail, concat[name, "l"], Ty.tensorTy sizes2, einapp2)
+            (*replacement*)
+            val Re = E.Tensor(id2, tshape2)
+            in
+              (Re, sizes2, lhs)
+            end
+            
+    fun compn (name, exp, params, indexD, sx, sx2, args, avail) = 
+        let
+            val E.Probe(fld, pos) = exp
+            val (D, es) = (case fld
+                of E.Comp e => e
+                |  E.OField(E.CFExp tterm, E.Comp e, dx) => e
+                (*end case*))
+            fun iter(sizes, lhs, [], avail) = compSingle(name, params, sx, sx2, args, avail, lhs, D, indexD, sizes, fld)
+              | iter(sizes, lhs, (B, indexB)::ns, avail) = let
+                val (_, sizes2, lhs2) = compSingle(name, params, [], [], args, avail, lhs, B, indexB, sizes, fld)
+                in
+                  iter(sizes2, lhs2, ns, avail)
+                end
+            val es' = List.rev(es)
+            (* inner term in composition *)
+            val (A, indexA) = List.hd(es')
+            val wrapA = (case fld
+                of E.OField(E.CFExp tterm, _, dx) => E.OField(E.CFExp tterm, A, dx)
+                | _  => A
+                (*end case*))
+            val innerExp = E.EIN{params = params, index =  indexA, body = mkProbe(E.Probe(wrapA, pos))}
+            val innerVar = AvailRHS.addAssign (avail, "Inner", Ty.tensorTy indexA, IR.EINAPP(innerExp, args))
+            (*other  composition *)
+            val (Re, sizes, lhs) = iter(indexA, innerVar, List.tl(es'), avail)
+            in
+              (Re, params @ [E.TEN(true, sizes)], args @ [lhs])
+            end
    (* lift:ein_app*params*index*sum_id*args-> (ein_exp* params*args*code)
     * lifts expression and returns replacement tensor
     * cleans the index and params of subexpression
@@ -77,9 +160,9 @@ structure FloatEin : sig
            | _          => false
          (* end case *))
 
-    fun transform (y, ein as Ein.EIN{body=E.Probe _, ...}, args) =
+    fun transform (y, ein as Ein.EIN{body=E.Probe (E.Conv _,_), ...}, args) =
           [(y, IR.EINAPP(ein, args))]
-      | transform (y, ein as Ein.EIN{body=E.Sum(_, E.Probe _), ...}, args) =
+      | transform (y, ein as Ein.EIN{body=E.Sum(_, E.Probe (E.Conv _,_)), ...}, args) =
           [(y, IR.EINAPP(ein, args))]
       | transform (y, Ein.EIN{params, index, body}, args) = let
           val avail = AvailRHS.new()
@@ -96,17 +179,35 @@ structure FloatEin : sig
                   filter (es, [], params, args)
                 end
           fun rewrite (sx, exp, params, args) = (case exp
-                 of E.Probe(E.Conv(_, [E.C _], _, []), _) =>
-                      cut ("cut", exp, params, index, sx, args, avail, 0)
-                  | E.Probe(E.Conv(_, [E.C _ ], _, [E.V 0]), _) =>
-                      cut ("cut", exp, params, index, sx, args, avail, 1)
-                  | E.Probe(E.Conv(_, [E.C _ ], _, [E.V 0, E.V 1]), _) =>
-                      cut ("cut", exp, params, index, sx, args, avail, 2)
-                  | E.Probe(E.Conv(_, [E.C _ ], _, [E.V 0, E.V 1, E.V 2]), _) =>
-                      cut ("cut", exp, params, index, sx, args, avail, 3)
-                  | E.Probe _ => lift ("probe", exp, params, index, sx, args, avail)
+                 of E.Probe(fld, pos) =>                      
+                    (case fld
+                        of E.Conv(_, [E.C _], _, [])
+                            => cut ("cut", exp, params, index, sx, args, avail, 0)
+                        | E.Conv(_, [E.C _ ], _, [E.V 0])
+                            => cut ("cut", exp, params, index, sx, args, avail, 1)
+                        | E.Conv(_, [E.C _ ], _, [E.V 0, E.V 1])
+                            => cut ("cut", exp, params, index, sx, args, avail, 2)
+                        | E.Conv(_, [E.C _ ], _, [E.V 0, E.V 1, E.V 2])
+                            => cut ("cut", exp, params, index, sx, args, avail, 3)
+                        | E.Comp(_, es)
+                            => compn("composition", exp, params, index, sx, [], args, avail)
+                        | _ => (case (mkProbe exp)
+                            of E.Probe _ => lift ("probe", mkProbe exp, params, index, sx, args, avail)
+                            | exp       => rewrite(sx, mkProbe exp, params, args)
+                            (* end case*))
+                    (*end case*))
                   | E.OField _ => lift ("probe", exp, params, index, sx, args, avail)
-                  | E.Sum(_, E.Probe _) => lift ("probe", exp, params, index, sx, args, avail)
+                  | E.Sum(sx2, e) => 
+                    (case  mkProbe(e) 
+                        of E.Probe(E.Comp(_, es), _) =>  compn("composition", e, params, index, sx, sx2, args, avail)
+                        | E.Probe _ => lift ("probe", exp, params, index, sx, args, avail)
+                        | e => let
+                            val _ = print" sum of somethins"
+                            val (e', params', args') = rewrite (sx2@sx, e, params, args)
+                            in
+                              (E.Sum(sx2, e'), params', args')
+                            end
+                    (*end case*))
                   | E.Op1(op1, e1) => let
                       val (e1', params', args') = rewrite (sx, e1, params, args)
                       val ([e1], params', args') = filterOps ([e1'], params', args', index, sx)
@@ -142,15 +243,10 @@ structure FloatEin : sig
                       in
                         (E.Opn(opn, es), params, args)
                       end
-                  | E.Sum(sx1, e) => let
-                      val (e', params', args') = rewrite (sx1@sx, e, params, args)
-                      in
-                        (E.Sum(sx1, e'), params', args')
-                      end
                   | _ => (exp, params, args)
                 (* end case *))
-          val (body', params', args') = rewrite ([], body, params, args)
-          val einapp = CleanParams.clean (body', params', index, args')
+          val (body', params', args') = rewrite ([], mkProbe body, params, args)
+          val einapp = CleanParams.clean (mkProbe body', params', index, args')
           in
             List.rev ((y, einapp) :: AvailRHS.getAssignments avail)
           end

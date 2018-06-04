@@ -51,7 +51,7 @@ structure Apply : sig
             | mapMu c = c
           fun mapAlpha mx = List.map mapMu mx
           fun mapSingle i = let
-                val E.V v = mapIndex(i, subMu, shift')
+            	val E.V v = if(!insideComp) then  (E.V i) else mapIndex(i, subMu, shift')
                 in
                   v
                 end
@@ -80,6 +80,11 @@ structure Apply : sig
                   | E.Value _ => raise Fail "expression before expand"
                   | E.Img _ => raise Fail "expression before expand"
                   | E.Krn _ => raise Fail "expression before expand"
+                  | E.Comp(e1, es) =>  
+                  	let
+                        val e1' = apply e1
+                        val es' = List.map (fn(e2, n2)=> (insideComp:=true; (apply e2, n2))) es
+                    in (insideComp:=false; E.Comp(e1', es')) end
                   | E.OField(E.CFExp es, e2,dx) => let
                       val es = List.map (fn (id, inputTy) => (mapParam id, inputTy)) es
                       val e2 = apply e2
@@ -121,8 +126,10 @@ structure Apply : sig
           val changed = ref false
           val (params', origId, substId, paramShift) = rewriteParams(params, params2, place)
           val sumIndex = ref(length index)
-          fun rewrite (id, mx, e) = let
-                val x = !sumIndex
+          val insideComp = ref(false)
+          fun rewrite (id, mx, e, shape) = let
+                val comp = !insideComp
+                val x = if(comp) then (length index) else  !sumIndex
                 in
                   if (id = place)
                     then if (length mx = length index2)
@@ -137,36 +144,43 @@ structure Apply : sig
                       (* end case *))
                 end
           fun sumI e = let val (v,_,_) = List.last e in v end
-          fun apply b = (case b
-                 of E.Tensor(id, mx) => rewrite (id, mx, b)
-                  | E.Field(id, mx) => rewrite (id, mx, b)
+          fun apply (b, shape) = (case b
+                 of E.Tensor(id, mx) => rewrite (id, mx, b, shape)
+                  | E.Field(id, mx) => rewrite (id, mx, b, shape)
                   | E.Zero(mx) => b
-                  | E.Lift e1 => E.Lift(apply e1)
+                  | E.Lift e1 => E.Lift(apply (e1, shape))
                   | E.Conv(v, mx, h, ux) => E.Conv(mapId(v, origId, 0), mx, mapId(h, origId, 0), ux)
-                  | E.Apply(e1, e2) => E.Apply(apply e1, apply e2)
-                  | E.Probe(f, pos) => E.Probe(apply f, apply pos)
+                  | E.Apply(e1, e2) => E.Apply(apply (e1, shape), apply (e2, shape))
+                  | E.Probe(f, pos) => E.Probe(apply (f, shape), apply (pos, shape))
                   | E.Value _ => raise Fail "expression before expand"
                   | E.Img _ => raise Fail "expression before expand"
                   | E.Krn _ => raise Fail "expression before expand"
+                  | E.Comp(e1, es) => 
+                    let
+                        val fouter = apply(e1, shape)
+                        val es' = List.map (fn (e2, n2) => (insideComp:=true; (apply (e2, n2), n2))) es
+                        in
+                          (insideComp:= true; E.Comp(fouter, es'))
+                        end
                   | E.OField(E.CFExp es, e2, E.Partial alpha) => let
                       val ps = List.map (fn (id, inputTy) => (mapId(id, origId, 0), inputTy)) es
                       in
-                        E.OField(E.CFExp ps, apply e2, E.Partial alpha)
+                        E.OField(E.CFExp ps, apply (e2, shape), E.Partial alpha)
                       end
                   | E.Poly _ => raise Fail "expression before expand"
                   | E.Sum(indices, esum) => let
                       val (ix, _, _) = List.last indices
                       in
                         sumIndex := ix;
-                        E.Sum(indices, apply esum)
+                        E.Sum(indices, apply (esum, shape))
                       end
-                  | E.Op1(op1, e1) => E.Op1(op1, apply e1)
-                  | E.Op2(op2, e1, e2) => E.Op2(op2, apply e1, apply e2)
-                  | E.Op3(op3, e1, e2, e3) => E.Op3(op3, apply e1, apply e2, apply e3)
-                  | E.Opn(opn, es) => E.Opn(opn, List.map apply es)
+                  | E.Op1(op1, e1) => E.Op1(op1, apply (e1, shape))
+                  | E.Op2(op2, e1, e2) => E.Op2(op2, apply (e1, shape), apply (e2, shape))
+                  | E.Op3(op3, e1, e2, e3) => E.Op3(op3, apply (e1, shape), apply (e2, shape), apply (e3, shape))
+                  | E.Opn(opn, es) => E.Opn(opn, List.map (fn e1=> apply(e1, shape)) es)
                   | _ => b
                 (* end case *))
-          val body'' = apply body
+          val body'' = apply (body, index2)
           in
             if (! changed)
               then SOME(E.EIN{params=params', index=index, body=body''})
