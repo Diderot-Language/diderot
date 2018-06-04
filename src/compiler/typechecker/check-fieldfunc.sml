@@ -25,7 +25,6 @@ structure CheckFieldFunc : sig
    
   (* an expression to return when there is a type error *)
     fun err arg = (TypeError.error arg; ())
-    val warn = TypeError.warning
 
     datatype token = datatype TypeError.token
 
