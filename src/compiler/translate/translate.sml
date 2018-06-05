@@ -315,14 +315,17 @@ print(concat["doVar (", SV.uniqueNameOf srcVar, ", ", IR.phiToString phi, ", _) 
                 env
               end
           end
+
     fun gather(IR.ND{kind,...}) = (case kind
            of IR.ASSIGN{stm, pred, ...} => (IR.ASSGN stm) :: gather(!pred)
             | IR.ENTRY _ => []
           (* end case *))
+
     fun tensorSize v = (case IR.Var.ty v
            of DstTy.TensorTy alpha => alpha
             | _ => raise Fail "Type is a not a tensor"
           (* end case *))
+
   (* expression translation *)
     fun cvtExp (env : env, lhs, exp) = (case exp
            of S.E_Var x => [IR.ASSGN(lhs, IR.VAR(lookup env x))]

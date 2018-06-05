@@ -22,17 +22,7 @@ structure HandleEin : sig
         (* ************** distribute and push Summation*********** *)
           val ein' = EinSums.transform ein
         (* **************** split phase ************* *)
-         fun iter([], ys) = ys
-		  | iter(e1::es, ys) = 
-		    let
-			  val (lhs, DstIR.EINAPP(e, a)) = e1
-			  val y1 = FloatEin.transform (lhs, e, a)
-			  in
-				iter(es, ys@y1)
-			  end
-		  val newbies = [(lhs, DstIR.EINAPP(ein', args))]
-          val newbies = iter(newbies, [])
-          val newbies = iter(newbies, [])
+          val newbies = FloatEin.transform (lhs, ein', args)
         (* **************** translate of fields ************* *)
           val newbies = List.foldr (fn (e, acc) => TranslateOField.transform e @ acc) [] newbies
         (* ************** ProbeEIN *********** *)

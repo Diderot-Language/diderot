@@ -337,7 +337,7 @@ structure BasisVars =
           in
            [t, t, Ty.realTy, Ty.realTy, Ty.realTy] --> t
           end))
-          
+
   (* Eigenvalues/vectors of a matrix; we only support this operation on 2x2 and 3x3 matrices, so
    * we overload the function.
    *)
