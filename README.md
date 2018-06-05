@@ -1,4 +1,4 @@
-testing
+
 # The Diderot language compiler
 
 This repository is the future home of the first official release of
