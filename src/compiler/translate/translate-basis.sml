@@ -179,10 +179,9 @@ structure TranslateBasis : sig
 *)
                 (BV.pow_ri,             fn (y, _, [f, n]) => case IR.Var.getDef n
                                            of IR.LIT(Literal.Int n) =>
-                                                [assignEin(y, Mk.powTI(IntInf.toInt n), [f])]
-(* FIXME: there is no guarantee that n will be constant! *)
-                                            | _ => raise Fail "impossible"
-                                          (* end case *)),
+                                                [assignEin(y, Mk.powTI( IntInf.toInt n), [f])]
+                                            | _ => [IR.ASSGN(y, IR.OP(Op.Power, [f, n]))]
+                                          (* end case *)),  
                 (BV.pow_rr,             fn (y, _, args) => assign(y, Op.MathFn MathFns.POW, args)),
                 (BV.pow_si,             fn (y, [_, Ty.DIM d1], [f, n]) => let
                                           fun getN x  = (case IR.Var.getDef x

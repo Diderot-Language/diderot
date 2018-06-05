@@ -89,43 +89,7 @@ structure NormalizeEin : sig
               | _                  => E.Probe(fld, x)
             (* end case *)
           end
-          
-    fun mkComp(F, es, x) = let
-        fun return e = (ST.tick cntProbe; e)
-        fun setInnerProbe e = E.Probe(E.Comp(e, es), x)
-        val probe = setInnerProbe F
-        in (case F
-            of E.Tensor _        => err "Tensor without Lift"
-            | E.Lift e           => return e
-            | E.Zero _           => return F
-            | E.Partial _        => err "Probe Partial"
-            | E.Probe _          => err "Probe of a Probe"
-            | E.Value _          => err "Value used before expand"
-            | E.Img _            => err "Probe used before expand"
-            | E.Krn _            => err "Krn used before expand"
-            | E.Comp c           => probe (* handled next stage*)
-            | E.Epsilon _        => return F
-            | E.Eps2 _           => return F
-            | E.Const _          => return F
-            | E.Delta _          => return F
-            | E.Sum(sx1, e)      => return (E.Sum(sx1, setInnerProbe e))
-            | E.Op1(op1, e)      => return (E.Op1(op1, setInnerProbe e))
-            | E.Op2(op2, e1, e2) =>
-                let
-                val exp1 = setInnerProbe e1
-                val exp2 = setInnerProbe e2
-                val xexp = E.Op2(op2, exp1, exp2)
-                in return xexp end
-            | E.Opn(opn, [])     => err "Probe of empty operator"
-            | E.Opn(opn, es1)     =>
-                let
-                val exps =  List.map (fn e1 => setInnerProbe e1) es1
-                val xexp = E.Opn(opn, exps)
-                in return xexp end
-            | _                  => probe
-            (* end case *))
-        end
-        
+
   (* rewrite body of EIN *)
     fun transform (ein as Ein.EIN{params, index, body}) = let
           (* DEBUG val _ = print(String.concat["\ntransform", EinPP.expToString(body)])*)
@@ -137,9 +101,6 @@ structure NormalizeEin : sig
                  of SOME e => e
                   | NONE => mkProd args
                 (* end case *))
-          val sumX = ref (length index)
-          fun incSum() = sumX:= (!sumX+2)
-          fun addSum((v, _, _)::sx) = sumX:= (!sumX)+v
           fun rewrite body = (case body
                  of E.Const _ => body
                   | E.ConstR _ => body
@@ -161,29 +122,12 @@ structure NormalizeEin : sig
                   | E.Apply(E.Partial d1, e1) => let
                       val e1 = rewrite e1
                       in
-                        case Derivative.mkApply(E.Partial d1, e1, params, !sumX)
+                        case Derivative.mkApply(E.Partial d1, e1)
                          of SOME e => (ST.tick cntApplyPartial; e)
                           | NONE => E.Apply(E.Partial d1, e1)
                         (* end case *)
                       end
                   | E.Apply _ => err "Ill-formed Apply expression"
-                  | E.Comp(E.Comp(a, es1), es2) => (ST.tick cntProbe; rewrite (E.Comp(a, es1@es2)))
-                  | E.Comp(a, (E.Comp(b, es1), m)::es2) =>  
-                    (ST.tick cntProbe; rewrite (E.Comp(a, ((b,m)::es1)@es2)))
-                  | E.Comp(e1, es) =>
-                    let
-                      val e1' = rewrite e1
-                      val es' = List.map (fn (e2, n2)=> (rewrite e2, n2)) es
-                      in  E.Comp(e1', es') end
-                  | E.Probe(E.Comp(e1, es), x) =>
-                    let
-                      val e1' = rewrite e1
-                      val es' = List.map (fn (e2, n2)=> (rewrite e2, n2)) es
-                      in (case (rewrite(E.Comp(e1', es')))
-                        of E.Comp(e1', es') => mkComp(e1', es', x)
-                        | e => e
-                        (*end case*))
-                      end
                   | E.Probe(e1, e2) => mkProbe(rewrite e1, rewrite e2)
                 (************** Field Terms **************)
                   | E.OField(ofld, e, alpha) => E.OField(ofld, rewrite e, alpha)

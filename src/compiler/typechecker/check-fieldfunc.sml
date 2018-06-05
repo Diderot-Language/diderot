@@ -44,7 +44,7 @@ structure CheckFieldFunc : sig
     val einOps = [
             BasisNames.op_add, BasisNames.op_sub, BasisNames.op_mul, BasisNames.op_dot,
             BasisNames.op_cross, BasisNames.op_convolve, BasisNames.op_outer, BasisNames.op_colon,
-            BasisNames.op_div, BasisNames.op_pow, BasisNames.op_at ,BasisNames.op_neg,
+            BasisNames.op_div, BasisNames.op_at ,BasisNames.op_neg,
             BasisNames.op_D, BasisNames.op_Ddot, BasisNames.op_Dotimes, BasisNames.op_curl, BasisNames.op_norm,
             BasisNames.fn_inv, BasisNames.fn_modulate, BasisNames.fn_normalize, BasisNames.fn_trace,
             BasisNames.fn_transpose, BasisNames.fn_acos, BasisNames.fn_asin, BasisNames.fn_atan,
@@ -85,7 +85,8 @@ structure CheckFieldFunc : sig
             | PT.E_Real e => funcErr (cxt, S "real expression")
             | PT.E_LoadSeq nrrd=> funcErr (cxt, S "load Seq")
             | PT.E_LoadImage nrrd => funcErr (cxt, S "load Image")
-            | PT.E_Var x => ()
+            | PT.E_Var x => funcErr (cxt, S "variable")
+                (* FIXME: need to look up this variable and check corresponding expressions *)
             | PT.E_Kernel(kern, dim) => funcErr (cxt, S "select expression")
             | PT.E_Lit lit => ()
             | PT.E_Id d => ()
