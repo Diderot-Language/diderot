@@ -174,9 +174,6 @@ structure TranslateBasis : sig
                                           [assignEin(y, Mk.divSS d, xs)]),
                 (BV.div_ts,             fn (y, [_,Ty.DIM d, Ty.SHAPE dd], xs) =>
                                           [assignEin(y, Mk.divTS(d, dd), xs)]),
-(*
-                (BV.pow_ri,             simpleOp Op.Power),
-*)
                 (BV.pow_ri,             fn (y, _, [f, n]) => case IR.Var.getDef n
                                            of IR.LIT(Literal.Int n) =>
                                                 [assignEin(y, Mk.powTI( IntInf.toInt n), [f])]
