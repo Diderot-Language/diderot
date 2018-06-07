@@ -80,6 +80,7 @@ structure Ein =
       | Conv of param_id * alpha * param_id * alpha
       | Partial of alpha
       | Apply of ein_exp * ein_exp
+      | Comp of ein_exp * subEIN list
       | Probe of ein_exp * ein_exp
       | OField of ofield * ein_exp * ein_exp (* field arg T, exp, E.Partial dx *) (* FIXME: need more info *)
     (* Mid-IL Terms *)
@@ -97,6 +98,6 @@ structure Ein =
     withtype alpha = mu list
         and pos = ein_exp
         and sumrange = index_id * int * int
-
+        and subEIN = ein_exp * index_bind list
   end
 
