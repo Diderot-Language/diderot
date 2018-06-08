@@ -9,7 +9,7 @@
 
 structure Derivative : sig
 
-    val mkApply : Ein.ein_exp * Ein.ein_exp -> Ein.ein_exp option
+    val mkApply : Ein.ein_exp * Ein.ein_exp * Ein.param_kind list * Ein.index_id -> Ein.ein_exp option
 
   end  = struct
 
@@ -141,8 +141,72 @@ structure Derivative : sig
                 end
         (* end case*))
 
+    (* rewrite free index (i) in  expression e to vk *)
+    fun rewriteIx(vk, e) = let
+        (* the variable index inside a composition will start at 0*)
+        fun change(E.V 0) = E.V vk
+          | change ix     = ix
+        in (case e
+            of E.Const _ => e
+            | E.Tensor(id2, alpha) => E.Tensor(id2, List.map (fn e => change(e)) alpha)
+            | E.Zero (alpha) => E.Zero(List.map (fn e => change(e)) alpha)
+            | E.Delta (i, j) => E.Delta(change i, change j)
+            | E.Epsilon (i, j, k) => E.Epsilon(change i, change j, change k)
+            | E.Eps2 (i, j) => E.Eps2(change i, change j)
+            | E.Field(id2, alpha) => E.Field(id2, List.map (fn e => change(e)) alpha)
+            | E.Lift e1  => E.Lift(rewriteIx(vk, e1))
+            | E.Conv(id2, alpha, h2, dx2) => E.Conv(id2, List.map (fn e => change(e)) alpha, h2, dx2)
+            | E.Partial(alpha) => E.Partial (List.map (fn e => change(e)) alpha)
+            | E.Apply(e1, e2) => E.Apply(e1, rewriteIx(vk, e2))
+            | E.Probe(e1, e2) => E.Probe(rewriteIx(vk, e1), e2)
+            | E.Comp(e1, es) => E.Comp(rewriteIx(vk, e1), es)
+            | E.Sum(sx, e1) => E.Sum(sx, rewriteIx(vk, e1))
+            | E.Op1(op1, e1) => E.Op1(op1, rewriteIx(vk, e1))
+            | E.Op2(op2, e1, e2) => E.Op2(op2, rewriteIx(vk, e1), rewriteIx(vk, e2))
+            | E.Opn(opn, es) => E.Opn(opn, List.map (fn e => rewriteIx(vk, e)) es)
+            |  _ => e
+            (*end case*))
+        end
+
+    fun findDim(e, params) = (case e
+            of E.Const _     => NONE
+            | E.Tensor _     => NONE
+            | E.Zero _       => NONE
+            | E.Delta _      => NONE
+            | E.Epsilon _    => NONE
+            | E.Eps2 _       => NONE
+            | E.Lift _       => NONE
+            | E.Field(id, _) => let
+                val E.IMG(d, _) = List.nth(params, id)
+                in SOME(d) end
+            | E.Conv(id, _, _, _) => let
+                val E.IMG(d, _) = List.nth(params, id)
+                in SOME(d) end
+
+            | E.Partial _    => NONE
+            | E.Apply(e1, e2) => findDim(e2, params)
+            | E.Probe(e1, e2) => findDim(e1, params)
+            | E.Comp(e1, _) => findDim(e1, params)
+            | E.Sum(_, e1)   => findDim(e1, params)
+            | E.Op1(_, e1)   => findDim(e1, params)
+            | E.Op2(_, e1, e2) =>
+                (case findDim(e1, params)
+                    of NONE => findDim(e2, params)
+                    |  e => e
+                (*end case *))
+            | E.Opn(_, es)   => let
+                fun iter([]) = NONE
+                  | iter(e1::es) =
+                    (case findDim(e1, params)
+                        of NONE => iter(es)
+                        |  e => e
+                        (*end case *))
+                in iter(es) end
+            |  _ => raise Fail(String.concat["find Dim does not handle: ", EinPP.expToString(e)])
+        (* end case*))
+        
   (* rewrite Apply nodes *)
-    fun mkApply (E.Partial dx, e:Ein.ein_exp) = (case e
+    fun mkApply (px as E.Partial dx, e:Ein.ein_exp, params, sumX) = (case e
            of E.Const _ => SOME zero
             | E.ConstR _ => SOME zero
             | E.Tensor _ => err "Tensor without Lift"
@@ -160,6 +224,22 @@ structure Derivative : sig
             | E.Value _ => err "Value used before expand"
             | E.Img _ => err "Probe used before expand"
             | E.Krn _ => err "Krn used before expand"
+            | E.Comp(e1, [(e2, n)]) =>
+				let
+				    val (d0::dn) = dx
+                    val p0 = E.Partial[d0]
+					val E.V ii = d0
+					val vk =  100+sumX (* need to fix*)
+					val px' = E.Partial[E.V vk]
+					val e3 = E.Comp(E.Apply(px', e1), [(e2, n)])
+					val e5 = rewriteIx(vk, e2)
+					val e4 = E.Apply(p0, e5) (* should p0 here be rewritten? or shifted base don the length of n  *)
+					val SOME(d)  = findDim(e1, params)
+					val en = E.Sum([(vk, 0, d-1)], E.Opn(E.Prod, [e3, e4]))
+					fun iterDn e2 = if null dn then e2 else E.Apply(E.Partial dn, e2)
+					(*val _ = (String.concat["\napply derivative:\n\t", "think new dx is ", Int.toString(vk), "-", EinPP.expToString(E.Apply(px, e )), "\n\t== =>\n, ", EinPP.expToString(en)])*)
+				in SOME (iterDn en) end
+              | E.Comp _ => err "unsupported differentiation of comp"
             | E.OField(ofld, e2, E.Partial alpha) => SOME(E.OField(ofld, e2, E.Partial(alpha @ dx)))
             | E.Sum(sx, e1) => SOME(E.Sum(sx, E.Apply(E.Partial dx, e1)))
             | E.Op1(op1, e1) => SOME(applyOp1(op1, e1, dx))
