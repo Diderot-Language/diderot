@@ -1017,22 +1017,21 @@ structure MkOperators : sig
               body = concatBody (E.Field, shape, nflds, 0)
             }
             
-    fun composition (dim0, shape0, dim1, shape1) = 
-        let
-         fun err exp = raise Fail (concat["\n Composition incorrect \n\t Expected: Vector field of length ", Int.toString(dim0), "\n\t Observed: ", exp, "\n"])
-         val _ = (case shape1
-            of [] => if(dim0=1) then () else err("scalar field") 
-            | [n] => if(dim0=n) then () else err("vector field of length"^Int.toString(n)) 
-            | _ => err("second-order tensor field")
+    fun composition (dim0, shape0, dim1, shape1) = let
+          fun err exp = raise Fail (concat["\n Composition incorrect \n\t Expected: Vector field of length ", Int.toString(dim0), "\n\t Observed: ", exp, "\n"])
+          val _ = (case shape1
+                of [] => if(dim0=1) then () else err("scalar field") 
+                | [n] => if(dim0=n) then () else err("vector field of length"^Int.toString(n)) 
+                | _ => err("second-order tensor field")
             (* end case *))
-         val expindex0 = specialize(shape0, 0)
-         val expindex1 = specialize(shape1, 0)
+          val expindex0 = specialize(shape0, 0)
+          val expindex1 = specialize(shape1, 0)
           in
             E.EIN{
                 params = [E.FLD (dim0), E.FLD (dim1)], 
                 index = shape0, 
                 body = E.Comp (E.Field(0, expindex0), [(E.Field(1, expindex1), shape1)])
-            }
+             }
           end
           
   (* Lerp<ty>(a, b, t) -- computes a + t*(b-a), where a and b have type ty

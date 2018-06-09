@@ -67,7 +67,7 @@ structure EinUtil : sig
                 | (E.Partial ix, E.Partial jx) => sameIndex(ix, jx)
                 | (E.Apply(e11, e12), E.Apply(e21, e22)) => same(e11, e21) andalso same(e12, e22)
                 | (E.Comp(e11, es1), E.Comp(e21, es2)) =>
-                    same(e11,e21) andalso sameSubEin(es1, es2)
+                    same(e11, e21) andalso sameSubEin(es1, es2)
                 | (E.Probe(e11, e12), E.Probe(e21, e22)) => same(e11, e21) andalso same(e12, e22)
                 | (E.Value i, E.Value j) => (i = j)
                 | (E.Img(id1, ix1, pos1, s1), E.Img(id2, ix2, pos2, s2)) =>
@@ -89,7 +89,7 @@ structure EinUtil : sig
                 | _ => false
               (* end case *))
         and sameSubEin([], []) = true
-            | sameSubEin ((e1,_)::es1, (e2,_)::es2) = same(e1, e2) andalso sameSubEin(es1, es2)
+            | sameSubEin ((e1 ,_)::es1, (e2, _)::es2) = same(e1, e2) andalso sameSubEin(es1, es2)
             | sameSubEin _ = false
         and sameList ([], []) = true
           | sameList (e1::es1, e2::es2) = same(e1, e2) andalso sameList(es1, es2)

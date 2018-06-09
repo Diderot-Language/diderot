@@ -77,11 +77,12 @@ structure Apply : sig
                   | E.Partial mx => E.Partial (mapAlpha mx)
                   | E.Apply(e1, e2) => E.Apply(apply e1, apply e2)
                   | E.Probe(f, pos) => E.Probe(apply f, apply pos)
-                  | E.Comp(e1, es) =>  
-                  	let
-                        val e1' = apply e1
-                        val es' = List.map (fn(e2, n2)=> (insideComp:=true; (apply e2, n2))) es
-                    in (insideComp:=false; E.Comp(e1', es')) end
+                  | E.Comp(e1, es) => let
+                      val e1' = apply e1
+                      val es' = List.map (fn(e2, n2)=> (insideComp:=true; (apply e2, n2))) es
+                      in
+                        (insideComp:=false; E.Comp(e1', es'))
+                      end
                   | E.Value _ => raise Fail "expression before expand"
                   | E.Img _ => raise Fail "expression before expand"
                   | E.Krn _ => raise Fail "expression before expand"
@@ -129,7 +130,7 @@ structure Apply : sig
           val insideComp = ref(false)
           fun rewrite (id, mx, e, shape) = let
                 val comp = !insideComp
-                val x = if(comp) then (length index) else  !sumIndex
+                val x = if(comp) then (length index) else !sumIndex
                 in
                   if (id = place)
                     then if (length mx = length shape)
@@ -155,13 +156,12 @@ structure Apply : sig
                   | E.Value _ => raise Fail "expression before expand"
                   | E.Img _ => raise Fail "expression before expand"
                   | E.Krn _ => raise Fail "expression before expand"
-                  | E.Comp(e1, es) => 
-                    let
-                        val fouter = apply (e1, shape)
-                        val es' = List.map (fn (e2, n2) => (insideComp:=true; (apply (e2, n2), n2))) es
-                        in
-                          (insideComp:= true; E.Comp(fouter, es'))
-                        end
+                  | E.Comp(e1, es) => let
+                      val fouter = apply (e1, shape)
+                      val es' = List.map (fn (e2, n2) => (insideComp:=true; (apply (e2, n2), n2))) es
+                      in
+                        (insideComp:= true; E.Comp(fouter, es'))
+                      end
                   | E.OField(E.CFExp es, e2, E.Partial alpha) => let
                       val ps = List.map (fn (id, inputTy) => (mapId(id, origId, 0), inputTy)) es
                       in

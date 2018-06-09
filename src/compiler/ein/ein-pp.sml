@@ -57,9 +57,8 @@ structure EinPP : sig
             | E.Partial alpha => "∂/∂x" ^ multiIndex2s alpha
             | E.Apply(e1, e2) => concat [ expToString e1, "@(", expToString e2, ")"]
             | E.Probe(e1, e2) => concat ["Probe(", expToString e1, ",", expToString e2, ")"]
-            | E.Comp(e1, es) => 
-                let
-                  fun f(e2, n1) = concat ["[", expToString e2, "{", shp2s n1, "}", "]"]
+            | E.Comp(e1, es) => let
+                fun f(e2, n1) = concat ["[", expToString e2, "{", shp2s n1, "}", "]"]
                 in 
                   concat ["Cmp(", expToString e1,")", String.concatWithMap ", " f es] 
                 end

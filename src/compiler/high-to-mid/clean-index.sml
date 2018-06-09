@@ -97,6 +97,7 @@ structure CleanIndex : sig
                   | E.Partial alpha => addMus(ixs, alpha)
                   | E.Apply(E.Partial alpha, e1) => shape (e1, addMus(ixs, alpha))
                   | E.Probe(e, _) => shape (e, ixs)
+                  | E.Comp(e1, _) => shape(e1, ixs)
                   | E.OField(_, e2, E.Partial alpha) => shape (e2, addMus(ixs, alpha))
                   | E.Poly(_, _, alpha) => addMus (ixs, alpha)
                   | E.Value e1 => raise Fail "Error in Ashape"
@@ -137,6 +138,7 @@ structure CleanIndex : sig
                   | E.Conv(_, alpha, _, dx) => alpha @ dx @ ixs
                   | E.Partial alpha => alpha @ ixs
                   | E.Apply(E.Partial dx, e) => shape (e, dx@ixs)
+                  | E.Comp(e1, _) => shape(e1, ixs)
                   | E.Probe(e, _) => shape (e, ixs)
                   | E.OField(_, e2, E.Partial alpha) => shape(e2, alpha@ixs)
                   | E.Poly(_, _, alpha) => alpha@ ixs
@@ -253,6 +255,7 @@ structure CleanIndex : sig
                   | E.Probe(E.Conv(v, alpha, h,dx), t) =>
                       E.Probe(E.Conv(v, getAlpha alpha, h, getAlpha dx), rewrite t)
                   | E.Probe (e1, e2) => E.Probe(rewrite e1, rewrite e2)
+                  | E.Comp(e1, es) => E.Comp(rewrite e1, es)
                   | E.OField (opn, e1, E.Partial dx) =>
                       E.OField(opn, rewrite e1, E.Partial(getAlpha dx))
                   | E.Poly(e1, n, dx) => E.Poly(rewrite e1, n, getAlpha dx)
