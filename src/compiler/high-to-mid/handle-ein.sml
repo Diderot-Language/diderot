@@ -22,7 +22,7 @@ structure HandleEin : sig
       | iter((lhs, DstIR.EINAPP(e, a))::es, ys) = iter(es, ys@(FloatEin.transform (lhs, e, a)))
           
     fun expand (lhs, ein, args) = let
-        val _ = print(concat["\n\n\n*****\n expand ***\n\t:", EinPP.toString(ein),"\n\t"])
+        val _ = (concat["\n\n\n*****\n expand ***\n\t:", EinPP.toString(ein),"\n\t"])
         (* ************** distribute and push Summation*********** *)
           val ein' = EinSums.transform ein
         (* **************** split phase ************* *)
