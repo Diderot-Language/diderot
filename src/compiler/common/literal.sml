@@ -15,6 +15,7 @@ structure Literal : sig
       | Real of RealLit.t               (* real literals *)
       | String of string                (* strings *)
       | Bool of bool                    (* booleans *)
+      | InVar of string                 (* field function input variable *)
 
     val toString : t -> string
 
@@ -38,17 +39,20 @@ structure Literal : sig
       | Real of RealLit.t               (* real literals *)
       | String of string                (* strings *)
       | Bool of bool                    (* booleans *)
-
+      | InVar of string 
+      
     fun toString (Int i) = IntLit.toString i
       | toString (Real flt) = RealLit.toString flt
       | toString (String s) = concat["\"", String.toCString s, "\""]
       | toString (Bool true) = "true"
       | toString (Bool false) = "false"
+      | toString (InVar s) = concat["\"", String.toCString s, "\""]
 
     fun same (Int i1, Int i2) = IntLit.same(i1, i2)
       | same (Real f1, Real f2) = RealLit.same(f1, f2)
       | same (String s1, String s2) = (s1 = s2)
       | same (Bool b1, Bool b2) = (b1 = b2)
+      | same (InVar s1, InVar s2) = (s1 = s2)
       | same _ = false
 
     fun compare (Int i1, Int i2) = IntLit.compare(i1, i2)
@@ -63,7 +67,8 @@ structure Literal : sig
       | compare (_, Real _) = GREATER
       | compare (String _, _) = LESS
       | compare (_, String _) = GREATER
-
+      | compare (InVar s1, InVar s2) = String.compare(s1, s2)
+      
   (* for hash codes, use the low-order 4 bits for a type code *)
     local
       val intCd = 0w5
@@ -77,6 +82,8 @@ structure Literal : sig
       | hash (String s) = h(HashString.hashString s, stringCd)
       | hash (Bool false) = h(0w1, boolCd)
       | hash (Bool true) = h(0w3, boolCd)
+      | hash (InVar s) = h(HashString.hashString s, stringCd)
+      
     end (* local *)
 
   (* some standard constants *)
