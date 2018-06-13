@@ -10,9 +10,9 @@
 
 structure TranslateCFExp : sig
 
- (* FIXME: add comment explaining function and arguments *)
-    val transform_CFExp : MidIR.var * Ein.ein * MidIR.var list
-          -> MidIR.var list * Ein.param_kind list * Ein.ein_exp
+   (* Transform an EIN operator that has a closed-form expression *)
+    val transform_CFExp : Ein.ein * MidIR.var list
+          -> Ein.param_kind list * Ein.ein_exp * MidIR.var list
 
   end = struct
 
@@ -215,7 +215,7 @@ structure TranslateCFExp : sig
   (* main function
    * translate probe of cfexp to poly terms
   *)
-    fun transform_CFExp (y, ein as Ein.EIN{body, index, params}, args_orig) = let
+    fun transform_CFExp (ein as Ein.EIN{body, index, params}, args_orig) = let
           val E.Probe (E.OField (E.CFExp cfexp_ids, exp_fn, E.Partial dx), expProbe) = body
           val _ = checkParams (cfexp_ids, exp_fn, args_orig)
         (* field is probed with arguments *)
@@ -234,7 +234,7 @@ structure TranslateCFExp : sig
         (* normalize ein by cleaning it up and differntiating *)
           val exp_new = rewriteDifferentiate (E.Apply (E.Partial dx, exp_new))
           in
-            (args, params, exp_new)
+            (params, exp_new, args)
           end
 
   end
