@@ -64,6 +64,10 @@ structure Ein =
   (* other kinds of fields *)
     and ofield = CFExp of (param_id * input_ty) list      (* input variables TT and TF*)
 
+    and compare = GT | GTE | LT | LTE | EQ
+    
+    and conditional = Compare of compare * ein_exp * ein_exp | Var of param_id
+
     and ein_exp
     (* Basic terms *)
       = Const of int
@@ -88,6 +92,7 @@ structure Ein =
       | Krn of param_id * (mu * mu) list * int
       | Poly of ein_exp * int * alpha  (* ein_exp^n dx *)
     (* Ops *)
+      | If of conditional * ein_exp * ein_exp
       | Sum of sumrange list * ein_exp
       | Op1 of unary * ein_exp
       | Op2 of binary * ein_exp * ein_exp

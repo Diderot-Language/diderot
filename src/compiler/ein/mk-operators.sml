@@ -138,7 +138,10 @@ structure MkOperators : sig
 
     val conv : dim * shape -> Ein.ein
     val probe : shape * dim -> Ein.ein
-
+    val condField : dim * shape -> Ein.ein
+    val condField_GT : dim * shape -> Ein.ein
+    val condField_LT : dim * shape -> Ein.ein
+    
     val curl2d : Ein.ein
     val curl3d : Ein.ein
     val grad : shape -> Ein.ein
@@ -926,13 +929,13 @@ structure MkOperators : sig
     end (* local *)
    fun  maxF dim = 
         E.EIN{
-            params = [E.FLD (dim, []), E.FLD (dim, [])], 
+            params = [E.FLD dim, E.FLD dim], 
             index = [], 
             body = E.Op2(E.Max, E.Field(0, []), E.Field(1, []))
         }
     fun minF dim = 
         E.EIN{
-            params = [E.FLD (dim, []), E.FLD (dim, [])], 
+            params = [E.FLD dim, E.FLD dim], 
             index = [], 
             body = E.Op2(E.Min, E.Field(0, []), E.Field(1, []))
         }
@@ -1156,6 +1159,33 @@ structure MkOperators : sig
               }
           end
 
+    fun condField(dim, alpha) = let
+         val expindex = specialize(alpha, 0)
+         val ein = 
+          E.EIN{
+            params = [mkNoSubstTEN[], E.FLD dim, E.FLD dim], 
+            index = alpha, 
+            body = E.If(E.Var 0, E.Field(1, expindex) , E.Field(2, expindex))
+          }
+          val _ = print(String.concat["\nein cond:", EinPP.toString(ein)])
+         in ein 
+          end
+
+    fun condField_cond(condition, dim, alpha) = let
+         val expindex = specialize(alpha, 0)
+         val ein = 
+          E.EIN{
+            params = [mkTEN[], mkTEN[], E.FLD dim, E.FLD dim], 
+            index = alpha, 
+            body = E.If(E.Compare(condition, E.Tensor(0,[]),E.Tensor(1,[])), E.Field(2, expindex) , E.Field(3, expindex))
+          }
+          val _ = print(String.concat["\nein cond:", EinPP.toString(ein)])
+         in ein 
+          end
+    
+   fun condField_GT(dim, alpha) =  condField_cond(E.GT, dim, alpha)
+   fun condField_LT(dim, alpha) =  condField_cond(E.LT, dim, alpha)
+   
   (***************************** derivative ****************************)
 
   (* \EinExp{\sum_{ij}\mathcal{E}_{ij} \frac{F_j}{\partial x_i} *)

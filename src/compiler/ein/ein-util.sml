@@ -139,6 +139,7 @@ structure EinUtil : sig
                 | E.Krn (_, dels, dim) => 0w41 + hashDels dels + hashInt dim
                 | E.OField(ofld, e2, alpha) => 0w141 +hash' e2  + hash' alpha
                 | E.Poly(e1, n1, alpha2) => 0w143 + hash' e1 + hashInt n1 + hashAlpha alpha2
+                | E.If(comp, e3, e4) => 0w173+hash' e3 + hash' e4
                 | E.Sum(c,e1) => 0w53 + hash' e1
                 | E.Op1(e1,e2) => (case e1
                      of E.Cosine => 0w113 + hash' e2
