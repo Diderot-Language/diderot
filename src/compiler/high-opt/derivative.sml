@@ -113,6 +113,14 @@ structure Derivative : sig
                           end
                      (* end case *))
                   (* end case *))
+              | E.Max =>  let
+                  val comp = E.GT(e1, e2)
+                  val exp  = E.If(comp, inner1, inner2)
+                   in iterDn exp end
+              | E.Min =>  let
+                   val comp = E.LT(e1, e2)
+                   val exp  = E.If(comp, inner1, inner2)
+                   in iterDn exp end
             (* end case *)
           end
 

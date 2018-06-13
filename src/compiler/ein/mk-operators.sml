@@ -114,7 +114,9 @@ structure MkOperators : sig
     val tanF  : dim -> Ein.ein
     val atanR : Ein.ein
     val atanF : dim -> Ein.ein
-
+    val maxF : dim -> Ein.ein
+    val minF : dim -> Ein.ein
+    
     val modulateTT : shape -> Ein.ein
     val modulateTF : shape * dim -> Ein.ein
     val modulateFT : shape * dim -> Ein.ein
@@ -922,7 +924,19 @@ structure MkOperators : sig
     val atanR = tensorFn E.ArcTangent
     val atanF = liftFn E.ArcTangent
     end (* local *)
-
+   fun  maxF dim = 
+        E.EIN{
+            params = [E.FLD (dim, []), E.FLD (dim, [])], 
+            index = [], 
+            body = E.Op2(E.Max, E.Field(0, []), E.Field(1, []))
+        }
+    fun minF dim = 
+        E.EIN{
+            params = [E.FLD (dim, []), E.FLD (dim, [])], 
+            index = [], 
+            body = E.Op2(E.Min, E.Field(0, []), E.Field(1, []))
+        }
+        
   (************************* other tensor ops *************************)
 
     fun modulateTT shape = let

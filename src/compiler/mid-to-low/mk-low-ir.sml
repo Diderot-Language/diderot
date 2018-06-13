@@ -37,6 +37,8 @@ structure MkLowIR : sig
     val realSub : AvailRHS.t * LowIR.var * LowIR.var -> LowIR.var
     val realMul : AvailRHS.t * LowIR.var * LowIR.var -> LowIR.var
     val realDiv : AvailRHS.t * LowIR.var * LowIR.var -> LowIR.var
+    val realMax : AvailRHS.t * LowIR.var * LowIR.var -> LowIR.var
+    val realMin : AvailRHS.t * LowIR.var * LowIR.var -> LowIR.var
     val realNeg : AvailRHS.t * LowIR.var -> LowIR.var
     val realClamp : AvailRHS.t * LowIR.var * LowIR.var * LowIR.var -> LowIR.var
     val realSign : AvailRHS.t * LowIR.var -> LowIR.var
@@ -133,6 +135,8 @@ structure MkLowIR : sig
     val realSub = scalarOp2 Op.RSub
     val realMul = scalarOp2 Op.RMul
     val realDiv = scalarOp2 Op.RDiv
+    val realMax = scalarOp2R Op.Max
+    val realMin = scalarOp2R Op.Min
     val realNeg = scalarOp1 Op.RNeg
     val realAbs = scalarOp1R Op.Abs
     val realSign = scalarOp1 Op.Sign

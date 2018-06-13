@@ -159,6 +159,15 @@ structure NormalizeEin : sig
                       ST.tick cntDivDiv;
                       rewrite (mkDiv (mkProd[a, c], b)))
                   | E.Op2(op1, e1, e2) => E.Op2(op1, rewrite e1, rewrite e2)
+                 (************** min|max **************)
+                  | E.Op2(E.Min, e1, e2) => let
+                      val comp = E.LT(e1, e2)
+                      val exp  = E.If(comp, e1, e2)
+                      in (ST.tick cntProbe; exp) end
+                  | E.Op2(E.Max, e1, e2) => let
+                      val comp = E.GT(e1, e2)
+                      val exp  = E.If(comp, e1, e2)
+                      in (ST.tick cntProbe; exp) end
                   | E.Op3(op3, e1, e2, e3) =>
                       E.Op3(op3, rewrite e1, rewrite e2, rewrite e3)
                 (************* Algebraic Rewrites Opn **************)

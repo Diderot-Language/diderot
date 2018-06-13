@@ -102,6 +102,8 @@ structure EinPP : sig
                 end
            | E.Op2(E.Sub, e1, e2) => concat ["(", expToString e1, ") - (", expToString e2, ")"]
            | E.Op2(E.Div, e1, e2) => concat ["(", expToString e1, ") / ( ", expToString e2, ")"]
+           | E.Op2(E.Max, e1, e2) => concat ["Max(", expToString e1, ", ", expToString e2, ")"]
+           | E.Op2(E.Min, e1, e2) => concat ["Min(", expToString e1, ", ", expToString e2, ")"]
            | E.Op3(E.Clamp, e1, e2, e3) => concat["Clamp <", expToString e1, ",", expToString e2, ",", expToString e3,">"]
            | E.Opn(E.Add, el) => concat["(", String.concatWithMap " + " expToString el,")"]
            | E.Opn(E.Prod, el) => concat["(", String.concatWithMap " * " expToString el, ")"]

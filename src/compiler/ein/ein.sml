@@ -53,7 +53,7 @@ structure Ein =
       | Abs
       | Sgn (* sign (positive or negative) *)
 
-    and binary = Sub | Div
+    and binary = Sub | Div | Max | Min
 
     and ternary = Clamp
 

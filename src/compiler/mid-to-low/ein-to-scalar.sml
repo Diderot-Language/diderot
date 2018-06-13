@@ -139,6 +139,8 @@ structure EinToScalar : sig
                     | E.Op2(E.Div, e1 as E.Tensor (_, [_]), e2 as E.Tensor (_, [])) =>
                         gen (mapp, E.Opn(E.Prod, [E.Op2 (E.Div, E.Const 1, e2), e1]))
                     | E.Op2(E.Div, e1, e2) => Mk.realDiv (avail, gen (mapp, e1), gen (mapp, e2))
+                    | E.Op2(E.Max, e1, e2) => Mk.realMax (avail, gen (mapp, e1), gen (mapp, e2))
+                    | E.Op2(E.Min, e1, e2) => Mk.realMin (avail, gen (mapp, e1), gen (mapp, e2))
                     | E.Sum(sx, E.Opn(E.Prod, (img as E.Img _) :: (kargs as (E.Krn _ :: _)))) =>
                         FieldToLow.expand {
                             avail = avail, mapp = mapp,

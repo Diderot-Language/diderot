@@ -156,6 +156,8 @@ structure EinUtil : sig
                     (* end case *))
                 | E.Op2(E.Sub, e1, e2) => 0w79 + hash' e1 + hash' e2
                 | E.Op2(E.Div, e1, e2) => 0w83 + hash' e1 + hash' e2
+                | E.Op2(E.Max, e1, e2) => 0w163 + hash' e1 + hash' e2
+                | E.Op2(E.Min, e1, e2) => 0w167 + hash' e1 + hash' e2
                 | E.Op3(E.Clamp, e1, e2, e3) => 0w163 + hash' e1 + hash' e2 + hash' e3
                 | E.Opn(E.Add, es) => 0w71 + iter es
                 | E.Opn(E.Prod, es) => 0w103 + iter es
