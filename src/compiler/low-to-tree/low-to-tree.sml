@@ -496,6 +496,7 @@ structure LowToTree : sig
               | Op.IndexInside(info, s) => bindTREE (TOp.IndexInside(info, s))
               | Op.ImageDim(info, d) => bindTREE(TOp.ImageDim(info, d))
               | Op.MathFn f => bindTREE (TOp.MathFn f)
+              | Op.IfWrap => bindTREE(TOp.IfWrap )
               | rator => raise Fail("bogus operator " ^ Op.toString srcRator)
             (* end case *)
           end
@@ -661,8 +662,8 @@ structure LowToTree : sig
                   val lhs = newLocal (env, getLHS ())
                   val (args, stms') = simpleArgs (env, args)
                   in
-		    mkDefn (lhs, T.E_Op(TOp.MkDynamic(U.trType ty, n), args))
-		      :: stms' @ stms
+            mkDefn (lhs, T.E_Op(TOp.MkDynamic(U.trType ty, n), args))
+              :: stms' @ stms
                   end
               | IR.OP(Op.Strands _, _) => stms (* Op.Strands is translated by trMapReduce *)
               | IR.OP(Op.LoadSeq(ty, file), []) => let

@@ -102,6 +102,8 @@ ArcTan : : 1 : 1 : returns the arctangent
 Exp    : : 1 : 1 : returns "e" raised to its argument
 Sign   : : 1 : 1 : returns -1, 0, or 1 depending on the sign of its argument
 #
+#ifwrap
+IfWrap:: 1 :3 : #if expression. creates in-line function else.
 # compute integral parts of reals
 Ceiling : int : 1 : 1 : compute real ceiling of a vector
 Floor : int : 1 : 1 : compute real floor of a vector
