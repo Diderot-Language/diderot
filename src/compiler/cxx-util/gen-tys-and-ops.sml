@@ -641,6 +641,14 @@ structure GenTysAndOps : sig
                               "sphere_query",
                               [CL.mkVar RN.selfVar, posExp, CL.mkVar "radius"]))))
                       end
+                  | RIfWrap => let
+                      val t1 = "float IfWrap (bool  e1, float e3, float e4)"
+                      val t2 = "\n\t{"
+                      val t3 = " \n\t\t if(e1){return e3;}"
+                      val t4 = "\n\t\t    else{return e4;}"
+                      val t5 = "\n\t}"
+                      val es = [t1,t2,t3,t4,t5]
+                      in CL.D_Verbatim es end
                 (* end case *))
           in
             dcl :: dcls
