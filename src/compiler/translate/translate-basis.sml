@@ -441,8 +441,12 @@ structure TranslateBasis : sig
                 (BV.evecs3x3,           eigenVec (Op.Eigen3x3, 3)),
                 (BV.fn_max_i,           simpleOp (Op.Max DstTy.IntTy)),
                 (BV.fn_max_r,           simpleOp (Op.Max DstTy.realTy)),
+                (BV.fn_maxF_s,           fn (y, [_, Ty.DIM d1], xs) =>
+                                          [assignEin(y, Mk.maxF d1, xs)]),                                            
                 (BV.fn_min_i,           simpleOp (Op.Min DstTy.IntTy)),
                 (BV.fn_min_r,           simpleOp (Op.Min DstTy.realTy)),
+                (BV.fn_minF_s,           fn (y, [_, Ty.DIM d1], xs) =>
+                                          [assignEin(y, Mk.minF d1, xs)]),
                 (BV.i2r,                simpleOp Op.IntToReal),
                 (BV.identity,           fn (y, [Ty.DIM d], xs) =>
                                           [assignEin(y, Mk.identity d, xs)]),

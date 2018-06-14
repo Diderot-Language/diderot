@@ -87,6 +87,8 @@ structure Apply : sig
                       in
                         E.OField(E.CFExp es, e2,dx)
                       end
+                  | E.If(E.Compare(op1, e1,e2), e3, e4) =>  E.If(E.Compare(op1, apply e1, apply e2), apply e3, apply e4)
+                  | E.If(E.Var id, e3, e4) =>  E.If(E.Var id, apply e3, apply e4)
                   | E.Sum(c, esum) => E.Sum(mapSum c, apply esum)
                   | E.Op1(op1, e1) => E.Op1(op1, apply e1)
                   | E.Op2(op2, e1, e2) => E.Op2(op2, apply e1, apply e2)
@@ -154,6 +156,10 @@ structure Apply : sig
                         E.OField(E.CFExp ps, apply e2, E.Partial alpha)
                       end
                   | E.Poly _ => raise Fail "expression before expand"
+                  | E.If(E.Compare(op1, e1, e2), e3, e4) 
+                    => E.If(E.Compare(op1, apply e1, apply e2), apply e3, apply e4)
+                  | E.If(E.Var id, e3, e4) 
+                    => E.If(E.Var (mapId(id, origId, 0)), apply e3, apply e4)
                   | E.Sum(indices, esum) => let
                       val (ix, _, _) = List.last indices
                       in

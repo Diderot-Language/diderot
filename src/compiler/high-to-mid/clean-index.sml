@@ -102,6 +102,9 @@ structure CleanIndex : sig
                   | E.Value e1 => raise Fail "Error in Ashape"
                   | E.Img _ => raise Fail "Error in Ashape"
                   | E.Krn _ => raise Fail "Error in Ashape"
+                  | E.If(E.Compare(op1, e1, e2), e3, e4) =>
+                    shape (e1,shape (e2, shape (e3, shape(e4, ixs))))
+                  | E.If(_, e3, e4) => shape (e3, shape(e4, ixs))
                   | E.Sum(sx, e) => shape (e, addSingle (ixs, List.map #1 sx))
                   | E.Op1 (_, e) => shape (e, ixs)
                   | E.Op2(_, e1, e2) => shape (e1, shape(e2, ixs))
@@ -143,6 +146,10 @@ structure CleanIndex : sig
                   | E.Value _ => raise Fail "unexpected Value"
                   | E.Img _ => raise Fail "unexpected Img"
                   | E.Krn _ => raise Fail "unexpected Krn"
+                  | E.If(E.Compare(_,e1, e2), e3, e4) =>
+                    shape' ([e1, e2, e3, e4], ixs)
+                  | E.If(E.Var id, e3, e4) =>
+                    shape' ([e3, e4], ixs)
                   | E.Sum(_ , e) => shape (e, ixs)
                   | E.Op1(_, e) => shape (e, ixs)
                   | E.Op2(_, e1, e2) => shape' ([e1, e2], ixs)
@@ -259,6 +266,10 @@ structure CleanIndex : sig
                   | E.Value e1 => raise Fail "unexpected Value"
                   | E.Img _ => raise Fail "unexpected Img"
                   | E.Krn _ => raise Fail "unexpected Krn"
+                  | E.If(E.Compare(op1, e1, e2), e3, e4) =>
+                    E.If(E.Compare(op1, rewrite e1, rewrite e2), rewrite e3, rewrite e4)
+                  | E.If(E.Var id, e3, e4) =>
+                    E.If(E.Var id, rewrite e3, rewrite e4)
                   | E.Sum(sx, e1) => E.Sum(getSx sx, rewrite e1)
                   | E.Op1(op1, e1) => E.Op1(op1, rewrite e1)
                   | E.Op2(op2, e1, e2) => E.Op2(op2, rewrite e1, rewrite e2)

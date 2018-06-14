@@ -79,6 +79,12 @@ structure NormalizeEin : sig
               | E.Eps2 _           => return fld
               | E.Const _          => return fld
               | E.Delta _          => return fld
+              | E.If(E.Compare(op1, e1, e2), e3, e4)
+                =>  let
+                    val comp2 = E.Compare(op1, E.Probe(e1, x), E.Probe(e2, x))
+                in (ST.tick cntProbe; (E.If(comp2, E.Probe(e3, x), E.Probe(e4, x)))) end
+              | E.If(E.Var id, e3, e4) 
+                => (ST.tick cntProbe;  E.If(E.Var id, E.Probe(e3, x), E.Probe(e4, x)))
               | E.Sum(sx1, e)      => return (E.Sum(sx1, E.Probe(e, x)))
               | E.Op1(op1, e)      => return (E.Op1(op1, E.Probe(e, x)))
               | E.Op2(op2, e1, e2) => return (E.Op2(op2, E.Probe(e1, x), E.Probe(e2, x)))
@@ -136,6 +142,8 @@ structure NormalizeEin : sig
                   | E.Krn _ => err "Krn before Expand"
                   | E.Poly _ => err "Poly before Expand"
                 (************** Sum **************)
+                  | E.If(E.Compare(op1, e1, e2), e3, e4) => E.If(E.Compare(op1, rewrite e1, rewrite e2), rewrite e3, rewrite e4)
+                  | E.If(E.Var id, e3, e4) => E.If(E.Var id, rewrite e3, rewrite e4)
                   | E.Sum(sx, e) => mkSum (sx, rewrite e)
                 (************* Algebraic Rewrites Op1 **************)
                   | E.Op1(E.Neg, E.Op1(E.Neg, e)) => (ST.tick cntNegElim; rewrite e)
@@ -158,16 +166,18 @@ structure NormalizeEin : sig
                   | E.Op2(E.Div, a, E.Op2(E.Div, b, c)) => (
                       ST.tick cntDivDiv;
                       rewrite (mkDiv (mkProd[a, c], b)))
-                  | E.Op2(op1, e1, e2) => E.Op2(op1, rewrite e1, rewrite e2)
                  (************** min|max **************)
-                  | E.Op2(E.Min, e1, e2) => let
-                      val comp = E.LT(e1, e2)
-                      val exp  = E.If(comp, e1, e2)
-                      in (ST.tick cntProbe; exp) end
-                  | E.Op2(E.Max, e1, e2) => let
-                      val comp = E.GT(e1, e2)
-                      val exp  = E.If(comp, e1, e2)
-                      in (ST.tick cntProbe; exp) end
+                  | E.Op2(E.Min, e1, e2)     =>
+                    let
+                        val comp = E.Compare(E.LT, e1, e2)
+                        val exp  = E.If(comp, e1, e2)
+                    in (ST.tick cntProbe; exp) end
+                  | E.Op2(E.Max, e1, e2)     =>
+                    let
+                        val comp = E.Compare(E.GT, e1, e2)
+                        val exp  = E.If(comp, e1, e2)
+                    in (ST.tick cntProbe; exp) end
+                  | E.Op2(op1, e1, e2) => E.Op2(op1, rewrite e1, rewrite e2)
                   | E.Op3(op3, e1, e2, e3) =>
                       E.Op3(op3, rewrite e1, rewrite e2, rewrite e3)
                 (************* Algebraic Rewrites Opn **************)

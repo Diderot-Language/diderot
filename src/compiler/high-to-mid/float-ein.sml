@@ -106,6 +106,25 @@ structure FloatEin : sig
                       cut ("cut", exp, params, index, sx, args, avail, 3)
                   | E.Probe _ => lift ("probe", exp, params, index, sx, args, avail)
                   | E.OField _ => lift ("probe", exp, params, index, sx, args, avail)
+                  | E.If(E.Var id, e3, e4) => let
+                      val (e3', params', args') = rewrite (sx, e3, params, args)
+                      val (e4', params', args') = rewrite (sx, e4, params', args')
+                      val ([e3', e4'], params', args') =
+                                filterOps ([e3', e4'], params', args', index, sx)
+                      val comp' = E.Var id
+                      in
+                       (E.If(comp', e3', e4'), params', args')
+                      end
+                  | E.If(E.Compare(op1, e1, e2), e3, e4) => let
+                      val (e1', params', args') = rewrite (sx, e1, params, args)
+                      val (e2', params', args') = rewrite (sx, e2, params', args')
+                      val (e3', params', args') = rewrite (sx, e3, params', args')
+                      val (e4', params', args') = rewrite (sx, e4, params', args')
+                      val ([e1', e2', e3', e4'], params', args') =
+                      filterOps ([e1', e2', e3', e4'], params', args', index, sx)
+                      in
+                        (E.If(E.Compare(op1, e1', e2'), e3', e4'), params', args')
+                      end
                   | E.Sum(_, E.Probe _) => lift ("probe", exp, params, index, sx, args, avail)
                   | E.Op1(op1, e1) => let
                       val (e1', params', args') = rewrite (sx, e1, params, args)

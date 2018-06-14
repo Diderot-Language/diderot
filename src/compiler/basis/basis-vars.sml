@@ -841,6 +841,21 @@ structure BasisVars =
     val fn_exp_r  = fn_r N.fn_exp
     val fn_exp_s  = fn_s N.fn_exp
     end (* local *)
+    
+    val fn_maxF_s = polyVar (N.fn_max, all([DK,NK], fn [Ty.DIFF k, Ty.DIM d] => let
+        val k' = Ty.DiffVar(k, 0)
+        val d' = Ty.DimVar d
+        val f = field(k', d', Ty.Shape[])
+        in
+            [f, f] --> f
+        end))
+    val fn_minF_s = polyVar (N.fn_min, all([DK,NK], fn [Ty.DIFF k, Ty.DIM d] => let
+        val k' = Ty.DiffVar(k, 0)
+        val d' = Ty.DimVar d
+        val f = field(k', d', Ty.Shape[])
+        in
+            [f, f] --> f
+        end))
 
   (* Math functions that have not yet been lifted to work on fields *)
     local
