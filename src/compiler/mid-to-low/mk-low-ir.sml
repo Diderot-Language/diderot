@@ -264,11 +264,11 @@ structure MkLowIR : sig
           in
             if (pow_n < 0)
               then add (avail, "_PowInv", Ty.realTy,
-        IR.OP(Op.RDiv, [
-            add (avail, "_One", Ty.realTy, IR.LIT(Literal.Real RealLit.one)),
-            pow(~pow_n)
-          ]))
-          else pow pow_n
+               IR.OP(Op.RDiv, [
+                   add (avail, "_One", Ty.realTy, IR.LIT(Literal.Real RealLit.one)),
+                   pow(~pow_n)
+                 ]))
+              else pow pow_n
           end
 
   end

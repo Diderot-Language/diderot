@@ -50,6 +50,8 @@ structure FloatEin : sig
           end
           
     fun err str = raise Fail(String.concat["Ill-formed EIN Operator", str])
+    
+    (* additional rewriting pass to distribute probe operation *)
     fun mkProbe (exp as E.Probe(fld, x)) =
        (case fld
           of E.Tensor _        => fld (*in case cfexp of tensor*)
@@ -220,24 +222,24 @@ structure FloatEin : sig
                     =>  compn("composition", e, params, index, sx, sx2, args, avail)
                   | E.Sum(_, E.Probe _) => lift ("probe", exp, params, index, sx, args, avail)
                   | E.Op1(op1, e1) => let
-                     val (e1', params', args') = rewrite (sx, e1, params, args)
-                     val ([e1], params', args') = filterOps ([e1'], params', args', index, sx)
+                      val (e1', params', args') = rewrite (sx, e1, params, args)
+                      val ([e1], params', args') = filterOps ([e1'], params', args', index, sx)
                       in
                         (E.Op1(op1, e1), params', args')
                       end
                   | E.Op2(op2, e1, e2) => let
-                     val (e1', params', args') = rewrite (sx, e1, params, args)
-                     val (e2', params', args') = rewrite (sx, e2, params', args')
-                     val ([e1', e2'], params', args') =
+                      val (e1', params', args') = rewrite (sx, e1, params, args)
+                      val (e2', params', args') = rewrite (sx, e2, params', args')
+                      val ([e1', e2'], params', args') =
                             filterOps ([e1', e2'], params', args', index, sx)
                       in
                         (E.Op2(op2, e1', e2'), params', args')
                       end
                   | E.Op3(op3, e1, e2, e3) => let
-                     val (e1', params', args') = rewrite (sx, e1, params, args)
-                     val (e2', params', args') = rewrite (sx, e2, params', args')
-                     val (e3', params', args') = rewrite (sx, e3, params', args')
-                     val ([e1', e2', e3'], params', args') =
+                      val (e1', params', args') = rewrite (sx, e1, params, args)
+                      val (e2', params', args') = rewrite (sx, e2, params', args')
+                      val (e3', params', args') = rewrite (sx, e3, params', args')
+                      val ([e1', e2', e3'], params', args') =
                             filterOps ([e1', e2', e3'], params', args', index, sx)
                       in
                         (E.Op3(op3, e1', e2', e3'), params', args')
@@ -245,17 +247,17 @@ structure FloatEin : sig
                   | E.Opn(opn, es) => let
                       fun iter ([], es, params, args) = (List.rev es, params, args)
                         | iter (e::es, es', params, args) = let
-                           val (e', params', args') = rewrite (sx, e, params, args)
+                            val (e', params', args') = rewrite (sx, e, params, args)
                             in
                               iter (es, e'::es', params', args')
                             end
-                     val (es, params, args) = iter (es, [], params, args)
-                     val (es, params, args) = filterOps (es, params, args, index, sx)
+                      val (es, params, args) = iter (es, [], params, args)
+                      val (es, params, args) = filterOps (es, params, args, index, sx)
                       in
                         (E.Opn(opn, es), params, args)
                       end
                   | E.Sum(sx1, e) => let
-                     val (e', params', args') = rewrite (sx1@sx, e, params, args)
+                      val (e', params', args') = rewrite (sx1@sx, e, params, args)
                       in
                         (E.Sum(sx1, e'), params', args')
                       end

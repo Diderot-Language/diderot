@@ -80,10 +80,9 @@ structure NormalizeEin : sig
               | E.Eps2 _           => return fld
               | E.Const _          => return fld
               | E.Delta _          => return fld
-              | E.If(E.Compare(op1, e1, e2), e3, e4)
-                =>  let
+              | E.If(E.Compare(op1, e1, e2), e3, e4) => let
                     val comp2 = E.Compare(op1, E.Probe(e1, x), E.Probe(e2, x))
-                in (ST.tick cntProbe; (E.If(comp2, E.Probe(e3, x), E.Probe(e4, x)))) end
+                    in (ST.tick cntProbe; (E.If(comp2, E.Probe(e3, x), E.Probe(e4, x)))) end
               | E.If(E.Var id, e3, e4) 
                 => (ST.tick cntProbe;  E.If(E.Var id, E.Probe(e3, x), E.Probe(e4, x)))
               | E.Sum(sx1, e)      => return (E.Sum(sx1, E.Probe(e, x)))
@@ -97,6 +96,7 @@ structure NormalizeEin : sig
             (* end case *)
           end
 
+    (* rewrite expression with composition operation *)
     fun mkComp(F, es, x) = let
         fun return e = (ST.tick cntProbe; e)
         fun setInnerProbe e = E.Probe(E.Comp(e, es), x)
@@ -117,15 +117,13 @@ structure NormalizeEin : sig
             | E.Delta _          => return F
             | E.Sum(sx1, e)      => return (E.Sum(sx1, setInnerProbe e))
             | E.Op1(op1, e)      => return (E.Op1(op1, setInnerProbe e))
-            | E.Op2(op2, e1, e2) =>
-                let
+            | E.Op2(op2, e1, e2) => let
                 val exp1 = setInnerProbe e1
                 val exp2 = setInnerProbe e2
                 val xexp = E.Op2(op2, exp1, exp2)
                 in return xexp end
             | E.Opn(opn, [])     => err "Probe of empty operator"
-            | E.Opn(opn, es1)     =>
-                let
+            | E.Opn(opn, es1)     => let
                 val exps =  List.map (fn e1 => E.Probe(E.Comp(e1, es), x)) es1
                 val xexp = E.Opn(opn, exps)
                 in return xexp end

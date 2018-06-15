@@ -129,47 +129,47 @@ structure EinUtil : sig
               case body
                of E.Const i => hashInt i + 0w3
                 | E.ConstR _ => 0w5
-                | E.Tensor(_, alpha) => 0w23 + hashAlpha alpha
-                | E.Zero(alpha) => 0w107 + hashAlpha alpha
-                | E.Delta _ => 0w7
-                | E.Epsilon _ => 0w13
-                | E.Eps2 _ => 0w17
+                | E.Tensor(_, alpha) => 0w7 + hashAlpha alpha
+                | E.Zero(alpha) => 0w11 + hashAlpha alpha
+                | E.Delta _ => 0w17
+                | E.Epsilon _ => 0w19
+                | E.Eps2 _ => 0w23
                 | E.Field(_, alpha) => 0w29 + hashAlpha alpha
-                | E.Lift e1 => 0w61 + hash' e1
+                | E.Lift e1 => 0w31 + hash' e1
                 | E.Conv(_, alpha, _, dx) =>
                     0w37 + hashAlpha alpha + hashAlpha dx + hashInt(length dx)
-                | E.Partial alpha => 0w19+hashAlpha alpha
-                | E.Apply(e1, e2) => 0w97 + hash' e1 + hash' e2
-                | E.Comp(e1, es) => 0w141 + hash' e1 + iterS es
-                | E.Probe(e1, e2) => 0w101 + hash' e1 + hash' e2
-                | E.Value _ => 0w11
-                | E.Img (_, alpha, es, _) => 0w43 + hashAlpha alpha + iter es
-                | E.Krn (_, dels, dim) => 0w41 + hashDels dels + hashInt dim
-                | E.OField(ofld, e2, alpha) => 0w141 +hash' e2  + hash' alpha
-                | E.Poly(e1, n1, alpha2) => 0w143 + hash' e1 + hashInt n1 + hashAlpha alpha2
-                | E.If(comp, e3, e4) => 0w173+hash' e3 + hash' e4
-                | E.Sum(c,e1) => 0w53 + hash' e1
+                | E.Partial alpha => 0w41+hashAlpha alpha
+                | E.Apply(e1, e2) => 0w43 + hash' e1 + hash' e2
+                | E.Comp(e1, es) => 0w47 + hash' e1 + iterS es
+                | E.Probe(e1, e2) => 0w53 + hash' e1 + hash' e2
+                | E.Value _ => 0w59
+                | E.Img (_, alpha, es, _) => 0w61 + hashAlpha alpha + iter es
+                | E.Krn (_, dels, dim) => 0w67 + hashDels dels + hashInt dim
+                | E.OField(ofld, e2, alpha) => 0w71 +hash' e2  + hash' alpha
+                | E.Poly(e1, n1, alpha2) => 0w73 + hash' e1 + hashInt n1 + hashAlpha alpha2
+                | E.If(comp, e3, e4) => 0w79+hash' e3 + hash' e4
+                | E.Sum(c,e1) => 0w83 + hash' e1
                 | E.Op1(e1,e2) => (case e1
-                     of E.Cosine => 0w113 + hash' e2
-                      | E.ArcCosine => 0w127 + hash' e2
-                      | E.Sine => 0w131 + hash' e2
-                      | E.ArcSine => 0w137 + hash' e2
-                      | E.Tangent => 0w139 + hash' e2
-                      | E.ArcTangent => 0w149 + hash' e2
-                      | E.Neg => 0w59 + hash' e2
-                      | E.Sqrt => 0w67 + hash' e2
-                      | E.PowInt _ => 0w107 + hash' e2
-                      | E.Exp => 0w151 + hash' e2
-                      | E.Abs => 0w157 + hash' e2
-                      | E.Sgn => 0w157 + hash' e2
+                     of E.Cosine => 0w89 + hash' e2
+                      | E.ArcCosine => 0w97 + hash' e2
+                      | E.Sine => 0w101 + hash' e2
+                      | E.ArcSine => 0w103 + hash' e2
+                      | E.Tangent => 0w107 + hash' e2
+                      | E.ArcTangent => 0w109 + hash' e2
+                      | E.Neg => 0w113 + hash' e2
+                      | E.Sqrt => 0w127 + hash' e2
+                      | E.PowInt _ => 0w131 + hash' e2
+                      | E.Exp => 0w137 + hash' e2
+                      | E.Abs => 0w139 + hash' e2
+                      | E.Sgn => 0w149 + hash' e2
                     (* end case *))
-                | E.Op2(E.Sub, e1, e2) => 0w79 + hash' e1 + hash' e2
-                | E.Op2(E.Div, e1, e2) => 0w83 + hash' e1 + hash' e2
+                | E.Op2(E.Sub, e1, e2) => 0w151 + hash' e1 + hash' e2
+                | E.Op2(E.Div, e1, e2) => 0w157 + hash' e1 + hash' e2
                 | E.Op2(E.Max, e1, e2) => 0w163 + hash' e1 + hash' e2
                 | E.Op2(E.Min, e1, e2) => 0w167 + hash' e1 + hash' e2
-                | E.Op3(E.Clamp, e1, e2, e3) => 0w163 + hash' e1 + hash' e2 + hash' e3
-                | E.Opn(E.Add, es) => 0w71 + iter es
-                | E.Opn(E.Prod, es) => 0w103 + iter es
+                | E.Op3(E.Clamp, e1, e2, e3) => 0w173 + hash' e1 + hash' e2 + hash' e3
+                | E.Opn(E.Add, es) => 0w179 + iter es
+                | E.Opn(E.Prod, es) => 0w181 + iter es
               (* end case *)
             end
         in
@@ -178,28 +178,28 @@ structure EinUtil : sig
 
     fun iterPP es = let
           fun iterP ([], [r]) = r
-        | iterP ([], rest) = E.Opn(E.Prod, rest)
-        | iterP (E.Const 0::es, rest) = E.Const(0)
-        | iterP (E.Const 1::es, rest) = iterP(es, rest)
-        | iterP (E.Delta(E.C c1, E.V v1)::E.Delta(E.C c2, E.V v2)::es, rest) =
-          (* variable can't be 0 and 1 '*)
-        if (c1 = c2)
-          then iterP (es, E.Delta(E.C c1, E.V v1)::E.Delta(E.C c2, E.V v2)::rest)
-          else E.Const(0)
-        | iterP (E.Opn(E.Prod, ys)::es, rest) = iterP(ys@es, rest)
-        | iterP (e1::es, rest)   = iterP(es, e1::rest)
-          in
+           | iterP ([], rest) = E.Opn(E.Prod, rest)
+           | iterP (E.Const 0::es, rest) = E.Const(0)
+           | iterP (E.Const 1::es, rest) = iterP(es, rest)
+           | iterP (E.Delta(E.C c1, E.V v1)::E.Delta(E.C c2, E.V v2)::es, rest) =
+             (* variable can't be 0 and 1 '*)
+               if (c1 = c2)
+                 then iterP (es, E.Delta(E.C c1, E.V v1)::E.Delta(E.C c2, E.V v2)::rest)
+                 else E.Const(0)
+           | iterP (E.Opn(E.Prod, ys)::es, rest) = iterP(ys@es, rest)
+           | iterP (e1::es, rest)   = iterP(es, e1::rest)
+         in
             iterP (es, [])
           end
 
     fun iterAA es = let
-      fun iterA ([], []) = E.Const 0
-        | iterA ([], [r]) = r
-        | iterA ([], rest) = E.Opn(E.Add, rest)
-        | iterA (E.Const 0::es, rest) = iterA(es, rest)
-        | iterA (E.Opn(E.Add, ys)::es, rest) = iterA(ys@es, rest)
-        | iterA (e1::es, rest) = iterA(es, e1::rest)
-      in
+         fun iterA ([], []) = E.Const 0
+           | iterA ([], [r]) = r
+           | iterA ([], rest) = E.Opn(E.Add, rest)
+           | iterA (E.Const 0::es, rest) = iterA(es, rest)
+           | iterA (E.Opn(E.Add, ys)::es, rest) = iterA(ys@es, rest)
+           | iterA (e1::es, rest) = iterA(es, e1::rest)
+         in
             iterA (es, [])
           end
 

@@ -121,8 +121,8 @@ Tan    : : 1 : 1 : returns the tangent
 ArcTan : : 1 : 1 : returns the arctangent
 Exp    : : 1 : 1 : returns "e" raised to its argument
 Sign   : : 1 : 1 : returns -1, 0, or 1 depending on the sign of its argument
-#ifwrap
-IfWrap:: 1 :3 : #if expression. creates in-line function else.
+# generates function call to if operation
+IfWrap:: 1 :3 : if then else
 #
 # convert an integer to a real
 IntToReal : : 1 : 1 :

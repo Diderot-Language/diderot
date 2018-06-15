@@ -111,14 +111,14 @@ structure EinToScalar : sig
                     | E.Tensor(id, ix) => Mk.tensorIndex (avail, mapp, List.nth(lowArgs, id), ix)
                     | E.Zero _ => Mk.intToRealLit (avail, 0)
                     | E.Poly _ => gen(mapp, unwrapPoly(mapp, body))
-                    | E.If(E.Compare(op1, e1, e2), e3, e4) =>
-                        let
-                            val vA = gen (mapp, e1)
-                            val vB = gen (mapp, e2)
-                        	val vC = (case op1
-                        		of E.GT => Mk.boolGT(avail, vA, vB)
-                        		 | E.LT => Mk.boolLT(avail, vA, vB)
-                        	(* end case*))
+                    | E.If(E.Compare(op1, e1, e2), e3, e4) => let
+                        val vA = gen (mapp, e1)
+                        val vB = gen (mapp, e2)
+                        val vC = 
+                          (case op1
+                                of E.GT => Mk.boolGT(avail, vA, vB)
+                                 | E.LT => Mk.boolLT(avail, vA, vB)
+                          (* end case *))
                         in
                             Mk.realIf(avail, vC, gen (mapp, e3), gen (mapp, e4))
                         end
