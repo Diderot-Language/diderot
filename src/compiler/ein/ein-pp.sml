@@ -79,6 +79,18 @@ structure EinPP : sig
                 ]
             | E.Poly(E.Tensor(tid, cx), 1, dx) => concat [deriv dx,"(P", i2s tid, multiIndex2s  cx, ")"]
             | E.Poly(E.Tensor(tid, cx), n, dx) => concat [deriv dx,"(P", i2s tid, multiIndex2s  cx, ")^",  i2s n]
+            | E.If (E.Var id, e3, e4) =>    concat[ "if(", Int.toString(id), ") then ", expToString e3," else ", expToString e4]
+            | E.If (E.Compare(op1, e1, e2), e3, e4) => let
+                val c = (case op1
+                    of E.GT => ">"
+                    | E.LT => "<"
+                    | E.GTE => "=>"
+                    | E.LTE => "<="
+                    | E.EQ => "="
+                    (*end case*))
+               in
+                concat[ "if(", expToString e1, c, expToString e2, ") then ", expToString e3," else ", expToString e4]
+               end
             | E.Sum(sx, e) => let
                 val sx = List.map
                       (fn (v, lb, ub) => concat ["(i", i2s v, "=", i2s lb, "..", i2s ub, ")"])

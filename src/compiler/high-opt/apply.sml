@@ -171,9 +171,9 @@ structure Apply : sig
                       end
                   | E.Poly _ => raise Fail "expression before expand"
                   | E.If(E.Compare(op1, e1, e2), e3, e4) 
-                    => E.If(E.Compare(op1, apply e1, apply e2), apply e3, apply e4)
+                    => E.If(E.Compare(op1, apply (e1, shape), apply (e2, shape)), apply(e3, shape), apply (e4, shape))
                   | E.If(E.Var id, e3, e4) 
-                    => E.If(E.Var (mapId(id, origId, 0)), apply e3, apply e4)
+                    => E.If(E.Var (mapId(id, origId, 0)), e3, e4)
                   | E.Sum(indices, esum) => let
                       val (ix, _, _) = List.last indices
                       in

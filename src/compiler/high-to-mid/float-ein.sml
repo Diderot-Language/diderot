@@ -197,7 +197,6 @@ structure FloatEin : sig
                     => compn("composition", exp, params, index, sx, [], args, avail)
                   | E.Probe _ => lift ("probe", exp, params, index, sx, args, avail)
                   | E.OField _ => lift ("probe", exp, params, index, sx, args, avail)
-<<<<<<< HEAD
                   | E.If(E.Var id, e3, e4) => let
                       val (e3', params', args') = rewrite (sx, e3, params, args)
                       val (e4', params', args') = rewrite (sx, e4, params', args')
