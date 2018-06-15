@@ -66,6 +66,8 @@ structure EinUtil : sig
                       sameIndex (alpha1, alpha2) andalso sameIndex (ix1, ix2)
                 | (E.Partial ix, E.Partial jx) => sameIndex(ix, jx)
                 | (E.Apply(e11, e12), E.Apply(e21, e22)) => same(e11, e21) andalso same(e12, e22)
+                | (E.Comp(e11, es1), E.Comp(e21, es2)) =>
+                    same(e11, e21) andalso sameSubEin(es1, es2)
                 | (E.Probe(e11, e12), E.Probe(e21, e22)) => same(e11, e21) andalso same(e12, e22)
                 | (E.Value i, E.Value j) => (i = j)
                 | (E.Img(id1, ix1, pos1, s1), E.Img(id2, ix2, pos2, s2)) =>
@@ -86,6 +88,9 @@ structure EinUtil : sig
                     (op1 = op2) andalso sameList(es1, es2)
                 | _ => false
               (* end case *))
+        and sameSubEin([], []) = true
+            | sameSubEin ((e1 ,_)::es1, (e2, _)::es2) = same(e1, e2) andalso sameSubEin(es1, es2)
+            | sameSubEin _ = false
         and sameList ([], []) = true
           | sameList (e1::es1, e2::es2) = same(e1, e2) andalso sameList(es1, es2)
           | sameList _ = false
@@ -112,6 +117,8 @@ structure EinUtil : sig
             fun hashInt i = Word.fromInt i
             fun iter [e] = hash' e
               | iter (e1::es) = hash' e1 + iter es
+            fun iterS [(e,_)] = hash' e
+              | iterS ((e1,_)::es) = hash' e1 + iterS es
             fun hashMu (E.C c) = hashInt c + 0w17
               | hashMu (E.V v) = hashInt v
             fun hashAlpha [] = 0w3
@@ -133,6 +140,7 @@ structure EinUtil : sig
                     0w37 + hashAlpha alpha + hashAlpha dx + hashInt(length dx)
                 | E.Partial alpha => 0w19+hashAlpha alpha
                 | E.Apply(e1, e2) => 0w97 + hash' e1 + hash' e2
+                | E.Comp(e1, es) => 0w141 + hash' e1 + iterS es
                 | E.Probe(e1, e2) => 0w101 + hash' e1 + hash' e2
                 | E.Value _ => 0w11
                 | E.Img (_, alpha, es, _) => 0w43 + hashAlpha alpha + iter es
@@ -170,28 +178,28 @@ structure EinUtil : sig
 
     fun iterPP es = let
           fun iterP ([], [r]) = r
-	    | iterP ([], rest) = E.Opn(E.Prod, rest)
-	    | iterP (E.Const 0::es, rest) = E.Const(0)
-	    | iterP (E.Const 1::es, rest) = iterP(es, rest)
-	    | iterP (E.Delta(E.C c1, E.V v1)::E.Delta(E.C c2, E.V v2)::es, rest) =
-	      (* variable can't be 0 and 1 '*)
-		if (c1 = c2)
-		  then iterP (es, E.Delta(E.C c1, E.V v1)::E.Delta(E.C c2, E.V v2)::rest)
-		  else E.Const(0)
-	    | iterP (E.Opn(E.Prod, ys)::es, rest) = iterP(ys@es, rest)
-	    | iterP (e1::es, rest)   = iterP(es, e1::rest)
+        | iterP ([], rest) = E.Opn(E.Prod, rest)
+        | iterP (E.Const 0::es, rest) = E.Const(0)
+        | iterP (E.Const 1::es, rest) = iterP(es, rest)
+        | iterP (E.Delta(E.C c1, E.V v1)::E.Delta(E.C c2, E.V v2)::es, rest) =
+          (* variable can't be 0 and 1 '*)
+        if (c1 = c2)
+          then iterP (es, E.Delta(E.C c1, E.V v1)::E.Delta(E.C c2, E.V v2)::rest)
+          else E.Const(0)
+        | iterP (E.Opn(E.Prod, ys)::es, rest) = iterP(ys@es, rest)
+        | iterP (e1::es, rest)   = iterP(es, e1::rest)
           in
             iterP (es, [])
           end
 
     fun iterAA es = let
-	  fun iterA ([], []) = E.Const 0
-	    | iterA ([], [r]) = r
-	    | iterA ([], rest) = E.Opn(E.Add, rest)
-	    | iterA (E.Const 0::es, rest) = iterA(es, rest)
-	    | iterA (E.Opn(E.Add, ys)::es, rest) = iterA(ys@es, rest)
-	    | iterA (e1::es, rest) = iterA(es, e1::rest)
-	  in
+      fun iterA ([], []) = E.Const 0
+        | iterA ([], [r]) = r
+        | iterA ([], rest) = E.Opn(E.Add, rest)
+        | iterA (E.Const 0::es, rest) = iterA(es, rest)
+        | iterA (E.Opn(E.Add, ys)::es, rest) = iterA(ys@es, rest)
+        | iterA (e1::es, rest) = iterA(es, e1::rest)
+      in
             iterA (es, [])
           end
 

@@ -84,6 +84,10 @@ structure TranslateCFExp : sig
                       end
                   | E.Opn (E.Prod, ps) => EinUtil.iterPP (List.map rewrite ps)
                   | E.Opn (E.Add , ps) => EinUtil.iterAA (List.map rewrite ps)
+<<<<<<< HEAD
+=======
+                  | E.Comp (e1, es) => E.Comp (rewrite e1, es)
+>>>>>>> 9f9e6062f8b1d425f13dc971eaf30251805d183b
                   | _ => body
                 (* end case *))
           in
@@ -162,6 +166,10 @@ structure TranslateCFExp : sig
             | E.Op1 (op1, e1) => E.Op1 (op1, rewriteDifferentiate e1)
             | E.Op2 (op2, e1, e2) => E.Op2 (op2, rewriteDifferentiate e1, rewriteDifferentiate e2)
             | E.Opn (opn, es) => E.Opn (opn, List.map rewriteDifferentiate es)
+<<<<<<< HEAD
+=======
+            | E.Comp (e1, es) => E.Comp (rewriteDifferentiate e1, es)
+>>>>>>> 9f9e6062f8b1d425f13dc971eaf30251805d183b
             | _ => body
           (* end case *))
           

@@ -128,7 +128,8 @@ structure MkOperators : sig
     val sliceF : bool list * int list * Ein.index_bind list * int -> Ein.ein
     val concatTensor : shape * int -> Ein.ein
     val concatField : dim * shape * int -> Ein.ein
-
+    val composition: int * shape * int * shape -> Ein.ein
+    
     val lerp3 : shape -> Ein.ein
     val lerp5 : shape -> Ein.ein
     val clampRRT : shape -> Ein.ein
@@ -1032,7 +1033,24 @@ structure MkOperators : sig
               index = nflds::shape,
               body = concatBody (E.Field, shape, nflds, 0)
             }
-
+            
+    fun composition (dim0, shape0, dim1, shape1) = let
+          fun err exp = raise Fail (concat["\n Composition incorrect \n\t Expected: Vector field of length ", Int.toString(dim0), "\n\t Observed: ", exp, "\n"])
+          val _ = (case shape1
+                of [] => if(dim0=1) then () else err("scalar field") 
+                | [n] => if(dim0=n) then () else err("vector field of length"^Int.toString(n)) 
+                | _ => err("second-order tensor field")
+            (* end case *))
+          val expindex0 = specialize(shape0, 0)
+          val expindex1 = specialize(shape1, 0)
+          in
+            E.EIN{
+                params = [E.FLD (dim0), E.FLD (dim1)], 
+                index = shape0, 
+                body = E.Comp (E.Field(0, expindex0), [(E.Field(1, expindex1), shape1)])
+             }
+          end
+          
   (* Lerp<ty>(a, b, t) -- computes a + t*(b-a), where a and b have type ty
    * and t has type real
    *)

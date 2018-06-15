@@ -18,11 +18,17 @@ structure HandleEin : sig
 
     fun useCount (SrcIR.V{useCnt, ...}) = !useCnt
 
+    fun iter([], ys) = ys
+      | iter((lhs, DstIR.EINAPP(e, a))::es, ys) = iter(es, ys@(FloatEin.transform (lhs, e, a)))
+          
     fun expand (lhs, ein, args) = let
+        val _ = (concat["\n\n\n*****\n expand ***\n\t:", EinPP.toString(ein),"\n\t"])
         (* ************** distribute and push Summation*********** *)
           val ein' = EinSums.transform ein
         (* **************** split phase ************* *)
-          val newbies = FloatEin.transform (lhs, ein', args)
+          val newbie = (lhs, DstIR.EINAPP(ein', args))
+          val newbies = iter([newbie], [])
+          val newbies = iter(newbies, [])
         (* **************** translate of fields ************* *)
           val newbies = List.foldr (fn (e, acc) => TranslateOField.transform e @ acc) [] newbies
         (* ************** ProbeEIN *********** *)

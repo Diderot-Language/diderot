@@ -17,7 +17,7 @@ structure CleanParams : sig
 
     val clean : Ein.ein_exp * Ein.param_kind list * Ein.index_bind list * MidIR.var list -> MidIR.rhs
     val getFreeParams : Ein.ein_exp -> IntRedBlackSet.set
-    
+
   end = struct
 
     structure E = Ein

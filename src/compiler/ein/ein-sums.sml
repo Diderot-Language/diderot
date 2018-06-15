@@ -59,6 +59,7 @@ structure EinSums : sig
               | E.Conv(_ , alpha, _ , dx) => findIndex (c, alpha@dx)
               | E.Partial (shape)         => findIndex (c, shape)
               | E.Apply(e1, e2)           => sort [e1, e2]
+              | E.Comp(e1, _)             => findSx(c, e1)
               | E.Probe(E.Conv(_, [], _, []), E.Tensor(_, []))
                                           => NONE
               | E.Probe(e1, e2)           => sort [e1, e2]
@@ -157,6 +158,7 @@ structure EinSums : sig
                   | E.Value _             => raise Fail"Value before Expand"
                   | E.Img _               => raise Fail"Img before Expand"
                   | E.Krn _               => raise Fail"Krn before Expand"
+                  | E.Comp(e1, es)        => E.Comp(rewriteBody e1, es)
                   | E.OField(ofld, e1, ix) => E.OField(ofld, rewriteBody e1, ix)
                   | E.If(E.Compare(op1, e1, e2), e3, e4)
                     => E.If(E.Compare(op1, rewriteBody e1,rewriteBody e2), rewriteBody e3, rewriteBody e4)

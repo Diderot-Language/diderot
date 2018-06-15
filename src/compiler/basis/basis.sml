@@ -158,7 +158,8 @@ structure Basis : sig
           (N.fn_sum, [BV.red_sum_i, BV.red_sum_r]),
           (N.fn_tan, [BV.fn_tan_r, BV.fn_tan_s]),
           (N.fn_trace, [BV.fn_trace_t, BV.fn_trace_f]),
-          (N.fn_transpose, [BV.fn_transpose_t, BV.fn_transpose_f])
+          (N.fn_transpose, [BV.fn_transpose_t, BV.fn_transpose_f]),
+          (N.op_compose, [BV.comp])
           ]
 
   (* assignment operators are bound to the corresponding binary operator *)
