@@ -114,7 +114,7 @@ structure CollectInfo : sig
             | EigenVecs2x2 => "EigenVecs2x2"
             | EigenVecs3x3 => "EigenVecs3x3"
             | SphereQuery(d, s) => concat["SphereQuery", Int.toString d, "<", s, ">"]
-            | RIfWrap  => "RIfWrap "
+            | RIfWrap  => "RIfWrap"
           (* end case *))
     end (* local *)
 
