@@ -169,13 +169,16 @@ structure CheckGlobals : sig
                             Env.functionScope(env, resTy, #tree bindF),
                             cxt, #tree bindX, x)
                       val bodyTy = CheckExpr.check (env', cxt, body)
-                      val _ = CheckFieldFunc.check (env', cxt, body)
+                      val _ = CheckFieldFunc.checkPT (env', cxt, body)
                       in
                         case Util.coerceType (resTy, bodyTy)
-                         of SOME e => (
+                         of SOME e => 
+                            ( CheckFieldFunc.checkAST (env, cxt, e);                          
+                             (
                                 OTHER(AST.D_DiffFunc(f, [x], e)),
                                 Env.insertGlobal(env, cxt, #tree bindF, f)
                               )
+                            )
                           | NONE => (
                               err (cxt, [
                                   S "type of r.h.s. definition for '", A(#tree bindF),
