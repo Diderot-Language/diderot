@@ -67,8 +67,6 @@ structure CoordSpaceTransform : sig
           val (mulOp, addOp) = if (dim = 1)
                 then (Mk.mulRR, Mk.addRR)
                 else (Mk.innerTT([dim, dim], [dim]), Mk.addTT[dim])
-
-
           val x0 = AvailRHS.addAssign (avail, "MxPos", rty, IR.EINAPP(mulOp, [M, pos])) (*Image-Space position*)
           val T = AvailRHS.addAssign (avail, "Ttranslate", rty, IR.OP(Op.Translate info, [img]))
           val x = AvailRHS.addAssign (avail, "imgPos", rty, IR.EINAPP(addOp, [x0, T]))
