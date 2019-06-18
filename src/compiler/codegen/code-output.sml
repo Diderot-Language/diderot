@@ -10,7 +10,7 @@ structure CodeOutput : sig
 
     type t
 
-  (* `openOut {ext, newPP, ppDecl} basename` opens an output stream for CLang code, where
+  (* `openOut {ext, ppDecl} basename` opens an output stream for CLang code, where
    * `ext` is the file extension (e.g., "cxx" or "h"), and `ppDecl` is the function for
    * pretty printing a CLang decl in the appropriate syntax.
    *)
