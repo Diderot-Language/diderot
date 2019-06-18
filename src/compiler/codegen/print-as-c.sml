@@ -4,7 +4,7 @@
  *
  * This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
  *
- * COPYRIGHT (c) 2016 The University of Chicago
+ * COPYRIGHT (c) 2018 The University of Chicago
  * All rights reserved.
  *)
 
@@ -18,14 +18,66 @@ structure PrintAsC : sig
     structure PP = TextIOPP
 
     val indent0 = (PP.Abs 0)
+    val indent2 = (PP.Abs 2)
     val indent = (PP.Abs 4)     (* standard indentation amount *)
 
-    fun output (strm, decl) = let
+    fun numTyName rty = (case rty
+           of RawTypes.RT_Int8 => "int8_t"
+            | RawTypes.RT_UInt8 => "uint8_t"
+            | RawTypes.RT_Int16 => "int16_t"
+            | RawTypes.RT_UInt16 => "uint16_t"
+            | RawTypes.RT_Int32 => "int32_t"
+            | RawTypes.RT_UInt32 => "uint32_t"
+            | RawTypes.RT_Int64 => "int64_t"
+            | RawTypes.RT_UInt64 => "uint64_t"
+            | RawTypes.RT_Float => "float"
+            | RawTypes.RT_Double => "double"
+          (* end case *))
+
+  (* convert a type plus optional varaible to a string *)
+    and tyToS (ty, optVar)= let
+          fun prefix (s, "") = s
+            | prefix (s1, s2) = concat[s1, " ", s2]
+          fun wrapArray (tyOp, CL.T_Array(ty', sz), acc) = let
+                val suffix = (case sz
+                       of NONE => "[]"
+                        | SOME n => concat["[", Int.toString n, "]"]
+                      (* end case *))
+                in
+                  toS (ty', concat[tyOp, "(", acc, suffix, ")"])
+                end
+            | wrapArray (tyOp, ty, acc) = toS (ty, prefix(tyOp, acc))
+          and toS (ty, acc) = (case ty
+                 of CL.T_Num nty => prefix(numTyName nty, acc)
+                  | CL.T_Const ty => toS (ty, prefix("const", acc))
+                  | CL.T_Ptr ty => wrapArray ("*", ty, acc)
+                  | CL.T_Ref ty => wrapArray ("&", ty, acc)
+                  | CL.T_RestrictPtr _ => wrapArray ("* __restrict__", ty, acc)
+                  | CL.T_Array(ty, NONE) => toS (ty, acc ^ "[]")
+                  | CL.T_Array(ty, SOME n) =>
+                      toS (ty, concat[acc, "[", Int.toString n, "]"])
+                  | CL.T_Named ty => prefix(ty, acc)
+                  | CL.T_Template(ty, tyArgs) => raise Fail "unexpected template type in C"
+                  | CL.T_Qual(attr, ty) => concat[attr, " ", toS(ty, acc)]
+                  | CL.T_Member _ => raise Fail "unexpected type member in C"
+                (* end case *))
+          in
+            case optVar
+             of SOME x => toS (ty, x)
+              | NONE => toS (ty, "")
+            (* end case *)
+          end
+
+  (* convert a type to a string *)
+    and tyToS' ty = tyToS (ty, NONE)
+
+    fun output (_, CL.D_Verbatim[]) = ()
+      | output (strm, decl) = let
           val str = PP.string strm
           fun sp () = PP.space strm 1
+          fun nl () = PP.newline strm
           fun inHBox f = (PP.openHBox strm; f(); PP.closeBox strm)
           fun ppCom s = inHBox (fn () => (str "// "; str s))
-          fun ppComLn s = (ppCom s; PP.newline strm)
           fun ppList {pp, sep, l} = let
                 fun ppList' [] = ()
                   | ppList' [x] = pp x
@@ -33,64 +85,9 @@ structure PrintAsC : sig
                 in
                   ppList' l
                 end
-          fun ppTy (ty, optVar) = let
-                fun rawTy rty = (case rty
-                       of RawTypes.RT_Int8 => "int8_t"
-                        | RawTypes.RT_UInt8 => "uint8_t"
-                        | RawTypes.RT_Int16 => "int16_t"
-                        | RawTypes.RT_UInt16 => "uint16_t"
-                        | RawTypes.RT_Int32 => "int32_t"
-                        | RawTypes.RT_UInt32 => "uint32_t"
-                        | RawTypes.RT_Int64 => "int64_t"
-                        | RawTypes.RT_UInt64 => "uint64_t"
-                        | RawTypes.RT_Float => "float"
-                        | RawTypes.RT_Double => "double"
-                      (* end case *))
-                fun getBaseTy (CL.T_Num rty) = rawTy rty
-                  | getBaseTy (CL.T_Const(CL.T_Num rty)) = "const " ^ rawTy rty
-                  | getBaseTy (CL.T_Const(CL.T_Named ty)) = "const " ^ ty
-                  | getBaseTy (CL.T_Const ty) = getBaseTy ty
-                  | getBaseTy (CL.T_Ptr ty) = getBaseTy ty
-                  | getBaseTy (CL.T_RestrictPtr ty) = getBaseTy ty
-                  | getBaseTy (CL.T_Array(ty, _)) = getBaseTy ty
-                  | getBaseTy (CL.T_Named ty) = ty
-                  | getBaseTy (CL.T_Template(name, tys)) = raise Fail "unexpected template type in C"
-                  | getBaseTy (CL.T_Qual(attr, ty)) = concat[attr, " ", getBaseTy ty]
-                  | getBaseTy (CL.T_Member _) = raise Fail "unexpected type member in C"
-                fun ppVar (isFirst, SOME x) = (
-                      if isFirst then sp() else ();
-                      str x)
-                  | ppVar _ = ()
-                fun pp (isFirst, CL.T_Const(CL.T_Num _), optVar) = ppVar (isFirst, optVar)
-                  | pp (isFirst, CL.T_Const(CL.T_Named _), optVar) = ppVar (isFirst, optVar)
-                  | pp (isFirst, CL.T_Const ty, optVar) = raise Fail "FIXME"
-                  | pp (isFirst, CL.T_Ptr ty, optVar) = (
-                      if isFirst then sp() else ();
-                      case ty
-                       of CL.T_Array _ => (
-                            str "(*"; pp(false, ty, optVar); str ")")
-                        | _ => (str "*"; pp(false, ty, optVar))
-                      (* end case *))
-                  | pp (isFirst, CL.T_RestrictPtr ty, optVar) = (
-                      if isFirst then sp() else ();
-                      case ty
-                       of CL.T_Array _ => (
-                            str "(*"; sp(); str "__restrict__"; sp(); pp(false, ty, optVar); str ")")
-                        | _ => (str "*"; sp(); str "__restrict__"; sp(); pp(false, ty, optVar))
-                      (* end case *))
-                  | pp (isFirst, CL.T_Array(ty, optN), optVar) = (
-                      pp (isFirst, ty, optVar);
-                      case optN
-                       of NONE => str "[]"
-                        | SOME n => (str "["; str(Int.toString n); str "]")
-                      (* end case *))
-                  | pp (isFirst, CL.T_Qual(_, ty), optVar) =
-                      pp (isFirst, ty, optVar)
-                  | pp (isFirst, _, optVar) = ppVar (isFirst, optVar)
-                in
-                  str (getBaseTy ty);
-                  pp (true, ty, optVar)
-                end
+          fun ppCommaList {pp, l} = ppList {pp = pp, sep = fn () => (str ","; sp()), l = l}
+          fun ppTyAndVar (ty, x) = str (tyToS (ty, SOME x))
+          fun ppTy ty = str (tyToS (ty, NONE))
           fun ppAttrs [] = ()
             | ppAttrs attrs = (
                 ppList {pp=str, sep=sp, l = attrs};
@@ -99,81 +96,95 @@ structure PrintAsC : sig
                  of CL.D_Pragma l => (
                       inHBox (fn () => (
                         str "#pragma";
-                        List.app (fn s => (sp(); str s)) l));
-                      PP.newline strm)
-                  | CL.D_Comment l => List.app ppComLn l
+                        List.app (fn s => (sp(); str s)) l)))
+                  | CL.D_Comment[] => ()
+                  | CL.D_Comment(com::coms) => (
+                      ppCom com;
+                      List.app (fn com => (nl(); ppCom com)) coms)
+                  | CL.D_Verbatim [] => ()
                   | CL.D_Verbatim l => List.app str l
                   | CL.D_Var(attrs, ty, [], x, optInit) => (
                       inHBox (fn () => (
                         ppAttrs attrs;
-                        ppTy (ty, SOME x);
+                        ppTyAndVar (ty, x);
                         case optInit
                          of SOME init => (sp(); str "="; sp(); ppInit init)
                           | NONE => ()
                         (* end case *);
-                        str ";"));
-                      PP.newline strm)
+                        str ";")))
                   | CL.D_Var _ => raise Fail "unexpected scope qualifiers in C code"
                   | CL.D_Proto(attrs, ty, f, params) => (
                       inHBox (fn () => (
                         ppAttrs attrs;
-                        ppTy(ty, SOME f);
+                        ppTyAndVar(ty, f);
                         sp(); str "(";
-                        ppList {pp=ppParam, sep=fn () => (str ","; sp()), l=params};
-                        str ");"));
-                      PP.newline strm)
+                        ppCommaList {pp=ppParam, l=params};
+                        str ");")))
                   | CL.D_Func(attrs, ty, [], f, params, body) => (
                       PP.openVBox strm indent0;
                         inHBox (fn () => (
                           ppAttrs attrs;
-                          ppTy(ty, SOME f);
+                          ppTyAndVar(ty, f);
                           sp(); str "(";
-                          ppList {pp=ppParam, sep=fn () => (str ","; sp()), l=params};
+                          ppCommaList {pp=ppParam, l=params};
                           str ")"));
-                        PP.newline strm;
+                        nl();
                         ppBlock (case body of CL.S_Block stms => stms | stm => [stm]);
-                      PP.closeBox strm;
-                      PP.newline strm)
+                      PP.closeBox strm)
                   | CL.D_Func _ => raise Fail "unexpected scope qualifiers in C code"
                   | CL.D_StructDef(SOME name, fields, NONE) => (
                       PP.openVBox strm indent0;
                         inHBox (fn () => (str "struct"; sp(); str name; sp(); str "{"));
                         PP.openVBox strm indent;
                           List.app (fn (ty, x) => (
-                              PP.newline strm;
-                              inHBox (fn () => (ppTy(ty, SOME x); str ";"))))
+                              nl();
+                              inHBox (fn () => (ppTyAndVar(ty, x); str ";"))))
                             fields;
                         PP.closeBox strm;
-                        PP.newline strm;
+                        nl();
                         str "};";
-                      PP.closeBox strm;
-                      PP.newline strm)
+                      PP.closeBox strm)
                   | CL.D_StructDef(optStruct, fields, SOME tyName) => (
                       PP.openVBox strm indent0;
                         str "typedef struct {";
                         PP.openVBox strm indent;
                           List.app (fn (ty, x) => (
-                              PP.newline strm;
-                              inHBox (fn () => (ppTy(ty, SOME x); str ";"))))
+                              nl();
+                              inHBox (fn () => (ppTyAndVar(ty, x); str ";"))))
                             fields;
                         PP.closeBox strm;
-                        PP.newline strm;
+                        nl();
                         inHBox (fn () => (str "}"; sp(); str tyName; str ";"));
-                        PP.closeBox strm;
-                      PP.newline strm)
+                      PP.closeBox strm)
                   | CL.D_StructDef(NONE, _, NONE) => raise Fail "unamed struct"
+                  | CL.D_EnumDef{isClass=false, name, repTy=NONE, cons=con::conr} => let
+                      fun ppCon (name, NONE) = str name
+                        | ppCon (name, SOME e) = inHBox (fn () => (
+                            str name; sp(); str "="; sp(); ppExp e))
+                      in
+                        PP.openHVBox strm indent0;
+                          inHBox (fn () => (str "enum"; sp(); str name; sp(); str "{"));
+                          PP.openHVBox strm indent;
+			    PP.cut strm;
+                            ppCon con;
+                            List.app (fn c => (str ","; sp(); ppCon c)) conr;
+                          PP.closeBox strm;
+			  PP.cut strm;
+                          str "};";
+                        PP.closeBox strm
+                      end
+		  | CL.D_EnumDef _ => raise Fail "ill-formed enum definition in C code"
                   | CL.D_Constr _ => raise Fail "unexpected constructor decl in C code"
                   | CL.D_Destr _ => raise Fail "unexpected destructor decl in C code"
                   | CL.D_ClassDef _ => raise Fail "unexpected class decl in C code"
-                  | CL.D_Typedef(name, ty) => (
-                      inHBox (fn () => (str "typedef"; sp(); ppTy(ty, SOME name); str ";"));
-                      PP.newline strm)
+                  | CL.D_Typedef(name, ty) =>
+                      inHBox (fn () => (str "typedef"; sp(); ppTyAndVar(ty, name); str ";"))
                   | CL.D_Template _ => raise Fail "unexpected template decl in C code"
                   | CL.D_Namespace _ => raise Fail "unexpected namespace decl in C code"
                 (* end case *))
           and ppParam (CL.PARAM(attrs, ty, x)) = (
                 ppAttrs attrs;
-                ppTy(ty, SOME(CL.varToString x)))
+                ppTyAndVar(ty, CL.varToString x))
           and ppInit init = (case init
                  of CL.I_Exp e => ppExp e
                   | CL.I_Exps fields => (
@@ -211,9 +222,9 @@ structure PrintAsC : sig
           and ppBlock stms = (
                 str "{";
                 PP.openVBox strm indent;
-                  List.app (fn stm => (PP.newline strm; ppStm stm)) stms;
+                  List.app (fn stm => (nl(); ppStm stm)) stms;
                 PP.closeBox strm;
-                PP.newline strm;
+                nl();
                 str "}")
           and ppStm stm = (case stm
                  of CL.S_Block stms => ppBlock stms
@@ -221,28 +232,48 @@ structure PrintAsC : sig
                   | CL.S_Verbatim [] => ()
                   | CL.S_Verbatim (stm::stms) => (
                       str stm;
-                      List.app (fn stm => (PP.newline strm; str stm)) stms)
+                      List.app (fn stm => (nl(); str stm)) stms)
                   | CL.S_Decl(attrs, ty, x, NONE) => inHBox (fn () => (
                       ppAttrs attrs;
-                      ppTy(ty, SOME x); str ";"))
+                      ppTyAndVar(ty, x); str ";"))
                   | CL.S_Decl(attrs, ty, x, SOME e) => inHBox (fn () => (
                       ppAttrs attrs;
-                      ppTy(ty, SOME x); sp(); str "="; sp(); ppInit e; str ";"))
+                      ppTyAndVar(ty, x); sp(); str "="; sp(); ppInit e; str ";"))
                   | CL.S_Exp e => inHBox (fn () => (ppExp e; str ";"))
                   | CL.S_If(e, blk, CL.S_Block[]) =>
                       inHBox (fn () => (str "if"; sp(); ppExp e; ppStmAsBlock blk))
                   | CL.S_If(e, blk1, stm as CL.S_If _) => (
                       PP.openVBox strm indent0;
                         inHBox (fn () => (str "if"; sp(); ppExp e; ppStmAsBlock blk1));
-                        PP.newline strm;
+                        nl();
                       PP.closeBox strm;
                       inHBox (fn () => (str "else"; sp(); ppStm stm)))
                   | CL.S_If(e, blk1, blk2) => (
                       PP.openVBox strm indent0;
                         inHBox (fn () => (str "if"; sp(); ppExp e; ppStmAsBlock blk1));
-                        PP.newline strm;
+                        nl();
                         inHBox (fn () => (str "else"; ppStmAsBlock blk2));
                       PP.closeBox strm)
+                  | CL.S_Switch(e, cases) => let
+                      fun ppCase (labels, stms) = (
+                            if List.null labels
+                              then (nl(); str "default:")
+                              else List.app
+                                (fn lab => inHBox(fn () => (
+                                    nl(); str "case"; sp(); str lab; str ":")))
+                                  labels;
+                            PP.openVBox strm indent2;
+                              List.app (fn stm => (nl(); ppStm stm)) stms;
+                            PP.closeBox strm)
+                      in
+                        PP.openVBox strm indent0;
+                          inHBox (fn () => (str "switch"; sp(); ppExp e; sp(); str "{"));
+                          PP.openVBox strm indent2;
+                            List.app ppCase cases;
+                          PP.closeBox strm;
+                          nl (); str "}";
+                        PP.closeBox strm
+                      end
                   | CL.S_While(e, blk) =>
                       inHBox (fn () => (str "while"; sp(); ppExp e; ppStmAsBlock blk))
                   | CL.S_DoWhile(blk, e) =>
@@ -252,7 +283,7 @@ structure PrintAsC : sig
                       str "for"; sp(); str "(";
                       case dcls
                        of (x, e)::rest => (
-                            ppTy(ty, SOME x); sp(); str "="; sp(); ppExp e;
+                            ppTyAndVar(ty, x); sp(); str "="; sp(); ppExp e;
                             List.app
                               (fn (x, e) => (str ","; sp(); str x; sp(); str "="; sp(); ppExp e))
                                 rest)
@@ -287,16 +318,15 @@ structure PrintAsC : sig
                   | CL.E_Subscript(e1, e2) => (ppExp e1; str "["; ppExp e2; str "]")
                   | CL.E_Select(e, f) => (ppExp e; str "."; str f)
                   | CL.E_Indirect(e, f) => (ppExp e; str "->"; str f)
-                  | CL.E_Cast(ty, e) => (str "("; ppTy(ty, NONE); str ")"; ppExp e)
+                  | CL.E_Cast(ty, e) => (str "("; ppTy ty; str ")"; ppExp e)
                   | CL.E_Vec(ty, args) => (
                     (* GCC vector syntax: "__extension__ (ty){a, b, ...}" *)
-                      str "__extension__"; sp(); str "("; ppTy(ty, NONE); str ")";
+                      str "__extension__"; sp(); str "("; ppTy ty; str ")";
                       str "{";
                       PP.openHOVBox strm indent;
                         PP.cut strm;
-                        ppList {
+                        ppCommaList {
                             pp = fn e => (PP.openHBox strm; ppExp e; PP.closeBox strm),
-                            sep = fn () => (str ","; sp()),
                             l = args
                           };
                         str "}";
@@ -329,7 +359,7 @@ structure PrintAsC : sig
                   | CL.E_Bool b => str(Bool.toString b)
                   | CL.E_Str s => str(concat["\"", String.toCString s, "\""])
                   | CL.E_Char c => str(concat["'", Char.toCString c, "'"])
-                  | CL.E_Sizeof ty => (str "sizeof("; ppTy(ty, NONE); str ")")
+                  | CL.E_Sizeof ty => (str "sizeof("; ppTy ty; str ")")
                   | CL.E_TApply _ => raise Fail "unexpected template application in C code"
                   | CL.E_QId _ => raise Fail "unexpected qualified ID in C code"
                   | CL.E_Cons _ => raise Fail "unexpected constructor application in C code"
@@ -341,15 +371,17 @@ structure PrintAsC : sig
                 str "(";
                 PP.openHOVBox strm indent;
                   PP.cut strm;
-                  ppList {
+                  ppCommaList {
                       pp = fn e => (PP.openHBox strm; ppExp e; PP.closeBox strm),
-                      sep = fn () => (str ","; sp()),
                       l = args
                     };
                   str ")";
                 PP.closeBox strm)
           in
-            ppDecl decl
+            PP.openVBox strm indent0;
+              ppDecl decl;
+              nl();
+            PP.closeBox strm
           end
 
   end

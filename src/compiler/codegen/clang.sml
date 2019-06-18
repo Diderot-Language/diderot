@@ -22,6 +22,7 @@ structure CLang =
                                  * means that what is pointed to is constant.
                                  *)
       | T_Ptr of ty
+      | T_Ref of ty		(* reference type *)
       | T_RestrictPtr of ty     (* pointer type with "restrict" annotation *)
       | T_Array of ty * int option
       | T_Named of string
@@ -50,6 +51,9 @@ structure CLang =
 
   (* make a "const ty *" type for some ty *)
     fun constPtrTy ty = T_Ptr(T_Const ty)
+
+  (* make a "ty const &" type for some ty *)
+    fun constRefTy ty = T_Ref(T_Const ty)
 
     datatype decl
       = D_Pragma of string list
@@ -84,6 +88,13 @@ structure CLang =
             protected : decl list,
             private : decl list
           }
+    (* enum / enum-class definition *)
+      | D_EnumDef of {
+	    isClass : bool,		(* true for "enum class" definition (C++ only) *)
+	    name : string,		(* name of enumeration type *)
+	    repTy : ty option,		(* optional underlying representation type (C++ only) *)
+	    cons : (string * exp option) list	(* enumeration constants *)
+	  }
     (* typedef/type alias *)
       | D_Typedef of string * ty
     (* template declaration *)
@@ -114,6 +125,8 @@ structure CLang =
                                         (* ty var [ '=' exp ]';' *)
       | S_Exp of exp                    (* exp ';' *)
       | S_If of exp * stm * stm         (* 'if' exp stm 'else' stm *)
+      | S_Switch of exp * (string list * stm list) list
+					(* 'switch' exp '{' ... '}' *)
       | S_While of exp * stm            (* 'while' exp stm *)
       | S_DoWhile of stm * exp          (* 'do' stm 'while' exp *)
       | S_For of ty * (var * exp) list * exp * exp list * stm
@@ -338,6 +351,9 @@ structure CLang =
     fun mkAssign' (e1, rator, e2) = S_Exp(mkAssignOp(e1, rator, e2))
     fun mkIfThenElse (e, b1, b2) = S_If(paren e, b1, b2)
     fun mkIfThen (e, b) = mkIfThenElse (e, b, skip)
+    fun mkSwitch (e, cases) = S_Switch(paren e, cases)
+    fun mkCase (label, stms) = ([label], stms)
+    fun mkDefault stms = ([], stms)
     val mkFor = S_For
     fun mkWhile (e, b) = S_While(paren e, b)
     fun mkDoWhile (b, e) = S_DoWhile(b, paren e)
@@ -366,6 +382,9 @@ structure CLang =
     fun mkDestrProto cls = D_Destr([], [], cls, NONE)
   (* destructor function definition outside class body *)
     fun mkDestrDcl (cls, body) = D_Destr([], [SC_Type(T_Named cls)], cls, SOME body)
+  (* method definition outside class body *)
+    fun mkMethDcl (cls, ty, f, params, body) =
+	  D_Func([], ty, [SC_Type(T_Named cls)], f, params, body)
 
   (* utility functions *)
 
