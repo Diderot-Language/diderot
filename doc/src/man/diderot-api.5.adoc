@@ -43,9 +43,9 @@ specified by the *--namespace* commandline option (the default namespace is +Did
 
 SEE ALSO
 --------
-  *diderotc*(1)
+*diderotc*(1)
 
-  teem -- http://teem.sourceforge.net[]
+teem -- http://teem.sourceforge.net[]
 
 
 AUTHOR
