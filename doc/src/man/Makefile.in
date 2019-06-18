@@ -2,7 +2,7 @@
 #
 # This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
 #
-# COPYRIGHT (c) 2017 The University of Chicago
+# COPYRIGHT (c) 2019 The University of Chicago
 # All rights reserved.
 #
 
@@ -31,17 +31,17 @@ HTML =		$(patsubst %,%.html,$(MANPAGES))
 .PHONY:		all
 all:		$(MANPAGES) $(HTML)
 
-diderotc.1:	diderotc.1.txt
-	$(ASCIIDOCTOR) $(ATTRIBUTES) -b manpage diderotc.1.txt
+diderotc.1:	diderotc.1.adoc
+	$(ASCIIDOCTOR) $(ATTRIBUTES) -b manpage diderotc.1.adoc
 
-diderot-api.5:  diderot-api.5.txt
-	$(ASCIIDOCTOR) $(ATTRIBUTES) -b manpage diderot-api.5.txt
+diderot-api.5:  diderot-api.5.adoc
+	$(ASCIIDOCTOR) $(ATTRIBUTES) -b manpage diderot-api.5.adoc
 
-diderotc.1.html:	diderotc.1.txt
-	$(ASCIIDOCTOR) $(ATTRIBUTES) -b html5 diderotc.1.txt
+diderotc.1.html:	diderotc.1.adoc
+	$(ASCIIDOCTOR) $(ATTRIBUTES) -b html5 diderotc.1.adoc
 
-diderot-api.5.html:  diderot-api.5.txt
-	$(ASCIIDOCTOR) $(ATTRIBUTES) -b html5 diderot-api.5.txt
+diderot-api.5.html:  diderot-api.5.adoc
+	$(ASCIIDOCTOR) $(ATTRIBUTES) -b html5 diderot-api.5.adoc
 
 #################### Cleanup ####################
 
