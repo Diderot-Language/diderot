@@ -59,11 +59,14 @@ ROOT_MLB =		driver/sources.mlb
 PARSER_FILES =		parser/diderot.grm.sml parser/diderot.lex.sml \
 			parser/diderot-1.0.grm.sml parser/diderot-1.0.lex.sml
 #
-# preprocess files that contain UTF-8 multibyte sequences
+# preprocess files that contain UTF-8 multibyte sequences in string literals
 #
 UTF8_FILES =	cfg-ir/dom-tree-fn.sml \
 		ein/ein-pp.sml \
 		parse-tree/operators.sml \
+		parse-tree/parse-tree-pp.sml \
+		simple/simple-pp.sml \
+		simple/simple-types.sml \
 		typechecker/check-expr.sml
 EXPANDED_FILES = $(patsubst %.sml,%_mlton.sml,$(UTF8_FILES))
 
