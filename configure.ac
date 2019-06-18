@@ -2,14 +2,14 @@ dnl Process this file with autoconf to produce a configure script.
 dnl
 dnl This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
 dnl
-dnl COPYRIGHT (c) 2017 The University of Chicago
+dnl COPYRIGHT (c) 2019 The University of Chicago
 dnl All rights reserved.
 dnl
 
 AC_INIT(diderot,2.0,)
 
 AC_PREREQ(2.60)
-AC_COPYRIGHT([[COPYRIGHT (c) 2017 The University of Chicago]])
+AC_COPYRIGHT([[COPYRIGHT (c) 2019 The University of Chicago]])
 AC_CONFIG_SRCDIR(src/compiler/options/ctl.sml)
 AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_MACRO_DIR(config)
@@ -616,6 +616,17 @@ if test x"$with_mlton" = xno ; then
     AC_MSG_ERROR([installation requires SML/NJ version 110.80+ (available from smlnj.org)])
   fi
 
+  dnl if the SMLNJ_PATH (and SMLNJ_CMD) variables are relative paths, then we add the
+  dnl $DIDEROT_ROOT as a prefix so that scripts work correctly.
+  dnl
+  case $SMLNJ_PATH in
+    /*) ;; # already absolute
+    *)  SMLNJ_PATH="$DIDEROT_ROOT/$SMLNJ_PATH"
+        sml=`basename "$SMLNJ_CMD"`
+        SMLNJ_CMD="$SMLNJ_PATH"/"$sml"
+        AC_MSG_NOTICE([using SMLNJ_PATH=$SMLNJ_PATH])
+  esac
+
   dnl determine the heap-image suffix
   dnl
   CHECK_SMLNJ_HEAP_SUFFIX([
@@ -721,7 +732,7 @@ AH_TOP([
 /*
  * This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
  *
- * COPYRIGHT (c) 2016 The University of Chicago * All rights reserved.
+ * COPYRIGHT (c) 2019 The University of Chicago * All rights reserved.
  */
 
 #ifndef _DIDEROT_CONFIG_H_
