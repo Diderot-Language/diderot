@@ -41,7 +41,6 @@ structure Options : sig
     val helpFlg = ref(NONE : bool option)       (* SOME false -- short help; SOME true -- long help *)
     val aboutFlg = ref false
     val dumpBasisFlg = ref false
-    val longHelp = ref false
     val versionFlg = ref false
     val runtimeLogFlg = ref false
     val debugFlg = ref false
