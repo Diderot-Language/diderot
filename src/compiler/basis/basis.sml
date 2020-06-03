@@ -147,8 +147,8 @@ structure Basis : sig
           (N.fn_inv, [BV.fn_inv1_t, BV.fn_inv2_t, BV.fn_inv3_t, BV.fn_inv1_f, BV.fn_inv2_f, BV.fn_inv3_f]),
           (N.fn_lerp, [BV.lerp5, BV.lerp3]),
           (N.fn_clerp, [BV.clerp5, BV.clerp3]),
-          (N.fn_max, [BV.fn_max_i, BV.fn_max_r, BV.red_max_i, BV.red_max_r]),
-          (N.fn_min, [BV.fn_min_i, BV.fn_min_r, BV.red_min_i, BV.red_min_r]),
+          (N.fn_max, [BV.fn_max_i, BV.fn_max_r, BV.red_max_i, BV.red_max_r, BV.fn_maxF_s]),
+          (N.fn_min, [BV.fn_min_i, BV.fn_min_r, BV.red_min_i, BV.red_min_r, BV.fn_minF_s]),
           (N.fn_normalize, [BV.fn_normalize_t, BV.fn_normalize_f]),
           (N.fn_modulate, [BV.fn_modulate_tt, BV.fn_modulate_ff, BV.fn_modulate_tf, BV.fn_modulate_ft]),
           (N.fn_product, [BV.red_product_i, BV.red_product_r]),
@@ -158,7 +158,8 @@ structure Basis : sig
           (N.fn_sum, [BV.red_sum_i, BV.red_sum_r]),
           (N.fn_tan, [BV.fn_tan_r, BV.fn_tan_s]),
           (N.fn_trace, [BV.fn_trace_t, BV.fn_trace_f]),
-          (N.fn_transpose, [BV.fn_transpose_t, BV.fn_transpose_f])
+          (N.fn_transpose, [BV.fn_transpose_t, BV.fn_transpose_f]),
+          (N.op_compose, [BV.comp])
           ]
 
   (* assignment operators are bound to the corresponding binary operator *)

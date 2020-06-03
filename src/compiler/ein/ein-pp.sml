@@ -57,6 +57,11 @@ structure EinPP : sig
             | E.Partial alpha => "∂/∂x" ^ multiIndex2s alpha
             | E.Apply(e1, e2) => concat [ expToString e1, "@(", expToString e2, ")"]
             | E.Probe(e1, e2) => concat ["Probe(", expToString e1, ",", expToString e2, ")"]
+            | E.Comp(e1, es) => let
+                fun f(e2, n1) = concat ["[", expToString e2, "{", shp2s n1, "}", "]"]
+                in 
+                  concat ["Cmp(", expToString e1,")", String.concatWithMap ", " f es] 
+                end
             | E.Value ix => "i" ^ i2s ix
             | E.Img(fid, alpha, pos, s) => concat [
                   "V", i2s fid, multiIndex2s alpha, "(", i2s s, ")[",
@@ -74,6 +79,18 @@ structure EinPP : sig
                 ]
             | E.Poly(E.Tensor(tid, cx), 1, dx) => concat [deriv dx,"(P", i2s tid, multiIndex2s  cx, ")"]
             | E.Poly(E.Tensor(tid, cx), n, dx) => concat [deriv dx,"(P", i2s tid, multiIndex2s  cx, ")^",  i2s n]
+            | E.If (E.Var id, e3, e4) =>    concat[ "if(", Int.toString(id), ") then ", expToString e3," else ", expToString e4]
+            | E.If (E.Compare(op1, e1, e2), e3, e4) => let
+                val c = (case op1
+                    of E.GT => ">"
+                    | E.LT => "<"
+                    | E.GTE => "=>"
+                    | E.LTE => "<="
+                    | E.EQ => "="
+                    (*end case*))
+               in
+                concat[ "if(", expToString e1, c, expToString e2, ") then ", expToString e3," else ", expToString e4]
+               end
             | E.Sum(sx, e) => let
                 val sx = List.map
                       (fn (v, lb, ub) => concat ["(i", i2s v, "=", i2s lb, "..", i2s ub, ")"])
@@ -102,6 +119,8 @@ structure EinPP : sig
                 end
            | E.Op2(E.Sub, e1, e2) => concat ["(", expToString e1, ") - (", expToString e2, ")"]
            | E.Op2(E.Div, e1, e2) => concat ["(", expToString e1, ") / ( ", expToString e2, ")"]
+           | E.Op2(E.Max, e1, e2) => concat ["Max(", expToString e1, ", ", expToString e2, ")"]
+           | E.Op2(E.Min, e1, e2) => concat ["Min(", expToString e1, ", ", expToString e2, ")"]
            | E.Op3(E.Clamp, e1, e2, e3) => concat["Clamp <", expToString e1, ",", expToString e2, ",", expToString e3,">"]
            | E.Opn(E.Add, el) => concat["(", String.concatWithMap " + " expToString el,")"]
            | E.Opn(E.Prod, el) => concat["(", String.concatWithMap " * " expToString el, ")"]

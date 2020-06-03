@@ -24,7 +24,7 @@ structure TranslateOField : sig
     fun mkEin(body, index, params) = Ein.EIN{body = body, index = index, params = params}
 
     fun wrapCFExp(sx, y, ein as E.EIN{index,...}, args) = let
-          val (args, params, body)  = TranslateCFExp.transform_CFExp (y, ein, args)
+          val (params, body, args)  = TranslateCFExp.transform_CFExp (ein, args)
         (* Add summation wrapper back to ein expression *)
           val body = (case sx
                  of [] => body

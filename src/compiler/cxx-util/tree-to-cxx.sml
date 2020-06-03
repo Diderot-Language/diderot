@@ -287,6 +287,7 @@ structure TreeToCxx : sig
             | (Op.IndexInside(info, s), [pos, img]) => CL.mkDispatch(img, "inside", [pos, mkInt s])
             | (Op.ImageDim(info, i), [img]) => CL.mkDispatch(img, "size", [mkInt i])
             | (Op.MathFn f, args) => mkStdApply(MathFns.toString f, args)
+            | (Op.IfWrap, [a, b, c])    => CL.mkApply("IfWrap", [a,b,c])
             | _ => raise Fail(concat[
                    "unknown or incorrect operator ", Op.toString rator
                  ])

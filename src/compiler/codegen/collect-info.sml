@@ -43,7 +43,8 @@ structure CollectInfo : sig
       | EigenVecs2x2
       | EigenVecs3x3
       | SphereQuery of int * string
-
+      | RIfWrap
+      
     val collect : TreeIR.program -> t
 
     val listTypes : t -> TreeTypes.t list
@@ -78,6 +79,8 @@ structure CollectInfo : sig
       | EigenVecs2x2
       | EigenVecs3x3
       | SphereQuery of int * string
+      | RIfWrap
+            
 
    (* operator to string (for debugging) *)
     local
@@ -111,6 +114,7 @@ structure CollectInfo : sig
             | EigenVecs2x2 => "EigenVecs2x2"
             | EigenVecs3x3 => "EigenVecs3x3"
             | SphereQuery(d, s) => concat["SphereQuery", Int.toString d, "<", s, ">"]
+            | RIfWrap  => "RIfWrap"
           (* end case *))
     end (* local *)
 
@@ -142,6 +146,7 @@ structure CollectInfo : sig
                 | EigenVecs2x2 => 0w109
                 | EigenVecs3x3 => 0w113
                 | SphereQuery(d, s) => 0w117 + 0w7 * Word.fromInt d + HashString.hashString s
+                | RIfWrap  => 0w123
               (* end case *))
         fun sameKey (op1, op2) = (case (op1, op2)
                of (Print ty1, Print ty2) => TreeTypes.same(ty1, ty2)
@@ -168,6 +173,7 @@ structure CollectInfo : sig
                 | (EigenVecs2x2, EigenVecs2x2) => true
                 | (EigenVecs3x3, EigenVecs3x3) => true
                 | (SphereQuery(d1, s1), SphereQuery(d2, s2)) => (d1 = d2) andalso (s1 = s2)
+                | (RIfWrap,RIfWrap) => true
                 | _ => false
               (* end case *))
       end)
@@ -256,6 +262,7 @@ structure CollectInfo : sig
                   | Op.Transform info => insert (Transform(ImageInfo.dim info))
                   | Op.Translate info => insert (Translate(ImageInfo.dim info))
                   | Op.Inside(layout, _, s) => insert (Inside(layout, s))
+                  | Op.IfWrap => insert RIfWrap
                   | _ => ()
                 (* end case *))
           in

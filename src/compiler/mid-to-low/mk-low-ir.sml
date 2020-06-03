@@ -37,10 +37,14 @@ structure MkLowIR : sig
     val realSub : AvailRHS.t * LowIR.var * LowIR.var -> LowIR.var
     val realMul : AvailRHS.t * LowIR.var * LowIR.var -> LowIR.var
     val realDiv : AvailRHS.t * LowIR.var * LowIR.var -> LowIR.var
+    val realMax : AvailRHS.t * LowIR.var * LowIR.var -> LowIR.var
+    val realMin : AvailRHS.t * LowIR.var * LowIR.var -> LowIR.var
+    val boolGT  : AvailRHS.t * LowIR.var * LowIR.var -> LowIR.var
+    val boolLT  : AvailRHS.t * LowIR.var * LowIR.var -> LowIR.var
     val realNeg : AvailRHS.t * LowIR.var -> LowIR.var
     val realClamp : AvailRHS.t * LowIR.var * LowIR.var * LowIR.var -> LowIR.var
     val realSign : AvailRHS.t * LowIR.var -> LowIR.var
-
+    val realIf : AvailRHS.t * LowIR.var * LowIR.var * LowIR.var -> LowIR.var
   (* scalar math functions *)
     val realAbs    : AvailRHS.t * LowIR.var -> LowIR.var
     val realSqrt   : AvailRHS.t * LowIR.var -> LowIR.var
@@ -126,6 +130,8 @@ structure MkLowIR : sig
     local
       fun scalarOp1 rator (avail, x) = add (avail, "r", Ty.realTy, IR.OP(rator, [x]))
       fun scalarOp2 rator (avail, x, y) = add (avail, "r", Ty.realTy, IR.OP(rator, [x, y]))
+      fun scalarOp2R rator (avail, x, y) = add (avail, "r", Ty.realTy, IR.OP(rator(Ty.realTy), [x, y]))
+      fun scalarOp2B rator (avail, x, y) = add (avail, "r", Ty.BoolTy, IR.OP(rator(Ty.BoolTy), [x, y]))
       fun scalarOp3 rator (avail, x, y, z) = add(avail, "t", Ty.realTy, IR.OP(rator, [x, y, z]))
       fun scalarOp1R rator (avail, x) = add (avail, "r", Ty.realTy, IR.OP(rator(Ty.realTy), [x]))
     in
@@ -133,6 +139,8 @@ structure MkLowIR : sig
     val realSub = scalarOp2 Op.RSub
     val realMul = scalarOp2 Op.RMul
     val realDiv = scalarOp2 Op.RDiv
+    val realMax = scalarOp2R Op.Max
+    val realMin = scalarOp2R Op.Min
     val realNeg = scalarOp1 Op.RNeg
     val realAbs = scalarOp1R Op.Abs
     val realSign = scalarOp1 Op.Sign
@@ -145,6 +153,9 @@ structure MkLowIR : sig
     val realTan = scalarOp1 Op.Tan
     val realArcTan = scalarOp1 Op.ArcTan
     val realClamp = scalarOp3 Op.RClamp
+    val boolGT = scalarOp2B Op.GT
+    val boolLT = scalarOp2B Op.LT
+    val realIf = scalarOp3 Op.IfWrap
     end (* local *)
 
   (* vector arithmetic *)
@@ -253,11 +264,11 @@ structure MkLowIR : sig
           in
             if (pow_n < 0)
               then add (avail, "_PowInv", Ty.realTy,
-		IR.OP(Op.RDiv, [
-		    add (avail, "_One", Ty.realTy, IR.LIT(Literal.Real RealLit.one)),
-		    pow(~pow_n)
-		  ]))
-	      else pow pow_n
+               IR.OP(Op.RDiv, [
+                   add (avail, "_One", Ty.realTy, IR.LIT(Literal.Real RealLit.one)),
+                   pow(~pow_n)
+                 ]))
+              else pow pow_n
           end
 
   end

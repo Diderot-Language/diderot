@@ -97,11 +97,15 @@ structure CleanIndex : sig
                   | E.Partial alpha => addMus(ixs, alpha)
                   | E.Apply(E.Partial alpha, e1) => shape (e1, addMus(ixs, alpha))
                   | E.Probe(e, _) => shape (e, ixs)
+                  | E.Comp(e1, _) => shape(e1, ixs)
                   | E.OField(_, e2, E.Partial alpha) => shape (e2, addMus(ixs, alpha))
                   | E.Poly(_, _, alpha) => addMus (ixs, alpha)
                   | E.Value e1 => raise Fail "Error in Ashape"
                   | E.Img _ => raise Fail "Error in Ashape"
                   | E.Krn _ => raise Fail "Error in Ashape"
+                  | E.If(E.Compare(op1, e1, e2), e3, e4) =>
+                    shape (e1,shape (e2, shape (e3, shape(e4, ixs))))
+                  | E.If(_, e3, e4) => shape (e3, shape(e4, ixs))
                   | E.Sum(sx, e) => shape (e, addSingle (ixs, List.map #1 sx))
                   | E.Op1 (_, e) => shape (e, ixs)
                   | E.Op2(_, e1, e2) => shape (e1, shape(e2, ixs))
@@ -137,12 +141,17 @@ structure CleanIndex : sig
                   | E.Conv(_, alpha, _, dx) => alpha @ dx @ ixs
                   | E.Partial alpha => alpha @ ixs
                   | E.Apply(E.Partial dx, e) => shape (e, dx@ixs)
+                  | E.Comp(e1, _) => shape(e1, ixs)
                   | E.Probe(e, _) => shape (e, ixs)
                   | E.OField(_, e2, E.Partial alpha) => shape(e2, alpha@ixs)
                   | E.Poly(_, _, alpha) => alpha@ ixs
                   | E.Value _ => raise Fail "unexpected Value"
                   | E.Img _ => raise Fail "unexpected Img"
                   | E.Krn _ => raise Fail "unexpected Krn"
+                  | E.If(E.Compare(_,e1, e2), e3, e4) =>
+                    shape' ([e1, e2, e3, e4], ixs)
+                  | E.If(E.Var id, e3, e4) =>
+                    shape' ([e3, e4], ixs)
                   | E.Sum(_ , e) => shape (e, ixs)
                   | E.Op1(_, e) => shape (e, ixs)
                   | E.Op2(_, e1, e2) => shape' ([e1, e2], ixs)
@@ -253,12 +262,17 @@ structure CleanIndex : sig
                   | E.Probe(E.Conv(v, alpha, h,dx), t) =>
                       E.Probe(E.Conv(v, getAlpha alpha, h, getAlpha dx), rewrite t)
                   | E.Probe (e1, e2) => E.Probe(rewrite e1, rewrite e2)
+                  | E.Comp(e1, es) => E.Comp(rewrite e1, es)
                   | E.OField (opn, e1, E.Partial dx) =>
                       E.OField(opn, rewrite e1, E.Partial(getAlpha dx))
                   | E.Poly(e1, n, dx) => E.Poly(rewrite e1, n, getAlpha dx)
                   | E.Value e1 => raise Fail "unexpected Value"
                   | E.Img _ => raise Fail "unexpected Img"
                   | E.Krn _ => raise Fail "unexpected Krn"
+                  | E.If(E.Compare(op1, e1, e2), e3, e4) =>
+                    E.If(E.Compare(op1, rewrite e1, rewrite e2), rewrite e3, rewrite e4)
+                  | E.If(E.Var id, e3, e4) =>
+                    E.If(E.Var id, rewrite e3, rewrite e4)
                   | E.Sum(sx, e1) => E.Sum(getSx sx, rewrite e1)
                   | E.Op1(op1, e1) => E.Op1(op1, rewrite e1)
                   | E.Op2(op2, e1, e2) => E.Op2(op2, rewrite e1, rewrite e2)

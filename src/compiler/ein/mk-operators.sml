@@ -114,7 +114,9 @@ structure MkOperators : sig
     val tanF  : dim -> Ein.ein
     val atanR : Ein.ein
     val atanF : dim -> Ein.ein
-
+    val maxF : dim -> Ein.ein
+    val minF : dim -> Ein.ein
+    
     val modulateTT : shape -> Ein.ein
     val modulateTF : shape * dim -> Ein.ein
     val modulateFT : shape * dim -> Ein.ein
@@ -126,7 +128,8 @@ structure MkOperators : sig
     val sliceF : bool list * int list * Ein.index_bind list * int -> Ein.ein
     val concatTensor : shape * int -> Ein.ein
     val concatField : dim * shape * int -> Ein.ein
-
+    val composition: int * shape * int * shape -> Ein.ein
+    
     val lerp3 : shape -> Ein.ein
     val lerp5 : shape -> Ein.ein
     val clampRRT : shape -> Ein.ein
@@ -136,7 +139,10 @@ structure MkOperators : sig
 
     val conv : dim * shape -> Ein.ein
     val probe : shape * dim -> Ein.ein
-
+    val condField : dim * shape -> Ein.ein
+    val condField_GT : dim * shape -> Ein.ein
+    val condField_LT : dim * shape -> Ein.ein
+    
     val curl2d : Ein.ein
     val curl3d : Ein.ein
     val grad : shape -> Ein.ein
@@ -922,7 +928,15 @@ structure MkOperators : sig
     val atanR = tensorFn E.ArcTangent
     val atanF = liftFn E.ArcTangent
     end (* local *)
-
+    fun  maxF dim = E.EIN{
+            params = [E.FLD dim, E.FLD dim], 
+            index = [], body = E.Op2(E.Max, E.Field(0, []), E.Field(1, []))
+         }
+     fun minF dim = E.EIN{
+            params = [E.FLD dim, E.FLD dim], 
+            index = [], body = E.Op2(E.Min, E.Field(0, []), E.Field(1, []))
+         }
+        
   (************************* other tensor ops *************************)
 
     fun modulateTT shape = let
@@ -1015,7 +1029,24 @@ structure MkOperators : sig
               index = nflds::shape,
               body = concatBody (E.Field, shape, nflds, 0)
             }
-
+            
+    fun composition (dim0, shape0, dim1, shape1) = let
+          fun err exp = raise Fail (concat["\n Composition incorrect \n\t Expected: Vector field of length ", Int.toString(dim0), "\n\t Observed: ", exp, "\n"])
+          val _ = (case shape1
+                of [] => if(dim0=1) then () else err("scalar field") 
+                | [n] => if(dim0=n) then () else err("vector field of length"^Int.toString(n)) 
+                | _ => err("second-order tensor field")
+            (* end case *))
+          val expindex0 = specialize(shape0, 0)
+          val expindex1 = specialize(shape1, 0)
+          in
+            E.EIN{
+                params = [E.FLD (dim0), E.FLD (dim1)], 
+                index = shape0, 
+                body = E.Comp (E.Field(0, expindex0), [(E.Field(1, expindex1), shape1)])
+             }
+          end
+          
   (* Lerp<ty>(a, b, t) -- computes a + t*(b-a), where a and b have type ty
    * and t has type real
    *)
@@ -1142,6 +1173,29 @@ structure MkOperators : sig
               }
           end
 
+    fun condField(dim, alpha) = let
+          val expindex = specialize(alpha, 0)
+          in  
+            E.EIN{
+                params = [mkNoSubstTEN[], E.FLD dim, E.FLD dim], 
+                index = alpha, 
+                body = E.If(E.Var 0, E.Field(1, expindex) , E.Field(2, expindex))
+              }
+          end
+
+    fun condField_cond(condition, dim, alpha) = let
+          val expindex = specialize(alpha, 0)
+          in 
+            E.EIN{
+                params = [mkTEN[], mkTEN[], E.FLD dim, E.FLD dim], 
+                index = alpha, 
+                body = E.If(E.Compare(condition, E.Tensor(0,[]),E.Tensor(1,[])), E.Field(2, expindex) , E.Field(3, expindex))
+              }   
+          end
+    
+   fun condField_GT(dim, alpha) =  condField_cond(E.GT, dim, alpha)
+   fun condField_LT(dim, alpha) =  condField_cond(E.LT, dim, alpha)
+   
   (***************************** derivative ****************************)
 
   (* \EinExp{\sum_{ij}\mathcal{E}_{ij} \frac{F_j}{\partial x_i} *)

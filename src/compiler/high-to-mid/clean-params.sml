@@ -16,6 +16,7 @@
 structure CleanParams : sig
 
     val clean : Ein.ein_exp * Ein.param_kind list * Ein.index_bind list * MidIR.var list -> MidIR.rhs
+    val getFreeParams : Ein.ein_exp -> IntRedBlackSet.set
 
   end = struct
 
@@ -47,6 +48,10 @@ structure CleanParams : sig
                   | E.Value _ => raise Fail "unexpected Value"
                   | E.Img _ => raise Fail "unexpected Img"
                   | E.Krn _ => raise Fail "unexpected Krn"
+                  | E.If(E.Compare(_, e1, e2), e3, e4) =>
+                    walk (e4, walk (e3, walk (e2, walk (e1, mapp))))
+                  | E.If(E.Var id, e3, e4) =>
+                    walk (e4, walk (e3,ISet.add(mapp, id)))
                   | E.Sum(_, e1) => walk (e1, mapp)
                   | E.Op1(_, e1) => walk (e1, mapp)
                   | E.Op2(_, e1, e2) => walk (e2, walk (e1, mapp))
@@ -92,6 +97,10 @@ structure CleanParams : sig
                       E.CFExp(List.map (fn (id, inputTy) => (getId id, inputTy)) es),
                       rewrite e2,
                       rewrite dx)
+                  | E.If(E.Compare(op1, e1, e2), e3, e4)
+                    => E.If(E.Compare(op1, rewrite e1, rewrite e2), rewrite e3, rewrite e4)
+                  | E.If(E.Var(id), e3, e4)
+                    => E.If(E.Var(getId id), rewrite e3, rewrite e4)
                   | E.Sum(sx ,e1) => E.Sum(sx, rewrite e1)
                   | E.Op1(op1, e1) => E.Op1(op1, rewrite e1)
                   | E.Op2(op2, e1,e2) => E.Op2(op2, rewrite e1, rewrite e2)

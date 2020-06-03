@@ -112,8 +112,8 @@ structure DerivativeEin : sig
             | E.Delta _ => E.Const 0
             | E.Epsilon _ => E.Const 0
             | E.Eps2 _ => E.Const 0
-            | E.Field _ => body
             | E.Tensor _ => E.Const 0
+            | E.Probe(e1, e2) => E.Const 0 
             | E.Poly(e, n, dx) => E.Poly(e, n, dx@px)
             | E.Lift e => E.Lift(differentiate(px, e))
             | E.Sum(op1, e) => (case differentiate(px, e)

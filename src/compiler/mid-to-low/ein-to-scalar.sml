@@ -111,6 +111,19 @@ structure EinToScalar : sig
                     | E.Tensor(id, ix) => Mk.tensorIndex (avail, mapp, List.nth(lowArgs, id), ix)
                     | E.Zero _ => Mk.intToRealLit (avail, 0)
                     | E.Poly _ => gen(mapp, unwrapPoly(mapp, body))
+                    | E.If(E.Compare(op1, e1, e2), e3, e4) => let
+                        val vA = gen (mapp, e1)
+                        val vB = gen (mapp, e2)
+                        val vC = 
+                          (case op1
+                                of E.GT => Mk.boolGT(avail, vA, vB)
+                                 | E.LT => Mk.boolLT(avail, vA, vB)
+                          (* end case *))
+                        in
+                            Mk.realIf(avail, vC, gen (mapp, e3), gen (mapp, e4))
+                        end
+                    | E.If(E.Var id, e3, e4) 
+                        => Mk.realIf(avail, List.nth(lowArgs, id), gen (mapp, e3), gen (mapp, e4))
                     | E.Op1(op1, e1) => let
                         val arg = gen (mapp, e1)
                         in
@@ -139,6 +152,8 @@ structure EinToScalar : sig
                     | E.Op2(E.Div, e1 as E.Tensor (_, [_]), e2 as E.Tensor (_, [])) =>
                         gen (mapp, E.Opn(E.Prod, [E.Op2 (E.Div, E.Const 1, e2), e1]))
                     | E.Op2(E.Div, e1, e2) => Mk.realDiv (avail, gen (mapp, e1), gen (mapp, e2))
+                    | E.Op2(E.Max, e1, e2) => Mk.realMax (avail, gen (mapp, e1), gen (mapp, e2))
+                    | E.Op2(E.Min, e1, e2) => Mk.realMin (avail, gen (mapp, e1), gen (mapp, e2))
                     | E.Sum(sx, E.Opn(E.Prod, (img as E.Img _) :: (kargs as (E.Krn _ :: _)))) =>
                         FieldToLow.expand {
                             avail = avail, mapp = mapp,

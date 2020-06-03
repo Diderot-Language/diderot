@@ -174,15 +174,11 @@ structure TranslateBasis : sig
                                           [assignEin(y, Mk.divSS d, xs)]),
                 (BV.div_ts,             fn (y, [_,Ty.DIM d, Ty.SHAPE dd], xs) =>
                                           [assignEin(y, Mk.divTS(d, dd), xs)]),
-(*
-                (BV.pow_ri,             simpleOp Op.Power),
-*)
                 (BV.pow_ri,             fn (y, _, [f, n]) => case IR.Var.getDef n
                                            of IR.LIT(Literal.Int n) =>
-                                                [assignEin(y, Mk.powTI(IntInf.toInt n), [f])]
-(* FIXME: there is no guarantee that n will be constant! *)
-                                            | _ => raise Fail "impossible"
-                                          (* end case *)),
+                                                [assignEin(y, Mk.powTI( IntInf.toInt n), [f])]
+                                            | _ => [IR.ASSGN(y, IR.OP(Op.Power, [f, n]))]
+                                          (* end case *)),  
                 (BV.pow_rr,             fn (y, _, args) => assign(y, Op.MathFn MathFns.POW, args)),
                 (BV.pow_si,             fn (y, [_, Ty.DIM d1], [f, n]) => let
                                           fun getN x  = (case IR.Var.getDef x
@@ -392,6 +388,8 @@ structure TranslateBasis : sig
                                             assignEin(denom, Mk.det3F dim, [x]),
                                             assignEin(y, Mk.divFS(dim, shape), [num, denom])
                                           ] end),
+                (BV.comp,               fn (y, [_, Ty.DIM d0, Ty.SHAPE s0, Ty.DIM d1, Ty.SHAPE s1], xs) =>
+                                          [assignEin(y, Mk.composition(d0, s0, d1, s1), xs)]),
                 (BV.fn_sqrt_r,          fn (y, _, xs) =>
                                           [assignEin(y, Mk.sqrtR, xs)]),
                 (BV.fn_sqrt_s,          fn (y, [_, Ty.DIM d1], xs) =>
@@ -435,9 +433,9 @@ structure TranslateBasis : sig
                                           [assignEin(y, Mk.lerp3 sv, xs)]),
                 (BV.lerp5,              fn (y, [Ty.SHAPE sv], xs) =>
                                           [assignEin(y, Mk.lerp5 sv, xs)]),
-                (BV.clerp3,              fn (y, [Ty.SHAPE sv], xs) =>
+                (BV.clerp3,             fn (y, [Ty.SHAPE sv], xs) =>
                                           [assignEin(y, Mk.clerp3 sv, xs)]),
-                (BV.clerp5,              fn (y, [Ty.SHAPE sv], xs) =>
+                (BV.clerp5,             fn (y, [Ty.SHAPE sv], xs) =>
                                           [assignEin(y, Mk.clerp5 sv, xs)]),
                 (BV.evals2x2,           eigenVal (Op.Eigen2x2, 2)),
                 (BV.evals3x3,           eigenVal (Op.Eigen3x3, 3)),
@@ -445,8 +443,12 @@ structure TranslateBasis : sig
                 (BV.evecs3x3,           eigenVec (Op.Eigen3x3, 3)),
                 (BV.fn_max_i,           simpleOp (Op.Max DstTy.IntTy)),
                 (BV.fn_max_r,           simpleOp (Op.Max DstTy.realTy)),
+                (BV.fn_maxF_s,          fn (y, [_, Ty.DIM d1], xs) =>
+                                          [assignEin(y, Mk.maxF d1, xs)]),                                            
                 (BV.fn_min_i,           simpleOp (Op.Min DstTy.IntTy)),
                 (BV.fn_min_r,           simpleOp (Op.Min DstTy.realTy)),
+                (BV.fn_minF_s,          fn (y, [_, Ty.DIM d1], xs) =>
+                                          [assignEin(y, Mk.minF d1, xs)]),
                 (BV.i2r,                simpleOp Op.IntToReal),
                 (BV.identity,           fn (y, [Ty.DIM d], xs) =>
                                           [assignEin(y, Mk.identity d, xs)]),

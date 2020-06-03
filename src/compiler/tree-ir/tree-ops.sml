@@ -128,6 +128,7 @@ structure TreeOps =
       | ArcTan
       | Exp
       | Sign
+      | IfWrap
       | IntToReal
       | NumStrands of StrandSets.t
       | Transform of ImageInfo.t
@@ -209,6 +210,7 @@ structure TreeOps =
       | resultArity ArcTan = 1
       | resultArity Exp = 1
       | resultArity Sign = 1
+      | resultArity IfWrap = 1
       | resultArity IntToReal = 1
       | resultArity (NumStrands _) = 1
       | resultArity (Transform _) = 1
@@ -290,6 +292,7 @@ structure TreeOps =
       | arity ArcTan = 1
       | arity Exp = 1
       | arity Sign = 1
+      | arity IfWrap = 3
       | arity IntToReal = 1
       | arity (NumStrands _) = 0
       | arity (Transform _) = 1
@@ -377,6 +380,7 @@ structure TreeOps =
       | same (ArcTan, ArcTan) = true
       | same (Exp, Exp) = true
       | same (Sign, Sign) = true
+      | same (IfWrap, IfWrap) = true
       | same (IntToReal, IntToReal) = true
       | same (NumStrands(a0), NumStrands(b0)) = StrandSets.same(a0, b0)
       | same (Transform(a0), Transform(b0)) = ImageInfo.same(a0, b0)
@@ -459,17 +463,18 @@ structure TreeOps =
       | hash ArcTan = 0w337
       | hash Exp = 0w347
       | hash Sign = 0w349
-      | hash IntToReal = 0w353
-      | hash (NumStrands(a0)) = 0w359 + StrandSets.hash a0
-      | hash (Transform(a0)) = 0w367 + ImageInfo.hash a0
-      | hash (Translate(a0)) = 0w373 + ImageInfo.hash a0
-      | hash (BaseAddress(a0)) = 0w379 + ImageInfo.hash a0
-      | hash (ControlIndex(a0,a1,a2)) = 0w383 + ImageInfo.hash a0 + hashidxctl a1 + hashint a2
-      | hash (LoadVoxel(a0)) = 0w389 + ImageInfo.hash a0
-      | hash (Inside(a0,a1,a2)) = 0w397 + VectorLayout.hash a0 + ImageInfo.hash a1 + hashint a2
-      | hash (IndexInside(a0,a1)) = 0w401 + ImageInfo.hash a0 + hashint a1
-      | hash (ImageDim(a0,a1)) = 0w409 + ImageInfo.hash a0 + hashint a1
-      | hash (MathFn(a0)) = 0w419 + MathFns.hash a0
+      | hash IfWrap = 0w353
+      | hash IntToReal = 0w359
+      | hash (NumStrands(a0)) = 0w367 + StrandSets.hash a0
+      | hash (Transform(a0)) = 0w373 + ImageInfo.hash a0
+      | hash (Translate(a0)) = 0w379 + ImageInfo.hash a0
+      | hash (BaseAddress(a0)) = 0w383 + ImageInfo.hash a0
+      | hash (ControlIndex(a0,a1,a2)) = 0w389 + ImageInfo.hash a0 + hashidxctl a1 + hashint a2
+      | hash (LoadVoxel(a0)) = 0w397 + ImageInfo.hash a0
+      | hash (Inside(a0,a1,a2)) = 0w401 + VectorLayout.hash a0 + ImageInfo.hash a1 + hashint a2
+      | hash (IndexInside(a0,a1)) = 0w409 + ImageInfo.hash a0 + hashint a1
+      | hash (ImageDim(a0,a1)) = 0w419 + ImageInfo.hash a0 + hashint a1
+      | hash (MathFn(a0)) = 0w421 + MathFns.hash a0
 
     fun toString IAdd = "IAdd"
       | toString ISub = "ISub"
@@ -540,6 +545,7 @@ structure TreeOps =
       | toString ArcTan = "ArcTan"
       | toString Exp = "Exp"
       | toString Sign = "Sign"
+      | toString IfWrap = "IfWrap"
       | toString IntToReal = "IntToReal"
       | toString (NumStrands(a0)) = concat["NumStrands<", StrandSets.toString a0, ">"]
       | toString (Transform(a0)) = concat["Transform<", ImageInfo.toString a0, ">"]
