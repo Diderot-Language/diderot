@@ -14,8 +14,8 @@ for acquiring and installing the prerequisite software.
 To build *Teem*, you will need to have *cmake* installed.  Instructions
 for getting *cmake* are [below](#cmake-details).
 
-The Diderot runtime system is written in C++11 and the code generator
-also produces C++ code, so you will need to have a modern C++ compiler
+The Diderot runtime system is written in **C++11** and the code generator
+also produces **C++** code, so you will need to have a modern **C++** compiler
 installed (*e.g.*, either version 4.8.1 or later of **g++**, or
 version 3.3 or later of **clang++**).
 
@@ -39,8 +39,17 @@ which you can get from
 >  <http://smlnj.org/dist/working/index.html>
 >
 
-Make sure that you get version 110.82 or later.  More details about
+Make sure that you get version 110.98 or later.  More details about
 installing **SML/NJ** can be found [below](#smlnj-details).
+
+#### MLton
+
+It is also possible to build **Diderot** using the **MLton**
+Standard ML compiler, which you can get from
+
+>
+>  <http:/mlton.org>
+>
 
 ### Getting the Diderot source
 
@@ -230,7 +239,7 @@ directory.  Then run the following command to download and unbundle
 the `config` directory:
 
 ```` bash
-    curl -O http://smlnj.org/dist/working/110.82/config.tgz
+    curl -O http://smlnj.org/dist/working/110.98/config.tgz
     tar -xzf config.tgz
 ````
 
@@ -243,9 +252,3 @@ Then you can build the system using the command
 This command will download the necessary source and precompiled files from
 <smlnj.org> and build the **SML/NJ** runtime, compiler, and libraries.
 The path to the **sml** command will be `$SMLDIR/bin/sml`.
-
-Note that SML/NJ is a 32-bit program, so on Linux systems you must also
-have the 32-bit compatibility libraries installed (the exact libraries/packages
-required will depend on your distribution; details are available in the
-SML/NJ [INSTALL](http://www.smlnj.org/dist/working/110.82/INSTALL)
-notes).
