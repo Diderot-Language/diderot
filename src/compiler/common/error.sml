@@ -23,7 +23,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  *
- * This file is part of the SML Compiler Utilities, which can be found at
+ * This code is part of the SML Compiler Utilities, which can be found at
  *
  *      https://github.com/JohnReppy/sml-compiler-utils
  *)
@@ -41,7 +41,7 @@ structure Error :> sig
 
     type err_stream
 
-  (* make an error stream. *)
+  (* `mkErrStream file` make an error stream for the specified file *)
     val mkErrStream : string -> err_stream
 
     val anyErrors : err_stream -> bool
@@ -70,7 +70,9 @@ structure Error :> sig
   (* print the errors to an output stream *)
     val report : TextIO.outstream * err_stream -> unit
 
-  (* source-code locations *)
+  (* source-code locations: these are either unknown or specify an interval
+   * in a source file.
+   *)
     datatype location
       = UNKNOWN
       | LOC of {file : string, l1 : int, c1 : int, l2 : int, c2 : int}
@@ -101,6 +103,7 @@ structure Error :> sig
   end = struct
 
     structure SP = AntlrStreamPos
+    structure FilePos = SP.FilePos
     structure Repair = AntlrRepair
     structure F = Format
 
@@ -180,9 +183,9 @@ structure Error :> sig
           fun gt (NONE, NONE) = false
             | gt (NONE, _) = true
             | gt (_, NONE) = false
-            | gt (SOME(l1, r1), SOME(l2, r2)) = (case Position.compare(l1, l2)
+            | gt (SOME(l1, r1), SOME(l2, r2)) = (case FilePos.compare(l1, l2)
                  of LESS => false
-                  | EQUAL => (Position.compare(r1, r2) = GREATER)
+                  | EQUAL => (FilePos.compare(r1, r2) = GREATER)
                   | GREATER => true
                 (* end case *))
           fun cmp (e1 : error, e2 : error) = gt(#pos e1, #pos e2)
