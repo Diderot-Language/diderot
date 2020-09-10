@@ -2,14 +2,14 @@ dnl Process this file with autoconf to produce a configure script.
 dnl
 dnl This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
 dnl
-dnl COPYRIGHT (c) 2019 The University of Chicago
+dnl COPYRIGHT (c) 2020 The University of Chicago
 dnl All rights reserved.
 dnl
 
 AC_INIT(diderot,2.0,)
 
 AC_PREREQ(2.60)
-AC_COPYRIGHT([[COPYRIGHT (c) 2019 The University of Chicago]])
+AC_COPYRIGHT([[COPYRIGHT (c) 2020 The University of Chicago]])
 AC_CONFIG_SRCDIR(src/compiler/options/ctl.sml)
 AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_MACRO_DIR(config)
@@ -30,7 +30,6 @@ sinclude(config/ax_gcc_x86_avx_xgetbv.m4)
 sinclude(config/ax_ext.m4)
 sinclude(config/acx_pthread.m4)
 sinclude(config/check_smlnj.m4)
-sinclude(config/check_smlnj_heap_suffix.m4)
 sinclude(config/ax_check_framework.m4)
 sinclude(config/ax_cxx_compile_stdcxx.m4)
 
@@ -611,9 +610,9 @@ if test x"$with_mlton" = xno ; then
   dnl
   CHECK_SMLNJ([AC_MSG_ERROR([unable to find SML/NJ installation; please add it to your PATH or set SML_CMD])])
   if test $SMLNJ_MAJOR_VERSION -lt 110 \
-    -o $SMLNJ_MINOR_VERSION -lt 80
+    -o $SMLNJ_MINOR_VERSION -lt 98
   then
-    AC_MSG_ERROR([installation requires SML/NJ version 110.80+ (available from smlnj.org)])
+    AC_MSG_ERROR([installation requires SML/NJ version 110.98+ (available from smlnj.org)])
   fi
 
   dnl if the SMLNJ_PATH (and SMLNJ_CMD) variables are relative paths, then we add the
@@ -626,11 +625,6 @@ if test x"$with_mlton" = xno ; then
         SMLNJ_CMD="$SMLNJ_PATH"/"$sml"
         AC_MSG_NOTICE([using SMLNJ_PATH=$SMLNJ_PATH])
   esac
-
-  dnl determine the heap-image suffix
-  dnl
-  CHECK_SMLNJ_HEAP_SUFFIX([
-    AC_MSG_ERROR([unsupported configuration ${host_cpu}-${host_os}])])
 
   dnl look for ml-makedepend
   dnl

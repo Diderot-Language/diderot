@@ -1,6 +1,6 @@
 dnl check_smlnj.m4
 dnl
-dnl COPYRIGHT (c) 2016 The The SML/NJ Fellowship (http://smlnj.org/)
+dnl COPYRIGHT (c) 2019 The The SML/NJ Fellowship (http://smlnj.org/)
 dnl
 dnl @synopsis CHECK_SMLNJ(ACTION-IF-UNKNOWN)
 dnl
@@ -12,16 +12,19 @@ dnl or the SMLNJ_CMD variable in the environment (SMLNJ_CMD is for backwards
 dnl compatibility; SML_CMD is prefered).
 dnl This macro sets the following shell variables when it executes successfully:
 dnl
-dnl	SML_CMD			-- the absolute path to the "sml" command
-dnl	SMLNJ_CMD		-- same as $SML_CMD; for backward compatibility
-dnl	SMLNJ_PATH		-- the
+dnl	SML_CMD*		-- the absolute path to the "sml" command
+dnl	SMLNJ_CMD*		-- same as $SML_CMD; for backward compatibility
+dnl	SMLNJ_PATH*		-- the
 dnl	SMLNJ_VERSION		-- the version as "<major>.<minor>.<patch>", where
 dnl				   the ".<patch>" is optional.
 dnl	SMLNJ_MAJOR_VERSION	-- major version number
 dnl	SMLNJ_MINOR_VERSION	-- minor version number
 dnl	SMLNJ_PATCH_VERSION	-- patch number (empty if there is no patch number)
+dnl	SMLNJ_ARCH*		-- the host archectecture
+dnl	SMLNJ_OPSYS*		-- the host operating system
+dnl	SMLNJ_HEAP_SUFFIX*	-- the heap suffix
 dnl
-dnl This macro also does an AC_SUBST for SMLNJ_CMD, SML_CMD, and SMLNJ_PATH.
+dnl * This macro also does an AC_SUBST for the variables marked with "*"
 dnl
 dnl @author John Reppy <jhr@cs.uchicago.edu>
 dnl
@@ -85,6 +88,24 @@ dnl
       AC_SUBST(SML_CMD)
       AC_SUBST(SMLNJ_CMD)
       AC_SUBST(SMLNJ_PATH)
+    else
+      $1
+    fi
+dnl
+dnl Determine the heap suffix; we assume that this has the form <arch>-<opsys>
+dnl
+    AC_MSG_CHECKING([heap suffix of SML/NJ])
+    ac_check_smlnj_suffix=`$SML_CMD @SMLsuffix`
+    if test $? -eq 0 ; then
+      SMLNJ_HEAP_SUFFIX=$ac_check_smlnj_suffix
+      [SMLNJ_ARCH=`echo $ac_check_smlnj_suffix \
+	| sed -e 's/\([a-z0-9A-Z]*\)-\([a-z0-9A-Z]*\)/\1/'`]
+      [SMLNJ_OPSYS=`echo $ac_check_smlnj_suffix \
+	| sed -e 's/\([a-z0-9A-Z]*\)-\([a-z0-9A-Z]*\)/\2/'`]
+      AC_MSG_RESULT([$SMLNJ_HEAP_SUFFIX])
+      AC_SUBST(SMLNJ_HEAP_SUFFIX)
+      AC_SUBST(SMLNJ_ARCH)
+      AC_SUBST(SMLNJ_OPSYS)
     else
       $1
     fi
