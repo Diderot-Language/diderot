@@ -1,7 +1,8 @@
 # The Diderot language compiler
 
-This repository is the future home of the first official release of
-the source code for the Diderot compiler and runtime system.
+This repository is the source code for the Diderot compiler
+and runtime system.  It currently is missing the documentation
+subtree, but is otherwise complete.
 
 Diderot is a _Parallel Domain-specific Language_ for image
 analysis and visualization.
@@ -12,4 +13,3 @@ Diderot provides a high-level mathematical programming model for
 these algorithms, while also providing high-performance implementations
 on a variety of parallel hardware platforms.
 
-**NOTE**: we are getting ready to upload the source soon

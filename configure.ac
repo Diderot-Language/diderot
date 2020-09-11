@@ -726,7 +726,7 @@ AH_TOP([
 /*
  * This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
  *
- * COPYRIGHT (c) 2019 The University of Chicago * All rights reserved.
+ * COPYRIGHT (c) 2020 The University of Chicago * All rights reserved.
  */
 
 #ifndef _DIDEROT_CONFIG_H_
