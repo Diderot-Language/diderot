@@ -80,7 +80,7 @@ endif
 
 #################### Cleanup ####################
 
-CLEAN_SUBDIRS =		$(BUILD_DIRS) $(LOG_GEN_DIR)
+CLEAN_SUBDIRS =		$(BUILD_DIRS) $(LOG_GEN_DIR) doc
 
 CLEAN_FILES =		rtest/tests/*/out.nrrd
 

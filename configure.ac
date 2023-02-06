@@ -756,7 +756,8 @@ AC_CONFIG_FILES(
 dnl
 dnl ***** Makefiles *****
   Makefile
-dnl  doc/Makefile
+  doc/Makefile
+  doc/src/Makefile
   doc/src/man/Makefile
 dnl  src/clinfo/Makefile
   src/compiler/Makefile"$COMPILER_MAKEFILE_IN"

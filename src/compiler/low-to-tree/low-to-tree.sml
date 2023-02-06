@@ -258,7 +258,7 @@ structure LowToTree : sig
           end
 
   (* convert a list of LowIR variables, each of which are mapped
-   * to lists of of vector expressions, to a list of list of expressions
+   * to lists of vector expressions, to a list of list of expressions
    *)
     fun vectorArgs (env, []) = raise Fail "unexpected empty argument list"
       | vectorArgs (env, x::xs) = let

@@ -1,11 +1,11 @@
 (* print-as-cxx.sml
  *
- * Print CLang syntax trees using C++ syntax.
- *
  * This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
  *
  * COPYRIGHT (c) 2018 The University of Chicago
  * All rights reserved.
+ *
+ * Print CLang syntax trees using C++ syntax.
  *)
 
 structure PrintAsCxx : sig
@@ -501,7 +501,14 @@ structure PrintAsCxx : sig
                   | CL.E_Cons(ty, args) => (ppTy ty; ppArgs args)
                   | CL.E_New(ty, args) => (
                       str "new"; sp(); ppTy ty;
-                      if null args then () else ppArgs args)
+                      case (ty, args)
+                       of (CL.T_Named ty, []) => str ty
+                        | (CL.T_Template _, []) => ppTy ty
+                        | (CL.T_Named ty, args) => (str ty; ppArgs args)
+                        | (CL.T_Template _, args) => (ppTy ty; ppArgs args)
+                        | (ty, []) => ppTy ty
+                        | _ => raise Fail "bogus new"
+                      (* end case *))
                   | CL.E_Subscript(e1, e2) => (ppExp e1; str "["; ppExp e2; str "]")
                   | CL.E_Select(e, f) => (ppExp e; str "."; str f)
                   | CL.E_Indirect(e, f) => (ppExp e; str "->"; str f)

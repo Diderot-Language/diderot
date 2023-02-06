@@ -38,7 +38,9 @@ structure Options : sig
     exception Usage of string
 
   (* option flags that are set by getOpt *)
-    val helpFlg = ref(NONE : bool option)       (* SOME false -- short help; SOME true -- long help *)
+    val helpFlg = ref(NONE : bool option)       (* SOME false -- short help;
+                                                 * SOME true -- long help
+                                                 *)
     val aboutFlg = ref false
     val dumpBasisFlg = ref false
     val versionFlg = ref false
