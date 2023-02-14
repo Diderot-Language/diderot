@@ -6,13 +6,8 @@
  * All rights reserved.
  *)
 
-structure Gen : sig
-
-    val exec : TargetSpec.t * CmdLineConstants.t * TreeIR.program -> unit
-
-    val library : TargetSpec.t * CmdLineConstants.t * TreeIR.program -> unit
-
-  end = struct
+structure Gen : CODEGEN =
+  struct
 
     structure IR = TreeIR
     structure GV = TreeGlobalVar
