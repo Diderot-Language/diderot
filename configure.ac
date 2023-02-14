@@ -339,7 +339,6 @@ dnl
   AC_MSG_NOTICE([checking for CUDA and nvcc])
   NVCC=none
   AC_PATH_PROG(NVCC,nvcc,none,$PATH:/usr/local/cuda/bin)
-echo "## NVCC=$NVCC"
   if test x"$NVCC" = xnone ; then
     AC_MSG_WARN([nvcc not found])
     CUDA_ENABLED=false

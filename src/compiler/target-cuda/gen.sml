@@ -1,4 +1,13 @@
-structure CudaGen : CPPGEN = struct
+(* gen.sml
+ *
+ * This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
+ *
+ * COPYRIGHT (c) 2023 The University of Chicago
+ * All rights reserved.
+ *)
+
+structure CudaGen : CODEGEN =
+  struct
 
     structure IR = TreeIR (* Contains globals *)
     structure GV = TreeGlobalVar
@@ -34,53 +43,64 @@ structure CudaGen : CPPGEN = struct
 
     val openCudaOut = Out.openOut {ext = "cu", ppDecl = PrintAsCUDA.output}
 
-    fun create_base_name (spec: TSpec.t) =  OS.Path.joinDirFile{dir = #outDir spec, file = #outBase spec}
+    fun createBaseName (spec: TSpec.t) =
+          OS.Path.joinDirFile{dir = #outDir spec, file = #outBase spec}
 
-    fun make_cuda_malloc_stm var size = CL.mkCall("cuda_err", [(CL.mkApply("cudaMalloc", [(CL.mkAddrOf var), size])), CL.mkStr("CUDA allocation failed.")]);
+(* FIXME: switch to tupled arguments *)
+    fun mkCUDAMallocStm var size = CL.mkCall("cuda_err", [
+            CL.mkApply("cudaMalloc", [(CL.mkAddrOf var), size]),
+            CL.mkStr("CUDA allocation failed.")
+          ])
 
-    fun make_cuda_copy_to_gpu_async src dest size = CL.mkCall("cuda_err", [(CL.mkApply ("cudaMemcpyAsync", [CL.mkAddrOf src, CL.mkAddrOf dest, size, CL.mkVar "cudaMemcpyHostToDevice"]))]);
+    fun mkCUDACopyToGPU src dest size = CL.mkCall("cuda_err", [
+            CL.mkApply ("cudaMemcpyAsync", [
+                CL.mkAddrOf src, CL.mkAddrOf dest, size,
+                CL.mkVar "cudaMemcpyHostToDevice"
+              ]))
+          ])
 
-    fun copy_image name g_var gpu_g_var imgty spec =
-        let
-            val var_name = "gv_" ^ name;
-            val var = CL.mkIndirect(g_var, var_name);
-            val copy_fn = CL.mkSelect (var, "copy_to_device_async");
-        in
-            [CL.mkCall("cuda_err_passthrough", [(CL.mkApplyExp(copy_fn,[])), CL.mkStr(concat["Failed to copy image \"", var_name ,"\" to GPU"])])]
-        end
+    fun mkCopyImage name g_var gpu_g_var imgty spec = let
+          val varName = "gv_" ^ name;
+          val var = CL.mkIndirect(g_var, varName);
+          val copyFn = CL.mkSelect(var, "copy_to_device_async");
+          in [
+            CL.mkCall("cuda_err_passthrough", [
+                CL.mkApplyExp(copyFn,[]),
+                CL.mkStr(concat["Failed to copy image \"", varName ,"\" to GPU"])
+              ])
+          ] end
 
     fun copy_other tt name gvg_var gpu_g_var spec = []
 
-    fun copy_list name g_var gpu_g_var spec (SOME _) = 
-        let
-          val var_name = "gv_" ^ name;
-          val var = CL.mkIndirect(g_var, var_name);
-          val copy_fn = CL.mkSelect (var, "copy_to_device_async");
-          val target_var = CL.mkIndirect(gpu_g_var, var_name);
+    fun copy_list name g_var gpu_g_var spec (SOME _) = let
+          val varName = "gv_" ^ name;
+          val var = CL.mkIndirect(g_var, varName);
+          val copyFn = CL.mkSelect (var, "copy_to_device_async");
+          val target_var = CL.mkIndirect(gpu_g_var, varName);
           val target_ref = CL.mkAddrOf target_var
-        in
-          [CL.mkCall("cuda_err_passthrough", [(CL.mkApplyExp(copy_fn, [target_ref])), CL.mkStr(concat["Failed to copy list \"", var_name ,"\" to GPU"])])]
-        end
-        | copy_list name gvg_var gpu_g_var spec NONE = raise Fail "Not implemented: dynamic length list copy" 
+          in
+            [CL.mkCall("cuda_err_passthrough", [CL.mkApplyExp(copyFn, [target_ref]), CL.mkStr(concat["Failed to copy list \"", varName ,"\" to GPU"])])]
+          end
+        | copy_list name gvg_var gpu_g_var spec NONE = raise Fail "Not implemented: dynamic length list copy"
 
     fun copy_field_match (TrTy.TensorRefTy lengths) name gvg_var gpu_g_var spec = raise Fail "not Implemented: tensorref"
-        | copy_field_match (TrTy.ImageTy info) name gvg_var gpu_g_var spec = copy_image name gvg_var gpu_g_var (TrTy.ImageTy info) spec
-        | copy_field_match (TrTy.TupleTy ttypes) name gvg_var gpu_g_var spec = raise Fail "not Implemented: tuple"
-        | copy_field_match (TrTy.SeqTy (stype_i,len_opt)) name gvg_var gpu_g_var spec = copy_list name gvg_var gpu_g_var spec len_opt
-        | copy_field_match tt name gvg_var gpu_g_var spec = copy_other tt name gvg_var gpu_g_var spec 
-    
+      | copy_field_match (TrTy.ImageTy info) name gvg_var gpu_g_var spec = mkCopyImage name gvg_var gpu_g_var (TrTy.ImageTy info) spec
+      | copy_field_match (TrTy.TupleTy ttypes) name gvg_var gpu_g_var spec = raise Fail "not Implemented: tuple"
+      | copy_field_match (TrTy.SeqTy (stype_i,len_opt)) name gvg_var gpu_g_var spec = copy_list name gvg_var gpu_g_var spec len_opt
+      | copy_field_match tt name gvg_var gpu_g_var spec = copy_other tt name gvg_var gpu_g_var spec
+
     fun copy_field (IR.GV{ty, name, ...}) gvg_var gpu_g_var =  copy_field_match ty name gvg_var gpu_g_var
 
     fun copy_fields globals gvg_var gpu_g_var spec = List.concat (List.map (fn gv => copy_field gv gvg_var gpu_g_var spec) globals)
 
     fun create_prep_copy global_var global_ty = let
-        val target_var = CL.mkVar "gpu_prep_globals";
-        val target_var_assign = CL.mkAssign(target_var, (CL.mkNew(global_ty, [CL.mkVar "globals"])));
-    in
-        (target_var, target_var_assign)
-    end
+          val target_var = CL.mkVar "gpu_prep_globals";
+          val target_var_assign = CL.mkAssign(target_var, (CL.mkNew(global_ty, [CL.mkVar "globals"])));
+          in
+            (target_var, target_var_assign)
+          end
 
-    fun copy_globals globals inputs consts spec = let 
+    fun copy_globals globals inputs consts spec = let
         val gvs = List.foldr (fn (inp, gvs) => Inputs.varOf inp :: gvs) globals inputs
         val gvs = List.foldr (op ::) gvs consts
         val prep_copy_var = CL.mkVar "gpu_prep_globals";
@@ -92,7 +112,7 @@ structure CudaGen : CPPGEN = struct
         val field_copy_stmt = copy_fields gvs prep_copy_var gpu_var spec;
         val copy_struct = CL.mkCall("cuda_err_passthrough", [CL.mkApply("cudaMemcpyAsync", [gpu_var, prep_copy_var, CL.mkSizeof(globTy), CL.mkVar "cudaMemcpyHostToDevice"]), CL.mkStr("Failed to copy global structure to GPU")])
         val block = CL.mkBlock (field_copy_stmt @ [copy_struct, return0]);
-    in 
+    in
       [ CL.D_Verbatim ["#ifndef DIDEROT_NO_GLOBALS"],
         CL.mkFuncDcl(CL.T_Named "cudaError_t", "copy_globals", [prep_copy_param, gpu_param], block),
         CL.D_Verbatim ["#endif"]
@@ -166,7 +186,7 @@ structure CudaGen : CPPGEN = struct
                 in
                   (name, String.concat (args))
                 end
-          
+
         (* get method properties *)
           fun methodProps NONE = {present=false, needsW=false, hasG=false}
             | methodProps (SOME(IR.Method{needsW, hasG, ...})) =
@@ -177,14 +197,14 @@ structure CudaGen : CPPGEN = struct
                   needsW = present andalso (needsW orelse #needsW props),
                   hasG = present andalso (hasG orelse #hasG props)
                 }
-          
+
           fun requiresGlobalWorldCopy [] = (false, false)
             | requiresGlobalWorldCopy (NONE :: ms) = requiresGlobalWorldCopy ms
-            | requiresGlobalWorldCopy (SOME (IR.Method{needsW, hasG, ...}) :: ms) = let 
+            | requiresGlobalWorldCopy (SOME (IR.Method{needsW, hasG, ...}) :: ms) = let
                 val (otherNeedsW, otherHasG) = requiresGlobalWorldCopy ms
               in
                 (needsW orelse otherNeedsW, hasG orelse otherHasG)
-              end 
+              end
           (* extra parameters/arguments for various functions that are defined in the code
            * fragments.  There are some inclusion requirements on these:
            *
@@ -253,7 +273,7 @@ structure CudaGen : CPPGEN = struct
             mkMethodParams (false, "STABILIZE_PARAMS", stabilizeMProps),
             mkMethodArgs (false, true, "STABILIZE_ARGS_IN_WRLD", stabilizeMProps),
             mkMethodArgs (false, false, "STABILIZE_ARGS", stabilizeMProps)
-          ] 
+          ]
           end
 
     fun condCons (true, x, xs) = x::xs
@@ -371,15 +391,15 @@ structure CudaGen : CPPGEN = struct
             | pp _ = ()
           fun cmdLineDef (symb, value) =
                 ppDecl (CL.D_Verbatim [concat["#define ", symb, " ", value]])
-          val _ = if (#cudaPermute spec andalso #cudaGlobalQueue spec) 
+          val _ = if (#cudaPermute spec andalso #cudaGlobalQueue spec)
                   then raise Fail "Cannot have permutation and GlobalQueueing enabled at the same time"
                   else true
-          val _ = if (#cudaBatch spec andalso #cudaGlobalQueue spec) 
+          val _ = if (#cudaBatch spec andalso #cudaGlobalQueue spec)
                   then raise Fail "Cannot have batching and GlobalQueueing enabled at the same time"
                   else true
-          val _ = if (#cudaBatch spec andalso #cudaUnified spec) 
+          val _ = if (#cudaBatch spec andalso #cudaUnified spec)
                   then raise Fail "Cannot have batching and unified memory enabled at the same time"
-                  else true  
+                  else true
           val cudaDefault = (not (#cudaPermute spec)) andalso (not (#cudaGlobalQueue spec))
           in
             pp (#exec spec andalso #snapshot spec, "DIDEROT_EXEC_SNAPSHOT");
@@ -421,7 +441,7 @@ structure CudaGen : CPPGEN = struct
             | (true, false, true) => CUDAFragments.parSArrayInd
             | (true, true, true) => CUDAFragments.parSArrayDualInd
             | (_, false, false) => CUDAFragments.seqSArrayDir
-            | (_, true, false) => CUDAFragments.seqSArrayDualDir 
+            | (_, true, false) => CUDAFragments.seqSArrayDualDir
             | (_, false, true) => CUDAFragments.seqSArrayInd
             | (_, true, true) => CUDAFragments.seqSArrayDualInd*)
           (* end case *))
@@ -466,7 +486,7 @@ structure CudaGen : CPPGEN = struct
                   consts, inputs, globals, funcs, constInit, globInit,
                   create, start, update, strand, ...
                 } = prog
-        val baseName = create_base_name spec
+        val baseName = createBaseName spec
         val outS = openCudaOut baseName
         val env = mkEnv spec
         val substitutions = mkSubs (spec, strand, create)
@@ -508,8 +528,8 @@ structure CudaGen : CPPGEN = struct
           val substitutions = mkSubs (spec, strand, create)
           val gCpy = copy_globals globals inputs consts spec
         (* output to C++ file *)
-          val baseName = create_base_name spec
-          val outS = openCudaOut baseName 
+          val baseName = createBaseName spec
+          val outS = openCudaOut baseName
           val ppDecl = Out.decl outS
           val fragment = Out.fragment substitutions outS
         (* gather the outputs *)
@@ -559,4 +579,4 @@ structure CudaGen : CPPGEN = struct
             RunCC.linkLib (#staticLib spec, baseName, ldFlags spec)
           end
 end
- 
+
