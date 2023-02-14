@@ -8,7 +8,7 @@ dnl
 
 AC_INIT([diderot],[2.0],[])
 
-AC_PREREQ([2.71])
+AC_PREREQ([2.69])
 AC_COPYRIGHT([[COPYRIGHT (c) 2020 The University of Chicago]])
 AC_CONFIG_SRCDIR(src/compiler/options/ctl.sml)
 AC_CONFIG_AUX_DIR(config)
