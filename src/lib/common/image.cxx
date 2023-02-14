@@ -14,7 +14,7 @@
  */
 
 #include <cstdlib>
-#include "diderot/image.hxx"
+#include "diderot/image.h"
 
 namespace diderot {
 

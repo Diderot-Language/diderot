@@ -20,7 +20,7 @@ structure Targets : sig
             | TargetOptions.PARALLEL => TargetCPU.target tgt
             | TargetOptions.DEBUGGER => TargetCPU.target tgt
             | TargetOptions.OPENCL => raise Fail "OpenCL not supported yet"
-            | TargetOptions.CUDA => raise Fail "CUDA not supported yet"
+            | TargetOptions.CUDA => TargetCUDA.target tgt
           (* end case *))
 
   end

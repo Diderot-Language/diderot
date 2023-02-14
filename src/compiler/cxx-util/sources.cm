@@ -11,10 +11,8 @@ Library
   structure CxxFragments
   structure CxxNames
   structure GenInputsUtil
-  structure GenTysAndOps
   structure GenOutputsUtil
   structure PrintAsCxx
-  structure RunCC
   structure TreeToCxx
   structure TypeToCxx
 
@@ -35,10 +33,8 @@ is
 
   cxx-names.sml
   gen-inputs-util.sml
-  gen-tys-and-ops.sml
   gen-outputs-util.sml
   print-as-cxx.sml
-  run-cc.sml
   tree-to-cxx.sml
   type-to-cxx.sml
 

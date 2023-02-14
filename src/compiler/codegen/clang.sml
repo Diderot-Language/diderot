@@ -26,6 +26,8 @@ structure CLang =
       | T_RestrictPtr of ty     (* pointer type with "restrict" annotation *)
       | T_Array of ty * int option
       | T_Named of string
+(* QUESTION: should this be RawTypes.t * int? *)
+      | T_Vec of ty * int
       | T_Template of string * ty list
       | T_Qual of attr * ty     (* qualified type *)
       | T_Member of ty * string (* select type member of named/template type *)
@@ -48,6 +50,7 @@ structure CLang =
     val float = T_Num(RawTypes.RT_Float)
     val double = T_Num(RawTypes.RT_Double)
     val autoTy = T_Named "auto"
+    fun structTy ty = T_Qual("struct", ty)
 
   (* make a "const ty *" type for some ty *)
     fun constPtrTy ty = T_Ptr(T_Const ty)
@@ -73,6 +76,7 @@ structure CLang =
      * the inits should be of the form "id(exp)"
      *)
       | D_Constr of attr list * scope list * string * param list * (exp list * stm) option
+      | D_DefConstr of attr list * scope list * string * param list
     (* class destructor definition or prototype *)
       | D_Destr of attr list * scope list * string * stm option
     (* struct type declaration; if the third argument is SOME name, then a
@@ -152,6 +156,7 @@ structure CLang =
       | E_Cons of ty * exp list         (* ty "(" ... ")" [C++,CUDA]*)
       | E_New of ty * exp list          (* "new" ty "(" ... ")" [C++,CUDA]*)
       | E_Subscript of exp * exp        (* e "[" e "]" *)
+      | E_VecConstIndex of exp * int    (* only allow constant indices into vectors *)
       | E_Select of exp * string        (* e "." f *)
       | E_Indirect of exp * string      (* e "->" f *)
       | E_Cast of ty * exp              (* "(" ty ")" e *)
@@ -234,6 +239,7 @@ structure CLang =
         | prec (E_Cons _) = callP (* check this *)
         | prec (E_New _) = callP (* check this *)
         | prec (E_Subscript _) = postP
+        | prec (E_VecConstIndex _) = postP
         | prec (E_Select _) = postP
         | prec (E_Indirect _) = postP
         | prec (E_Cast _) = castP
@@ -299,6 +305,9 @@ structure CLang =
     fun mkSubscript(e1, e2) = if prec e1 < postP
           then E_Subscript(E_Grp e1, e2)
           else E_Subscript(e1, e2)
+    fun mkVecIndex (e1, i) = if prec e1 < postP
+          then E_VecConstIndex(E_Grp e1, i)
+          else E_VecConstIndex(e1, i)
     fun mkSelect (e, f) = if prec e < postP
           then E_Select(E_Grp e, f)
           else E_Select(e, f)
@@ -375,6 +384,7 @@ structure CLang =
     fun mkFuncDcl (ty, f, params, body) = D_Func([], ty, [], f, params, body)
   (* constructor prototype member declaration *)
     fun mkConstrProto (cls, params) = D_Constr([], [], cls, params, NONE)
+    val mkDefaultConstr = D_DefConstr
   (* constructor function definition outside class body *)
     fun mkConstrDcl (cls, params, inits, body) =
           D_Constr([], [SC_Type(T_Named cls)], cls, params, SOME(inits, body))

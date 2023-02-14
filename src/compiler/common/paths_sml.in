@@ -19,6 +19,7 @@ structure Paths : sig
     val teemBin : unit -> string
     val teemInclude : unit -> string
     val teemLinkFlags : unit -> string list
+    val teemCudaLinkFlags : unit -> string list
 
   (* SIMD support *)
     val hasSSE : bool
@@ -27,6 +28,9 @@ structure Paths : sig
 
   (* command to run the C++ compiler *)
     val ccxx : string
+
+  (* command to run the CUDA compiler *)
+    val nvcc : string
 
   (* command-line flags for the C++ compiler *)
     val cxxFlags : {
@@ -158,6 +162,13 @@ structure Paths : sig
               then ["-Wl,-rpath=" ^ teemLib, "-L" ^ teemLib, "-lteem"]
               else ["-L" ^ teemLib, "-lteem"]
           end
+    fun teemCudaLinkFlags () = let
+          val teemLib = resolveTeemDir "lib"
+          in
+            if @LD_NEEDS_RPATH@
+              then ["-Xlinker \"-rpath," ^ teemLib ^ "\"", "-L" ^ teemLib, "-lteem"]
+              else ["-L" ^ teemLib, "-lteem"]
+          end
     end (* local *)
 
   (* SIMD support *)
@@ -196,21 +207,28 @@ structure Paths : sig
             String.concatWith " " (cmd::args)
           end
 
+    val nvcc = let
+          val (cmd::args) = String.tokens Char.isSpace "@NVCC@"
+          val cmd = findExe ([], cmd)
+          in
+            String.concatWith " " (cmd::args)
+          end
+
     val cxxFlags = {
             base = "@CXXFLAGS_BASE@",
-            simd = String.concatWith " " simdFlags,
+            simd = String.concatWith " " ("-march=native" :: simdFlags),
             parallel = "@PTHREAD_CFLAGS@",
             cl = "@CPPFLAGS_CL@",
-            cuda = "@CPPFLAGS_CUDA@",
+            cuda = String.concatWith " " ["-std=c++14", "@CPPFLAGS_CUDA@"],
             debug = "-g -O0",
-            ndebug = "-march=native -O3 -DNDEBUG"
+            ndebug = "-O3 -DNDEBUG"
           }
 
     val extraLibs = {
             base = "@LDFLAG_LIBM@",
             parallel = "@PTHREAD_LIBS@",
             cl = "@LIBS_CL@",
-            cuda = "@LIBS_CUDA@"
+            cuda = "-L@CUDA_LIB@ @LIBS_CUDA@"
           }
 
     fun linkLibrary true = let (* static library *)

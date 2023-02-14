@@ -200,6 +200,19 @@ structure PrintAsCxx : sig
                           (* end case *);
                         (* NOTE: HBox has been closed *)
                       PP.closeBox strm)
+                  | CL.D_DefConstr(attrs, scopes, cls, params) => (
+                      if inClass then nl() else ();
+                      PP.openVBox strm indent0;
+                        PP.openHBox strm;
+                          ppAttrs attrs;
+                          if inClass
+                            then str cls
+                            else ppQName (scopes, cls);
+                          sp(); str "(";
+                          ppCommaList {pp=ppParam, l=params};
+                          str ")";
+                          str " = default;";
+                          PP.closeBox strm)
                   | CL.D_Destr(attrs, scopes, cls, body) => (
                       if inClass then nl() else ();
                       PP.openVBox strm indent0;
@@ -467,6 +480,7 @@ structure PrintAsCxx : sig
                       ppList {pp = ppExp, sep = fn () => str ",", l = incrs};
                       str ")";
                       ppStmAsBlock blk))
+                  | CL.S_KernCall _ => raise Fail "unexpected KernCall in C++ code"
                   | CL.S_Return(SOME e) => inHBox (fn () => (str "return"; sp(); ppExp e; str ";"))
                   | CL.S_Return _ => str "return;"
                   | CL.S_Break => str "break;"
@@ -474,7 +488,6 @@ structure PrintAsCxx : sig
                   | CL.S_Delete(isArr, e) => inHBox (fn () => (
                       if isArr then str "delete[]" else str "delete";
                       sp(); ppExp e; str ";"))
-                  | CL.S_KernCall _ => raise Fail "unexpected KernCall in C++ code"
                 (* end case *))
         (* force printing "{" "}" around a statement *)
           and ppStmAsBlock (CL.S_Block stms) = (sp(); ppBlock stms)
@@ -500,7 +513,7 @@ structure PrintAsCxx : sig
                   | CL.E_QId(prefix, id) => ppQName(prefix, id)
                   | CL.E_Cons(ty, args) => (ppTy ty; ppArgs args)
                   | CL.E_New(ty, args) => (
-                      str "new"; sp(); ppTy ty;
+                      str "new"; sp();
                       case (ty, args)
                        of (CL.T_Named ty, []) => str ty
                         | (CL.T_Template _, []) => ppTy ty
@@ -510,6 +523,8 @@ structure PrintAsCxx : sig
                         | _ => raise Fail "bogus new"
                       (* end case *))
                   | CL.E_Subscript(e1, e2) => (ppExp e1; str "["; ppExp e2; str "]")
+                  | CL.E_VecConstIndex(e, i) => (
+                      ppExp e; str "["; str (Int.toString i); str "]")
                   | CL.E_Select(e, f) => (ppExp e; str "."; str f)
                   | CL.E_Indirect(e, f) => (ppExp e; str "->"; str f)
                   | CL.E_Cast(ty, e) => (str "("; ppTy ty; str ")"; ppExp e)

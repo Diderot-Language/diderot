@@ -143,6 +143,12 @@ target-cpu/fragments.gmk: target-cpu/fragments/CATALOG $(wildcard target-cpu/fra
 target-cpu/fragments.sml:
 	$(MKFRAGS) target-cpu
 
+target-cuda/fragments.gmk: target-cuda/fragments/CATALOG $(wildcard target-cuda/fragments/*in)
+	$(MKMK) target-cuda
+
+target-cuda/fragments.sml:
+	$(MKFRAGS) target-cuda
+
 #
 # Dependency file rules
 #
@@ -153,6 +159,7 @@ ifneq ($(MAKECMDGOALS),distclean)
 sinclude codegen/fragments.gmk
 sinclude cxx-util/fragments.gmk
 sinclude target-cpu/fragments.gmk
+sinclude target-cuda/fragments.gmk
 endif
 endif
 endif

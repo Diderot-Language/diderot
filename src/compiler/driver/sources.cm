@@ -35,6 +35,7 @@ is
   ../simple-opt/sources.cm
   ../simplify/sources.cm
   ../target-cpu/sources.cm
+  ../target-cuda/sources.cm
   ../translate/sources.cm
   ../tree-ir/sources.cm
   ../tree-opt/sources.cm

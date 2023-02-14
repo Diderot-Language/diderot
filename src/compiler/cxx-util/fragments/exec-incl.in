@@ -2,8 +2,12 @@
 #define @DIDEROT_FLOAT_PRECISION@
 #define @DIDEROT_INT_PRECISION@
 #define @DIDEROT_TARGET@
-#include "diderot/diderot.hxx"
-
+#ifndef DIDEROT_TARGET_CUDA
+#include "diderot/diderot.h"
+#else
+#include "diderot/diderot.cuh"
+#include <random>
+#endif
 #ifdef DIDEROT_ENABLE_LOGGING
 #define IF_LOGGING(...)         __VA_ARGS__
 #else

@@ -443,8 +443,8 @@ structure GenTysAndOps : sig
                   | VSum(w, pw) => let
                       val name = RN.vsum w
                       val params = [CL.PARAM([], RN.vecTy w, "v")]
-                      fun mkSum 0 = CL.mkSubscript(CL.mkVar "v", mkInt 0)
-                        | mkSum i = CL.mkBinOp(mkSum(i-1), CL.#+, CL.mkSubscript(CL.mkVar "v", mkInt i))
+                      fun mkSum 0 = CL.mkVecIndex(CL.mkVar "v", 0)
+                        | mkSum i = CL.mkBinOp(mkSum(i-1), CL.#+, CL.mkVecIndex(CL.mkVar "v", i))
                       in
                         mkFunc(realTy, name, params, mkReturn(mkSum(w-1)))
                       end
@@ -452,8 +452,8 @@ structure GenTysAndOps : sig
                       val name = RN.vdot w
                       val vTy = RN.vecTy w
                       val params = [CL.PARAM([], vTy, "u"), CL.PARAM([], vTy, "v")]
-                      fun mkSum 0 = CL.mkSubscript(CL.mkVar "w", mkInt 0)
-                        | mkSum i = CL.mkBinOp(mkSum(i-1), CL.#+, CL.mkSubscript(CL.mkVar "w", mkInt i))
+                      fun mkSum 0 = CL.mkVecIndex(CL.mkVar "w", 0)
+                        | mkSum i = CL.mkBinOp(mkSum(i-1), CL.#+, CL.mkVecIndex(CL.mkVar "w", i))
                       in
                         mkFunc(realTy, name, params,
                           CL.mkBlock[
@@ -469,7 +469,7 @@ structure GenTysAndOps : sig
                       val intTy = Env.intTy env
                       val seqTy = sequenceTy (CL.intTy, wid)
                       fun mkItem i =
-                            CL.I_Exp(CL.mkCons(intTy, [CL.mkSubscript(CL.mkVar "src", mkInt i)]))
+                            CL.I_Exp(CL.mkCons(intTy, [CL.mkVecIndex(CL.mkVar "src", i)]))
                       val vParamTys = Ty.piecesOf layout
                       val vParams = List.mapi
                             (fn (i, Ty.VecTy(w, _)) => CL.PARAM([], RN.vecTy w, "v"^Int.toString i))
@@ -478,7 +478,7 @@ structure GenTysAndOps : sig
                             fun doPiece (i, Ty.VecTy(w, _)) = let
                                   val src = CL.mkVar("v"^Int.toString i)
                                   fun mkItem j =
-                                        CL.I_Exp(CL.mkCons(intTy, [CL.mkSubscript(src, mkInt j)]))
+                                        CL.I_Exp(CL.mkCons(intTy, [CL.mkVecIndex(src, j)]))
                                   in
                                     List.tabulate (w, mkItem)
                                   end
@@ -496,7 +496,7 @@ structure GenTysAndOps : sig
                   | VLoad(w, pw) => let
                       val name = RN.vload w
                       val cTy = RN.vecTy w
-                      fun arg i = CL.mkSubscript(CL.mkVar "vp", mkInt i)
+                      fun arg i = CL.mkVecIndex(CL.mkVar "vp", i)
                       in
                         mkFunc(cTy, name,
                           [CL.PARAM(["const"], CL.T_Ptr realTy, "vp")],
@@ -519,8 +519,8 @@ structure GenTysAndOps : sig
                       val dstTy = RN.tensorTy[#wid layout]
                       fun mkAssign (i, v, j) =
                             CL.mkAssign(
-                              CL.mkSubscript(CL.mkSelect(CL.mkVar "dst", "_data"), mkInt i),
-                              CL.mkSubscript(v, mkInt j))
+                              CL.mkVecIndex(CL.mkSelect(CL.mkVar "dst", "_data"), i),
+                              CL.mkVecIndex(v, j))
                       fun mkAssignsForPiece (dstStart, pieceIdx, wid, stms) = let
                             val piece = CL.mkVar("v"^Int.toString pieceIdx)
                             fun mk (j, stms) = if (j < wid)

@@ -2,7 +2,11 @@
 #define @DIDEROT_FLOAT_PRECISION@
 #define @DIDEROT_INT_PRECISION@
 #define @DIDEROT_TARGET@
-#include "diderot/diderot.hxx"
+#ifndef DIDEROT_TARGET_CUDA
+  #include "diderot/diderot.h"
+#else
+  #include "diderot/diderot.cuh"
+#endif
 
 #ifdef DIDEROT_ENABLE_LOGGING
 #define IF_LOGGING(...)         __VA_ARGS__
@@ -10,7 +14,7 @@
 #define IF_LOGGING(...)
 #endif
 
-static std::string ProgramName = "@PROG_NAME@";
+const static std::string ProgramName = "@PROG_NAME@";
 
 extern "C" {
 typedef struct @PREFIX@_struct_world @PREFIX@_world_t;

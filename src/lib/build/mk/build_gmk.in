@@ -39,11 +39,19 @@ DEPFLAGS =	-MT $@ -MMD -MP -MF $(DEPDIR)/$*.Td
 #
 # tools and flags
 #
+ifeq (cuda,$(TARGET_PLATFORM))
+CXX =		@NVCC@ -std=c++11
+AUXFLAGS =      -Xcompiler
+AUXDEL = "
+else
 CXX =		@CXX@
+AUXFLAGS =
+AUXDEL =
+endif
 INCLUDES =	-I@DIDEROT_SRCDIR@/lib/include -I@TEEM_DIR@/include
-CXXFLAGS =	$(DEPFLAGS) @CXXFLAGS@ @CXXFLAG_fPIC@
+CXXFLAGS =	$(DEPFLAGS) $(AUXFLAGS) $(AUXDEL) @CXXFLAGS@ @CXXFLAG_fPIC@ -fpermissive $(AUXDEL)
 LDFLAGS =
-CPPFLAGS =	@CPPFLAGS@ $(INCLUDES)
+CPPFLAGS =	@CPPFLAGS@ $(INCLUDES) -x c++
 
 POSTCOMPILE =	mv -f $(DEPDIR)/$*.Td $(DEPDIR)/$*.d
 
@@ -77,12 +85,14 @@ endif
 #
 # set debug flags, if needed
 #
+CXXFLAGS += $(AUXFLAGS) $(AUXDEL)
 ifeq ($(ENABLE_DEBUG),true)
   CXXFLAGS += -g3 -O0
 else
   CPPFLAGS += -DNDEBUG
   CXXFLAGS += -O3
 endif
+CXXFLAGS += $(AUXDEL)
 
 #
 # include pthreads if necessary

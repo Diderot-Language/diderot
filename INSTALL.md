@@ -72,6 +72,7 @@ Once you have downloaded the **Diderot** source code, go to the root of
 the source tree and configure the build for your machine.
 
 ````bash
+    autoreconf # Creates the configuration script
     ./configure
 ````
 

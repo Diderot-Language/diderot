@@ -10,7 +10,7 @@
  * All rights reserved.
  */
 
-#include "diderot/parallel.hxx"
+#include "diderot/parallel.h"
 
 #if defined (__APPLE__)
 #  include <sys/sysctl.h>

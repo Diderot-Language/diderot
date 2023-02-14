@@ -63,7 +63,13 @@ structure TargetSpec =
         hasGlobalUpdate : bool,         (* true for programs that have a global update block *)
         hasKillAll : bool,              (* true for programs that have a global die statement *)
         hasStabilizeAll : bool,         (* true for programs that have a global stabilize statement *)
-        hasReduce : bool                (* true for programs that have global reduce *)
+        hasReduce : bool,               (* true for programs that have global reduce *)
+
+        cudaPermute : bool,             (* true if user requests index space to be permuted *)
+        cudaGlobalQueue : bool,         (* true if user requests work steal scheduler *)
+        cudaUnified : bool,             (* true if user requests cuda unified memory *)
+        cudaBenchmark : bool,           (* true if user requests cuda benchmark mode that does not fails on invalid dimensions*)
+        cudaBatch : bool                (* true if user requests cuda batch processing*)
       }
 
     local
@@ -92,6 +98,11 @@ structure TargetSpec =
             scalar = #scalar tgt,
             debug = #debug tgt,
             runtimeLog = #runtimeLog tgt,
+            cudaPermute = #cudaPermute tgt,
+            cudaGlobalQueue = #cudaGlobalQueue tgt,
+            cudaUnified = #cudaUnified tgt,
+            cudaBenchmark = #cudaBenchmark tgt,
+            cudaBatch = #cudaBatch tgt,
             bsp = #bsp tgt orelse P.hasProp P.NeedsBSP props,
             useKDTree = #kdtree tgt,
             spatialDim = spatialDim,

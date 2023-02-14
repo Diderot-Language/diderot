@@ -103,7 +103,7 @@ structure MkFrags : sig
           \ *\n\
           \ * This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)\n\
           \ *\n\
-          \ * COPYRIGHT (c) 2016 The University of Chicago\n\
+          \ * COPYRIGHT (c) 2023 The University of Chicago\n\
           \ * All rights reserved.\n\
           \ *\n\
           \ * !!! THIS FILE WAS GENERATED; DO NOT EDIT !!!\n\

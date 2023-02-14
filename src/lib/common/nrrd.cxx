@@ -10,7 +10,7 @@
  * All rights reserved.
  */
 
-#include "diderot/base.hxx"
+#include "diderot/base.h"
 
 namespace diderot {
 

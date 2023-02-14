@@ -10,12 +10,13 @@
  * All rights reserved.
  */
 
-#include "diderot/options.hxx"
+#include "diderot/options.h"
 
 #include <iostream>
 #include <sstream>
 #include <cstdio>
 #include <cstring>
+#include <cstdint>
 #include <teem/air.h>
 #include <teem/hest.h>
 

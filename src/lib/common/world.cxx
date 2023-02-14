@@ -11,11 +11,11 @@
  */
 
 #include <cstdlib>
-#include "diderot/base.hxx"
-#include "diderot/world.hxx"
+#include "diderot/base.h"
+#include "diderot/world.h"
 
 #ifdef DIDEROT_TARGET_PARALLEL
-#include "diderot/parallel.hxx"
+#include "diderot/parallel.h"
 #endif
 
 namespace diderot {

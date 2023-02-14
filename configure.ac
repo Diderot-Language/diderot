@@ -17,7 +17,7 @@ AC_CONFIG_MACRO_DIR(config)
 dnl
 dnl set the following to the name of the branch
 dnl
-BRANCH="master"
+BRANCH="cuda"
 AC_SUBST(BRANCH)
 
 dnl
@@ -337,21 +337,54 @@ dnl
 dnl Look for NVIDIA's nvcc compiler
 dnl
   AC_MSG_NOTICE([checking for CUDA and nvcc])
-  AC_PATH_PROG(NVCC, nvcc, no, $PATH)
-  if test x"$NVCC" = xno ; then
+  AC_PATH_PROG(NVCC, nvcc, none, $PATH:/usr/local/cuda/bin)
+  if test x"$NVCC" = xnone ; then
     AC_MSG_WARN([nvcc not found])
     CUDA_ENABLED=false
     NVCC=":"
   else
     AC_MSG_RESULT([$NVCC])
     CUDA_ENABLED=true
+    LIBS_CUDA="-lcuda -lcudart -lcublas"
   fi
+  AC_MSG_CHECKING([checking for CUDA libraries in path])
+## QUESTION: where is CUDA_HOME defined?
+  if test x"$CUDA_HOME" == xnone ; then
+      for CUDA in cuda cuda-11.0 cuda-11.1 cuda-11.2 cuda-11.3 cuda-11.4 ; do
+        if test -d /usr/local/$CUDA/include/ ; then
+          CUDA_HOME=/usr/local/$CUDA
+          break
+        fi
+      done
+  fi
+  if test x"$CUDA_HOME" != xnone ; then
+      CUDA_LIB="$CUDA_HOME/lib"
+      AC_SUBST(CUDA_LIB)
+      CPPFLAGS_CUDA="-I$CUDA_HOME/include"
+      AC_MSG_RESULT([$CUDA_LIB])
+      AC_MSG_CHECKING([checking compatible CUDA version])
+      CUDA_VERSION=m4_esyscmd_s([$CUDA_HOME/bin/nvcc --version | grep -P 'release \d+' | cut -c 33-34])
+      CUDA_VERSION_1=m4_esyscmd_s([$CUDA_HOME/bin/nvcc --version | grep -P 'release \d+' | cut -c 33-33])
+      if (test "$CUDA_VERSION" == "11") ; then
+        AC_MSG_RESULT([yes])
+      else
+        if (test "$CUDA_VERSION" != "10") && (test "$CUDA_VERSION_1" == "1") ; then
+          AC_MSG_WARN([CUDA version $CUDA_VERSION is not supported but may work - Use at your own risk - Officially we support version 11])
+        else
+          AC_MSG_ERROR([CUDA version $CUDA_VERSION is not supported. Officially we support version 11 but higher versions may work])
+        fi
+      fi
+    else
+      AC_MSG_ERROR([CUDA_HOME not set - diderotc will not be able to link correctly])
+    fi
 else
   NVCC=":"
   CUDA_ENABLED=false
 fi
 AC_SUBST(NVCC)
 AC_SUBST(CUDA_ENABLED)
+AC_SUBST(LIBS_CUDA)
+AC_SUBST(CPPFLAGS_CUDA)
 
 #################### end CUDA configuration ####################
 
@@ -828,6 +861,11 @@ MK_BUILD_DIR(rt-par-debug, parallel, [parallel debug])
 
 if test x"$LOGGING_ENABLED" = xtrue ; then
   MK_BUILD_DIR(rt-par-log, parallel, [parallel logging])
+fi
+
+if test x"$CUDA_ENABLED" = xtrue; then
+  MK_BUILD_DIR(rt-cuda, cuda, [])
+  MK_BUILD_DIR(rt-cuda-debug, cuda, [debug])
 fi
 
 #if test x"$CL_ENABLED" = xtrue ; then

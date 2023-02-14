@@ -58,6 +58,11 @@ structure Options : sig
     val platform = ref Tgt.SEQUENTIAL
     val bspFlg = ref false
     val noSpacePartFlg = ref false
+    val cudaPermuteFlg = ref false
+    val cudaGlobalQueueFlg = ref false
+    val cudaUnifiedFlg = ref false
+    val cudaBenchmarkFlg = ref false
+    val cudaBatchFlg = ref false
 
     fun mkOpt ctl = let
           val name = if Controls.get ctl
@@ -164,6 +169,26 @@ structure Options : sig
               desc = setFlag (scalarFlg, true),
               help = "do not generate vectorized code"
             },
+            { short = "", long = ["cuda-permute"],
+              desc = setFlag (cudaPermuteFlg, true),
+              help = "generate cuda code with index space permuted - will be ignored if target is not cuda"
+            },
+            { short = "", long = ["cuda-global-queue"],
+              desc = setFlag (cudaGlobalQueueFlg, true),
+              help = "generate cuda code with work stealing scheduler"
+            },
+            { short = "", long = ["cuda-unified-memory"],
+              desc = setFlag (cudaUnifiedFlg, true),
+              help = "generate cuda code for unified memory. Allows for overprovisioning. Do not use unless necessary"
+            },
+            { short = "", long = ["cuda-benchmark"],
+              desc = setFlag (cudaBenchmarkFlg, true),
+              help = "generate cuda code for benchmarking. Will not change performance behavior but disable undesirable implicit features such as allowing too large grids"
+            },
+            { short = "", long = ["cuda-batch"],
+              desc = setFlag (cudaBatchFlg, true),
+              help = "generate cuda code with batching - will be ignored if target is not cuda"
+            },
 (* QUESTION: perhaps --log should not be part of the short option list? *)
             Controls.mkOptionFlag {ctl = Ctl.enableLog, short = "", long = SOME "log"},
 (* QUESTION: perhaps --stats should not be part of the short option list? *)
@@ -250,7 +275,7 @@ structure Options : sig
                 (* end case *))
         (* get the namespace and check that it is legal *)
           val namespace = (case !prefix
-                 of NONE => "Diderot"
+                 of NONE => "diderot"
                   | SOME "diderot" => raise Usage "namespace \"diderot\" is reserved"
                   | SOME ns => (case String.explode ns
                        of [] => raise Usage "invalid empty namespace specifier"
@@ -284,7 +309,12 @@ structure Options : sig
             runtimeLog = !runtimeLogFlg,
             debug = !debugFlg,
             bsp = !bspFlg,
-            kdtree = not(!noSpacePartFlg)
+            kdtree = not(!noSpacePartFlg),
+            cudaPermute = !cudaPermuteFlg,
+            cudaGlobalQueue = !cudaGlobalQueueFlg,
+            cudaUnified = !cudaUnifiedFlg,
+            cudaBenchmark = !cudaBenchmarkFlg,
+            cudaBatch = !cudaBatchFlg
           } end
 
     fun parse [] = {

@@ -23,25 +23,25 @@ inline void nullspace1 (
 
   /* ret += crs or ret -= crs; whichever makes res longer */
     if (dot3(res, crs) > 0.0) {
-	res[0] += crs[0];
-	res[1] += crs[1];
-	res[2] += crs[2];
+        res[0] += crs[0];
+        res[1] += crs[1];
+        res[2] += crs[2];
     } else {
-	res[0] -= crs[0];
-	res[1] -= crs[1];
-	res[2] -= crs[2];
+        res[0] -= crs[0];
+        res[1] -= crs[1];
+        res[2] -= crs[2];
     }
 
     cross3(r0, r2, crs);
   /* ret += crs or ret -= crs; whichever makes res longer */
     if (dot3(res, crs) > 0.0) {
-	res[0] += crs[0];
-	res[1] += crs[1];
-	res[2] += crs[2];
+        res[0] += crs[0];
+        res[1] += crs[1];
+        res[2] += crs[2];
     } else {
-	res[0] -= crs[0];
-	res[1] -= crs[1];
-	res[2] -= crs[2];
+        res[0] -= crs[0];
+        res[1] -= crs[1];
+        res[2] -= crs[2];
     }
 }
 
@@ -60,22 +60,22 @@ static void nullspace2 (
 
     sum = r0;
     if (dot3(sum, r1) > 0) {
-	sum[0] += r1[0];
-	sum[1] += r1[1];
-	sum[2] += r1[2];
+        sum[0] += r1[0];
+        sum[1] += r1[1];
+        sum[2] += r1[2];
     } else {
-	sum[0] -= r1[0];
-	sum[1] -= r1[1];
-	sum[2] -= r1[2];
+        sum[0] -= r1[0];
+        sum[1] -= r1[1];
+        sum[2] -= r1[2];
     }
     if (dot3(sum, r2) > 0) {
-	sum[0] += r2[0];
-	sum[1] += r2[1];
-	sum[2] += r2[2];
+        sum[0] += r2[0];
+        sum[1] += r2[1];
+        sum[2] += r2[2];
     } else {
-	sum[0] -= r2[0];
-	sum[1] -= r2[1];
-	sum[2] -= r2[2];
+        sum[0] -= r2[0];
+        sum[1] -= r2[1];
+        sum[2] -= r2[2];
     }
   // find largest component, to get most stable expression for a perpendicular vector
     sqr[0] = sum[0]*sum[0];
@@ -83,10 +83,10 @@ static void nullspace2 (
     sqr[2] = sum[2]*sum[2];
     idx = 0;
     if (sqr[0] < sqr[1]) {
-	idx = 1;
+        idx = 1;
     }
     if (sqr[idx] < sqr[2]) {
-	idx = 2;
+        idx = 2;
     }
 
     if (0 == idx) {
@@ -179,47 +179,47 @@ static int eigenvecs (tensor_ref_3_3 const &mat, diderot::array<@REALTY@, 3> &ev
     tensor_3 ev = tensor_3 { eval[0], eval[1], eval[2] };
     if (diderot::__details::ROOT_THREE == roots) {
          nullspace1 (
-	    tensor_3 { M00 - eval[0], M01, M02 },
-	    tensor_3 { M01, M11 - eval[0], M12 },
-	    tensor_3 { M02, M12, M22 - eval[0] },
-	    evec[0]);
+            tensor_3 { M00 - eval[0], M01, M02 },
+            tensor_3 { M01, M11 - eval[0], M12 },
+            tensor_3 { M02, M12, M22 - eval[0] },
+            evec[0]);
         nullspace1 (
-	    tensor_3 { M00 - eval[1], M01, M02 },
-	    tensor_3 { M01, M11 - eval[1], M12 },
-	    tensor_3 { M02, M12, M22 - eval[1] },
-	    evec[1]);
+            tensor_3 { M00 - eval[1], M01, M02 },
+            tensor_3 { M01, M11 - eval[1], M12 },
+            tensor_3 { M02, M12, M22 - eval[1] },
+            evec[1]);
         nullspace1 (
-	    tensor_3 { M00 - eval[2], M01, M02 },
-	    tensor_3 { M01, M11 - eval[2], M12 },
-	    tensor_3 { M02, M12, M22 - eval[2] },
-	    evec[2]);
+            tensor_3 { M00 - eval[2], M01, M02 },
+            tensor_3 { M01, M11 - eval[2], M12 },
+            tensor_3 { M02, M12, M22 - eval[2] },
+            evec[2]);
     }
     else if (diderot::__details::ROOT_SINGLE_DOUBLE == roots) {
         if (eval[1] == eval[2]) {
           /* one big (eval[0]) , two small (eval[1,2]) */
             nullspace1 (
-		tensor_3 { M00 - eval[0], M01, M02 },
-		tensor_3 { M01, M11 - eval[0], M12 },
-		tensor_3 { M02, M12, M22 - eval[0] },
-		evec[0]);
+                tensor_3 { M00 - eval[0], M01, M02 },
+                tensor_3 { M01, M11 - eval[0], M12 },
+                tensor_3 { M02, M12, M22 - eval[0] },
+                evec[0]);
             nullspace2 (
-		tensor_3 { M00 - eval[1], M01, M02 },
-		tensor_3 { M01, M11 - eval[1], M12 },
-		tensor_3 { M02, M12, M22 - eval[1] },
-		&evec[1]);
+                tensor_3 { M00 - eval[1], M01, M02 },
+                tensor_3 { M01, M11 - eval[1], M12 },
+                tensor_3 { M02, M12, M22 - eval[1] },
+                &evec[1]);
         }
         else {
           /* two big (eval[0,1]), one small (eval[2]) */
             nullspace2 (
-		tensor_3 { M00 - eval[0], M01, M02 },
-		tensor_3 { M01, M11 - eval[0], M12 },
-		tensor_3 { M02, M12, M22 - eval[0] },
-		&evec[0]);
+                tensor_3 { M00 - eval[0], M01, M02 },
+                tensor_3 { M01, M11 - eval[0], M12 },
+                tensor_3 { M02, M12, M22 - eval[0] },
+                &evec[0]);
             nullspace1 (
-		tensor_3 { M00 - eval[2], M01, M02 },
-		tensor_3 { M01, M11 - eval[2], M12 },
-		tensor_3 { M02, M12, M22 - eval[2] },
-		evec[2]);
+                tensor_3 { M00 - eval[2], M01, M02 },
+                tensor_3 { M01, M11 - eval[2], M12 },
+                tensor_3 { M02, M12, M22 - eval[2] },
+                evec[2]);
         }
     }
     else {
@@ -235,10 +235,10 @@ static int eigenvecs (tensor_ref_3_3 const &mat, diderot::array<@REALTY@, 3> &ev
       /* normalize evec[0] but don't move it */
         diderot::__details::normalize3(evec[0]._data);
       // compute evec[1] -= scale3(dot3(evec[1], evec[0]), evec[0]);
-	@REALTY@ s = dot3(evec[1], evec[0]);
-	evec[1][0] -= s*evec[0][0];
-	evec[1][1] -= s*evec[0][1];
-	evec[1][2] -= s*evec[0][2];
+        @REALTY@ s = dot3(evec[1], evec[0]);
+        evec[1][0] -= s*evec[0][0];
+        evec[1][1] -= s*evec[0][1];
+        evec[1][2] -= s*evec[0][2];
         diderot::__details::normalize3(evec[1]._data);
         cross3(evec[0], evec[1], evec[2]);
     }
@@ -246,10 +246,10 @@ static int eigenvecs (tensor_ref_3_3 const &mat, diderot::array<@REALTY@, 3> &ev
       /* normalize evec[2] but don't move it */
         diderot::__details::normalize3(evec[2]._data);
       // compute evec[1] -= scale3(dot3(evec[1], evec[2]), evec[2]);
-	@REALTY@ s = dot3(evec[1], evec[2]);
-	evec[1][0] -= s*evec[2][0];
-	evec[1][1] -= s*evec[2][1];
-	evec[1][2] -= s*evec[2][2];
+        @REALTY@ s = dot3(evec[1], evec[2]);
+        evec[1][0] -= s*evec[2][0];
+        evec[1][1] -= s*evec[2][1];
+        evec[1][2] -= s*evec[2][2];
         diderot::__details::normalize3(evec[1]._data);
         cross3(evec[1], evec[2], evec[0]);
     }

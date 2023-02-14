@@ -10,9 +10,9 @@
  * All rights reserved.
  */
 
-#include "diderot/base.hxx"
-#include "diderot/log-file.hxx"
-#include "diderot/parallel.hxx"
+#include "diderot/base.h"
+#include "diderot/log-file.h"
+#include "diderot/parallel.h"
 
 #ifndef DIDEROT_ENABLE_LOGGING
 #  error expected DIDEROT_ENABLE_LOGGING to be defined

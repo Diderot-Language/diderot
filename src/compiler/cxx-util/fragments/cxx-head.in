@@ -1,6 +1,6 @@
 /*! \file @CXXFILE@
  *
- * Generated from @SRCFILE@.
+ * Generated from @SRCFILE@ on @DATE@.
  *
  * Command: @DIDEROTC_CMD@ @DIDEROTC_ARGV@
  * Version: @DIDEROTC_VERSION@

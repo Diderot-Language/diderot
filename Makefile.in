@@ -55,7 +55,7 @@ local-install:
 	  (cd $$dir && $(MAKE) local-install) || exit $$?; \
 	done
 	mkdir -p include/diderot
-	(cd src/lib/include/diderot/; cp -p *.h *.hxx ../../../../include/diderot) || exit $$?
+	(cd src/lib/include/diderot/; cp -p *.h *.cuh ../../../../include/diderot) || exit $$?
 
 install:
 	mkdir -p $(INSTALL_DIR)
@@ -63,7 +63,7 @@ install:
 	  (cd $$dir && $(MAKE) install) || exit $$?; \
 	done
 	mkdir -p $(INSTALL_DIR)/include/diderot
-	(cd src/lib/include/diderot/; cp -p *.h *.hxx $(INSTALL_DIR)/include/diderot) || exit $$?
+	(cd src/lib/include/diderot/; cp -p *.h *.cuh $(INSTALL_DIR)/include/diderot) || exit $$?
 
 build:		$(LOG_HEADER)
 	for dir in $(BUILD_DIRS); do \
@@ -99,6 +99,7 @@ DISTCLEAN_FILES +=	Makefile config.status config.log \
 			src/logging/lib/default-log-paths.hxx
 
 DEVCLEAN_FILES =	configure \
+			src/compiler/.depend \
 			config/config_h.in \
 			config/config_h.in~
 

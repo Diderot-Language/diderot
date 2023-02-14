@@ -27,4 +27,6 @@ clean:
 	rm -f mkmk mkfrags
 
 distclean:	clean
-	rm -f mkmk.sh mkfrags.sh
+	rm -f mkmk.sh mkfrags.sh Makefile
+
+devclean:	distclean

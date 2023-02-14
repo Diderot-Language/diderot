@@ -39,7 +39,12 @@ structure TargetOptions =
         runtimeLog : bool,              (* true if runtime event logging is enabled *)
         debug : bool,                   (* true if debugging of the target is enabled *)
         bsp : bool,                     (* true if BSP style execution should always be used *)
-        kdtree : bool                   (* true if a kdtree is used to accelerate spatial queries *)
+        kdtree : bool,                  (* true if a kdtree is used to accelerate spatial queries *)
+        cudaPermute : bool,             (* true if cuda permutation is enabled *)
+        cudaGlobalQueue : bool,         (* true if cuda global queue is enabled *)
+        cudaUnified : bool,             (* true if cuda unified is enabled *)
+        cudaBenchmark : bool,           (* true if cuda benchmark is enabled *)
+        cudaBatch : bool                (* true if cuda batch is enabled *)
       }
 
     fun platformToString SEQUENTIAL = "SEQUENTIAL"

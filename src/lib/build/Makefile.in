@@ -17,7 +17,7 @@ INSTALL =		@INSTALL@
 # clear out unused file suffixes for implicit rules
 #
 .SUFFIXES:
-.SUFFIXES:	.cxx .hxx
+.SUFFIXES:	.cxx .hxx .cuh .h
 
 #
 # directories for the install target
