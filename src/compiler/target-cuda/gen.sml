@@ -56,7 +56,7 @@ structure CudaGen : CODEGEN =
             CL.mkApply ("cudaMemcpyAsync", [
                 CL.mkAddrOf src, CL.mkAddrOf dest, size,
                 CL.mkVar "cudaMemcpyHostToDevice"
-              ]))
+              ])
           ])
 
     fun mkCopyImage name g_var gpu_g_var imgty spec = let
