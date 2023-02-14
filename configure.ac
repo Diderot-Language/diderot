@@ -6,9 +6,9 @@ dnl COPYRIGHT (c) 2020 The University of Chicago
 dnl All rights reserved.
 dnl
 
-AC_INIT(diderot,2.0,)
+AC_INIT([diderot],[2.0],[])
 
-AC_PREREQ(2.60)
+AC_PREREQ([2.71])
 AC_COPYRIGHT([[COPYRIGHT (c) 2020 The University of Chicago]])
 AC_CONFIG_SRCDIR(src/compiler/options/ctl.sml)
 AC_CONFIG_AUX_DIR(config)
@@ -78,7 +78,7 @@ dnl
 AX_EXT
 
 AC_ARG_ENABLE([32-bit],
-  AC_HELP_STRING([--enable-32-bit], [configure Diderot to produce 32-bit executables]),
+  AS_HELP_STRING([--enable-32-bit], [configure Diderot to produce 32-bit executables]),
   [CXXFLAG_Mxx="-m32"],
   [CXXFLAG_Mxx="-m64"])
 
@@ -307,7 +307,7 @@ AC_SUBST(DSLEXT)
 
 LOGGING_ENABLED=false
 AC_ARG_ENABLE([event-logging],
-  AC_HELP_STRING([--enable-event-logging], [include event-logging support for parallel target]),
+  AS_HELP_STRING([--enable-event-logging], [include event-logging support for parallel target]),
   [LOGGING_ENABLED=true],
   [LOGGING_ENABLED=false])
 
@@ -319,7 +319,7 @@ AC_SUBST(LOGGING_ENABLED)
 
 DEBUGGER_ENABLED=false
 AC_ARG_ENABLE([debugger],
-  AC_HELP_STRING([--enable-debugger], [build the Diderot debugger (experimental)]),
+  AS_HELP_STRING([--enable-debugger], [build the Diderot debugger (experimental)]),
   [DEBUGGER_ENABLED=true],
   [DEBUGGER_ENABLED=false])
 
@@ -330,14 +330,16 @@ AC_SUBST(DEBUGGER_ENABLED)
 #################### CUDA configuration ####################
 
 AC_ARG_ENABLE([cuda],
-  AC_HELP_STRING([--enable-cuda], [include support for targeting CUDA]))
+  AS_HELP_STRING([--enable-cuda], [include support for targeting CUDA]))
 
 if test "${enable_cuda+set}" = set ; then
 dnl
 dnl Look for NVIDIA's nvcc compiler
 dnl
   AC_MSG_NOTICE([checking for CUDA and nvcc])
-  AC_PATH_PROG(NVCC, nvcc, none, $PATH:/usr/local/cuda/bin)
+  NVCC=none
+  AC_PATH_PROG(NVCC,nvcc,none,$PATH:/usr/local/cuda/bin)
+echo "## NVCC=$NVCC"
   if test x"$NVCC" = xnone ; then
     AC_MSG_WARN([nvcc not found])
     CUDA_ENABLED=false
@@ -346,37 +348,36 @@ dnl
     AC_MSG_RESULT([$NVCC])
     CUDA_ENABLED=true
     LIBS_CUDA="-lcuda -lcudart -lcublas"
-  fi
-  AC_MSG_CHECKING([checking for CUDA libraries in path])
-## QUESTION: where is CUDA_HOME defined?
-  if test x"$CUDA_HOME" == xnone ; then
-      for CUDA in cuda cuda-11.0 cuda-11.1 cuda-11.2 cuda-11.3 cuda-11.4 ; do
-        if test -d /usr/local/$CUDA/include/ ; then
-          CUDA_HOME=/usr/local/$CUDA
-          break
-        fi
-      done
-  fi
-  if test x"$CUDA_HOME" != xnone ; then
+
+    AC_MSG_CHECKING([checking for CUDA libraries])
+    CUDA_HOME=none
+    for CUDA in cuda cuda-11.0 cuda-11.1 cuda-11.2 cuda-11.3 cuda-11.4 ; do
+      if test -d /usr/local/$CUDA/include/ ; then
+        CUDA_HOME=/usr/local/$CUDA
+        break
+      fi
+    done
+    if test x"$CUDA_HOME" != xnone ; then
       CUDA_LIB="$CUDA_HOME/lib"
       AC_SUBST(CUDA_LIB)
       CPPFLAGS_CUDA="-I$CUDA_HOME/include"
       AC_MSG_RESULT([$CUDA_LIB])
-      AC_MSG_CHECKING([checking compatible CUDA version])
-      CUDA_VERSION=m4_esyscmd_s([$CUDA_HOME/bin/nvcc --version | grep -P 'release \d+' | cut -c 33-34])
-      CUDA_VERSION_1=m4_esyscmd_s([$CUDA_HOME/bin/nvcc --version | grep -P 'release \d+' | cut -c 33-33])
-      if (test "$CUDA_VERSION" == "11") ; then
-        AC_MSG_RESULT([yes])
-      else
-        if (test "$CUDA_VERSION" != "10") && (test "$CUDA_VERSION_1" == "1") ; then
-          AC_MSG_WARN([CUDA version $CUDA_VERSION is not supported but may work - Use at your own risk - Officially we support version 11])
-        else
-          AC_MSG_ERROR([CUDA version $CUDA_VERSION is not supported. Officially we support version 11 but higher versions may work])
-        fi
-      fi
+#      AC_MSG_CHECKING([checking compatible CUDA version])
+#      CUDA_VERSION=m4_esyscmd_s([$NVCC --version | grep 'release [:digit:]+]' | cut -c 33-34])
+#      CUDA_VERSION_1=m4_esyscmd_s([$NVCC --version | grep 'release [:digit:]+' | cut -c 33-33])
+#      if (test "$CUDA_VERSION" == "11") ; then
+#        AC_MSG_RESULT([yes])
+#      else
+#        if (test "$CUDA_VERSION" != "10") && (test "$CUDA_VERSION_1" == "1") ; then
+#          AC_MSG_WARN([CUDA version $CUDA_VERSION is not supported but may work - Use at your own risk - Officially we support version 11])
+#        else
+#          AC_MSG_ERROR([CUDA version $CUDA_VERSION is not supported. Officially we support version 11 but higher versions may work])
+#        fi
+#      fi
     else
       AC_MSG_ERROR([CUDA_HOME not set - diderotc will not be able to link correctly])
     fi
+  fi
 else
   NVCC=":"
   CUDA_ENABLED=false
@@ -391,7 +392,7 @@ AC_SUBST(CPPFLAGS_CUDA)
 #################### OpenCL configuration ####################
 
 AC_ARG_ENABLE([opencl],
-  AC_HELP_STRING([--enable-opencl], [include support for targeting OpenCL]))
+  AS_HELP_STRING([--enable-opencl], [include support for targeting OpenCL]))
 
 if test "${enable_opencl+set}" = set ; then
 
@@ -543,7 +544,7 @@ dnl
 dnl the path can be specified using "--with-teem=..." too
 dnl
 AC_ARG_WITH(teem,
-  AC_HELP_STRING([--with-teem=<path>], [specify path to teem installation]),
+  AS_HELP_STRING([--with-teem=<path>], [specify path to teem installation]),
   [ac_cv_use_teem=$withval], [ac_cv_use_teem=no])
 
 if test x"$ac_cv_use_teem" = xno ; then
