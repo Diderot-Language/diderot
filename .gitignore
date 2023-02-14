@@ -40,3 +40,7 @@
 # Makefile dependencies
 .depend
 
+# autoconf files
+#
+autom4te.cache
+config/config_h.in
