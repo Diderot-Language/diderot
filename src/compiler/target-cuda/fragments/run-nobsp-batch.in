@@ -1,0 +1,245 @@
+//! Run the Diderot program (sequential version without BSP semantics)
+//! \param max_nsteps the limit on the number of super steps; 0 means unlimited
+//! \return the number of steps taken, or 0 if done or there is an error.
+
+static uint32_t InnerBlockSize = @CUDA_INNER_BLK_SIZE@;
+static uint32_t NumberOfBlocks = @CUDA_NO_BLOCKS@;
+#ifdef DIDEROT_CUDA_GLOBAL_QUEUE
+#error "Global queue and batching are mutually exclusive"
+#endif
+@NEED_WORLD_COPY@
+@NEED_GLOBAL_COPY@
+
+
+__device__
+void runStrand(@UPDATE_PARAMS@strand_array *strands, uint32_t max_nsteps, uint32_t idx) {
+    assert(idx < strands->_nItems);
+    diderot::strand_status status =
+#ifdef DIDEROT_HAS_START_METHOD
+    strands->strand_start(ix);
+# else
+    strands->status(idx);
+#endif
+    uint32_t steps = 0;
+    for (; activeSts(status); status = strands->strand_update(@UPDATE_ARGS@idx)) {
+        if (++steps > max_nsteps) { break; }
+    }
+    switch (status) {
+        case diderot::kStabilize:
+// stabilize the strand's state.
+            strands->strand_stabilize(idx);
+            break;
+#ifdef DIDEROT_HAS_STRAND_DIE
+            case diderot::kDie:
+                strands->kill(idx);
+                        break;
+#endif
+        default:
+            return;
+    }
+}
+
+#ifdef DIDEROT_CUDA_PERMUTATIONS
+uint32_t *create_index_permutation(uint32_t n) {
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    auto permutation = static_cast<uint32_t *>(malloc(sizeof(uint32_t) * n));
+    std::iota(permutation, permutation + n, 0);
+    for (uint32_t i = 0; i < n; i++) {
+        std::uniform_int_distribution<> distr(0, n - i - 1); // define the range
+        uint32_t j = distr(gen);
+        if (j != 0) {
+            std::swap(permutation[i], permutation[j]);
+        }
+    }
+    return permutation;
+}
+
+__global__
+void cudaRun(@UPDATE_PARAMS@strand_array *strands, uint32_t max_nsteps, uint32_t blockSize, const uint32_t *permutation) {
+    uint32_t idx = blockIdx.x * blockDim.x + threadIdx.x;
+    for (uint32_t i = idx * blockSize; i < min((idx + 1) * blockSize, strands->_nItems); i++) {
+        uint32_t index = permutation[i];
+        runStrand(@UPDATE_ARGS@strands, max_nsteps, index);
+    }
+}
+#endif
+#ifdef DIDEROT_CUDA_DEFAULT
+__global__
+void cudaRun(@UPDATE_PARAMS@strand_array *strands, uint32_t max_nsteps, uint32_t blockSize) {
+    uint32_t idx = blockIdx.x * blockDim.x + threadIdx.x;
+    for (uint32_t i = idx * blockSize; i < min((idx + 1) * blockSize, strands->_nItems); i++) {
+        runStrand(@UPDATE_ARGS@strands, max_nsteps, i);
+    }
+}
+#endif
+
+uint32_t world::run(uint32_t max_nsteps, int32_t* gpu_id) {
+    if (this->_stage == diderot::POST_CREATE) {
+#ifdef DIDEROT_HAS_GLOBAL_START
+        this->global_start();
+#endif
+        this->_stage = diderot::RUNNING;
+    } else if (this->_stage == diderot::DONE) {
+        return 0;
+    }
+    assert(this->_stage == diderot::RUNNING);
+
+#ifndef DIDEROT_NO_GLOBALS
+    globals *glob = this->_globals;
+#endif
+
+    if (max_nsteps == 0) {
+        max_nsteps = 0xffffffff;  // essentially unlimited
+    }
+
+
+    if (this->_verbose) {
+        std::cerr << "run with " << this->_strands.num_alive() << " strands ..." << std::endl;
+    }
+
+    uint32_t num_strands = this->_strands._nItems;
+    uint32_t *gpu_permutation = nullptr;
+#ifdef DIDEROT_CUDA_PERMUTATIONS
+    uint32_t *permutation = create_index_permutation(num_strands);
+    cuda_err(cudaMalloc(&gpu_permutation, sizeof(uint32_t) * num_strands), "Failed to alloc gpu permutation");
+#endif
+    // iterate until all strands are stable
+    uint32_t maxSteps = 0;
+#ifndef DIDEROT_NO_GLOBALS
+#ifdef GLOBAL_COPY_REQUIRED    
+    globals *gpu_globals;
+    cuda_err(cudaMalloc(&gpu_globals, sizeof(globals)), "Failed to allocate GPU memory: ");
+#endif // GLOBAL_COPY_REQUIRED
+#endif // DIDEROT_NO_GLOBALS
+
+    uint8_t *gpu_strand_status;
+    char *gpu_strand_storage;
+    cuda_err(cudaMalloc(&gpu_strand_status, sizeof(uint8_t) * num_strands),
+             "Failed to alloc strand status array on gpu");
+    cuda_err(cudaMalloc(&gpu_strand_storage, sizeof(@STRANDTY@) * num_strands),
+             "Failed to alloc gpu strand storage");
+
+    strand_array *gpu_strands;
+    cuda_err(cudaMalloc(&gpu_strands, sizeof(strand_array)),
+             "Failed to alloc strand status array on gpu");
+    auto gpu_prep_strands = static_cast<strand_array *>(malloc(sizeof(strand_array)));
+    memcpy(gpu_prep_strands, &this->_strands, sizeof(strand_array));
+
+#ifndef DIDEROT_NO_GLOBALS
+#ifdef GLOBAL_COPY_REQUIRED
+    auto* gpu_prep_globals = new globals(this->_globals);
+#endif // GLOBAL_COPY_REQUIRED
+#endif // DIDEROT_NO_GLOBALS
+
+    gpu_prep_strands->_storage = gpu_strand_storage;
+    gpu_prep_strands->_status = gpu_strand_status;
+
+#ifndef DIDEROT_NO_GLOBALS
+#ifdef GLOBAL_COPY_REQUIRED  
+    cuda_err(copy_globals(gpu_prep_globals, gpu_globals), "Failed to copy global to GPU"); 
+#endif // GLOBAL_COPY_REQUIRED
+#endif // DIDEROT_NO_GLOBALS
+
+    cuda_err(cudaMemcpyAsync(gpu_strand_status, this->_strands._status, sizeof(uint8_t) * num_strands,
+                             cudaMemcpyHostToDevice),
+             "Failed to copy strand statii to GPU");
+    cuda_err(cudaMemcpyAsync(gpu_strand_storage, this->_strands._storage, sizeof(@STRANDTY@) * num_strands,
+                             cudaMemcpyHostToDevice),
+             "Failed to copy strand data to GPU");
+
+    cuda_err(cudaMemcpyAsync(gpu_strands, gpu_prep_strands, sizeof(strand_array),
+                             cudaMemcpyHostToDevice),
+             "Failed to copy strand array object to GPU");
+
+#ifdef DIDEROT_CUDA_PERMUTATIONS
+    cuda_err(cudaMemcpyAsync(gpu_permutation, permutation, sizeof(uint32_t) * num_strands,
+                             cudaMemcpyHostToDevice),
+             "Failed to copy permutation to GPU");
+#endif
+    cuda_err(cudaDeviceSynchronize(), "Pre exec sync failed"); // Ensure all async memcpys are done
+#ifndef DIDEROT_NO_GLOBALS
+#ifdef GLOBAL_COPY_REQUIRED  
+    free(gpu_prep_globals);
+#endif // GLOBAL_COPY_REQUIRED
+#endif // DIDEROT_NO_GLOBALS
+    free(gpu_prep_strands);
+#ifdef DIDEROT_CUDA_PERMUTATIONS
+    free(permutation);
+#endif
+    free(this->_strands._status);
+    free(this->_strands._storage);
+
+    //Check threads are allowed
+    int gpuIdx;
+    cudaGetDevice(&gpuIdx);
+    cudaDeviceProp *deviceProperties = static_cast<cudaDeviceProp*>(malloc(sizeof(cudaDeviceProp)));
+    cudaGetDeviceProperties(deviceProperties, gpuIdx);
+    uint32_t maxThreadsPerBlock = deviceProperties->maxThreadsPerBlock;
+    uint32_t maxBlocks  = deviceProperties->maxThreadsDim[1];
+    uint32_t maxGridSize  = deviceProperties->maxGridSize[1];
+    if(NumberOfBlocks > maxBlocks) {
+        std::cerr << "Number of blocks exceeded maximum for current gpu (maximum is " << maxBlocks << ")" << std::endl;
+#ifdef DIDEROT_CUDA_BENCHMARK
+        exit(1);
+#endif
+        NumberOfBlocks = maxBlocks;
+    }
+    if(InnerBlockSize > maxThreadsPerBlock) {
+        std::cerr << "Block size exceeded maximum for current gpu (maximum is " << maxThreadsPerBlock << ")" << std::endl;
+#ifdef DIDEROT_CUDA_BENCHMARK
+        exit(1);
+#endif
+        InnerBlockSize = maxThreadsPerBlock;
+    }
+    uint32_t gridSize = NumberOfBlocks * InnerBlockSize;
+    if(gridSize > maxGridSize) {
+        std::cerr << "Grid size exceeded maximum for current gpu (maximum is " << maxGridSize << ")" << std::endl;
+#ifdef DIDEROT_CUDA_BENCHMARK
+        exit(1);
+#endif
+        NumberOfBlocks = maxBlocks;
+        InnerBlockSize = maxGridSize / maxBlocks;
+        gridSize = NumberOfBlocks * InnerBlockSize;
+    }
+    free(deviceProperties);
+    double t0 = airTime();
+
+    assert(this->_strands._nItems > 0);
+    uint32_t blockSize =
+            1 + ((this->_strands._nItems - 1) / (NumberOfBlocks * InnerBlockSize)); // round up division
+#ifdef DIDEROT_CUDA_PERMUTATIONS
+    cudaRun<<<NumberOfBlocks, InnerBlockSize>>>(@CUDA_UPDATE_ARGS@gpu_strands, max_nsteps, blockSize, gpu_permutation);
+#else
+    cudaRun<<<NumberOfBlocks, InnerBlockSize>>>(@CUDA_UPDATE_ARGS@gpu_strands, max_nsteps, blockSize);
+#endif
+    cuda_err(cudaGetLastError(), "Failed to run kernel");
+    cuda_err(cudaDeviceSynchronize(), "exec sync failed");
+    this->_run_time += airTime() - t0;
+    cuda_err(cudaMemcpy(&this->_strands, gpu_strands, sizeof(strand_array), cudaMemcpyDeviceToHost), "Failed ot copy strand array");
+    this->_strands._status = static_cast<uint8_t *>(malloc(sizeof(uint8_t) * num_strands));
+    this->_strands._storage = static_cast<char *>(malloc(sizeof(@STRANDTY@) * num_strands));
+    cuda_err(cudaMemcpyAsync(this->_strands._status, gpu_strand_status, sizeof(uint8_t) * num_strands,
+                             cudaMemcpyDeviceToHost),
+             "Failed to copy strand statii from GPU");
+    cuda_err(cudaMemcpyAsync(this->_strands._storage, gpu_strand_storage, sizeof(@STRANDTY@) * num_strands,
+                             cudaMemcpyDeviceToHost),
+             "Failed to copy strand data from GPU");
+#ifndef DIDEROT_NO_GLOBALS
+#ifdef GLOBAL_COPY_REQUIRED
+    cudaFree(gpu_globals);
+#endif
+#endif
+    cudaFree(gpu_permutation);
+    cuda_err(cudaDeviceSynchronize(), "Post exec sync failed");
+    cudaFree(gpu_strands);
+    cudaFree(gpu_strand_status);
+    cudaFree(gpu_strand_storage);
+
+    if (this->_strands.num_active() == 0) {
+        this->_stage = diderot::DONE;
+    }
+
+    return maxSteps;
+
+} // world::run

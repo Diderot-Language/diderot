@@ -1,0 +1,159 @@
+extern "C" uint32_t @PREFIX@_num_strands (@PREFIX@_world_t *wrld)
+{
+    @PREFIX@::world *w = reinterpret_cast<@PREFIX@::world *>(wrld);
+    return w->_strands.num_alive();
+}
+
+extern "C" uint32_t @PREFIX@_num_active_strands (@PREFIX@_world_t *wrld)
+{
+    @PREFIX@::world *w = reinterpret_cast<@PREFIX@::world *>(wrld);
+    return w->_strands.num_active();
+}
+
+extern "C" uint32_t @PREFIX@_num_stable_strands (@PREFIX@_world_t *wrld)
+{
+    @PREFIX@::world *w = reinterpret_cast<@PREFIX@::world *>(wrld);
+    return w->_strands.num_stable();
+}
+
+extern "C" @BOOLTY@ @PREFIX@_any_errors (@PREFIX@_world_t *wrld)
+{
+    @PREFIX@::world *w = reinterpret_cast<@PREFIX@::world *>(wrld);
+    return (w->_errors->errNum > 0);
+}
+
+extern "C" char *@PREFIX@_get_errors (@PREFIX@_world_t *wrld)
+{
+    @PREFIX@::world *w = reinterpret_cast<@PREFIX@::world *>(wrld);
+    char *msg = biffMsgStrGet (w->_errors);
+    biffMsgClear (w->_errors);
+    return msg;
+}
+
+extern "C" @PREFIX@_world_t *@PREFIX@_new_world ()
+{
+    @PREFIX@::world *w = new (std::nothrow) @PREFIX@::world();
+    return reinterpret_cast<@PREFIX@_world_t *>(w);
+}
+
+extern "C" @BOOLTY@ @PREFIX@_init_world (@PREFIX@_world_t *wrld)
+{
+    @PREFIX@::world *w = reinterpret_cast<@PREFIX@::world *>(wrld);
+
+    if (w->_stage != diderot::POST_NEW) {
+        w->error ("multiple calls to @PREFIX@_init_world");
+        return true;
+    }
+
+    if (w->init()) {
+        return true;
+    }
+
+#ifndef DIDEROT_NO_INPUTS
+    if (w != nullptr) {
+        init_defined_inputs (w);
+        init_defaults (w->_globals);
+    }
+#endif
+
+    return false;
+}
+
+extern "C" @BOOLTY@ @PREFIX@_create_strands (@PREFIX@_world_t *wrld)
+{
+    @PREFIX@::world *w = reinterpret_cast<@PREFIX@::world *>(wrld);
+
+    if (w->_stage < diderot::POST_INIT) {
+        w->error ("must call @PREFIX@_init_world before @PREFIX@_create_strands");
+        return true;
+    }
+    else if (w->_stage > diderot::POST_INIT) {
+        w->error ("multiple calls to @PREFIX@_create_strands");
+        return true;
+    }
+
+#ifdef DIDEROT_TARGET_PARALLEL
+    if (w->_sched->create_workers (w)) {
+        return true;
+    }
+#endif
+
+#ifndef DIDEROT_NO_INPUTS
+    if (check_defined(w)) {
+        return true;
+    }
+#endif
+
+    return static_cast<@BOOLTY@>(w->create_strands());
+}
+
+extern "C" uint32_t @PREFIX@_run (@PREFIX@_world_t *wrld, uint32_t maxNSteps)
+{
+    @PREFIX@::world *w = reinterpret_cast<@PREFIX@::world *>(wrld);
+
+    if (w->_stage < diderot::POST_CREATE) {
+        w->error ("attempt to run uninitialized program");
+        return 0;
+    }
+    else if (w->_stage == diderot::DONE) {
+        return 0;
+    }
+
+    return w->run(maxNSteps);
+}
+
+extern "C" void @PREFIX@_shutdown (@PREFIX@_world_t *wrld)
+{
+    @PREFIX@::world *w = reinterpret_cast<@PREFIX@::world *>(wrld);
+    delete w;
+}
+
+extern "C" void @PREFIX@_set_verbose (@PREFIX@_world_t *wrld, @BOOLTY@ mode)
+{
+    @PREFIX@::world *w = reinterpret_cast<@PREFIX@::world *>(wrld);
+    w->_verbose = (mode ? true : false);
+}
+
+extern "C" @BOOLTY@ @PREFIX@_get_verbose (@PREFIX@_world_t *wrld)
+{
+    @PREFIX@::world *w = reinterpret_cast<@PREFIX@::world *>(wrld);
+    return static_cast<@BOOLTY@>(w->_verbose);
+}
+
+extern "C" bool @PREFIX@_set_printer_cb (@PREFIX@_world_t *wrld, bool (*pr)(void *, char *), void *data)
+{
+  /* FIXME: implement printer callback */
+    return true;
+}
+
+#ifdef DIDEROT_TARGET_PARALLEL
+
+extern "C" uint32_t @PREFIX@_get_num_cores (@PREFIX@_world_t *wrld)
+{
+    @PREFIX@::world *w = reinterpret_cast<@PREFIX@::world *>(wrld);
+    return w->_sched->_numHWCores;
+}
+
+extern "C" bool @PREFIX@_set_num_workers (@PREFIX@_world_t *wrld, uint32_t nw)
+{
+    @PREFIX@::world *w = reinterpret_cast<@PREFIX@::world *>(wrld);
+    if (w->_sched->_numHWCores < nw) {
+        w->_sched->_numWorkers = w->_sched->_numHWCores;
+        return true;
+    }
+    else if (nw > 0) {
+        w->_sched->_numWorkers = nw;
+    }
+    else {
+        w->_sched->_numWorkers = w->_sched->_numHWCores;
+    }
+    return false;
+}
+
+extern "C" uint32_t @PREFIX@_get_num_workers (@PREFIX@_world_t *wrld)
+{
+    @PREFIX@::world *w = reinterpret_cast<@PREFIX@::world *>(wrld);
+    return w->_sched->_numWorkers;
+}
+
+#endif /* DIDEROT_TARGET_PARALLEL */

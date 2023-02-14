@@ -1,0 +1,10 @@
+/* helper function that reports an error, deletes the world, and then exits */
+#ifdef HAVE_FUNC_ATTRIBUTE_NORETURN
+void exit_with_error (@PREFIX@::world *wrld, std::string const &msg) __attribute__ ((noreturn));
+#endif
+void exit_with_error (@PREFIX@::world *wrld, std::string const &msg)
+{
+    std::cerr << msg << ":\n" << wrld->get_errors() << std::endl;
+    delete wrld;
+    exit (1);
+}

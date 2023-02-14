@@ -1,0 +1,36 @@
+// Run the start methods of the initial strands (sequential version)
+//
+
+__global__
+void cudaStart(
+    const uint32_t blockSize
+#ifdef DIDEROT_CUDA_PERMUTATIONS
+     , const uint32_t *permutation) {
+#endif
+    uint32_t idx = blockIdx.x * blockDim.x + threadIdx.x;
+    for (uint32_t i = idx * blockSize; i < min((idx + 1) * blockSize, strands->_nItems); i++) {
+#ifdef DIDEROT_CUDA_PERMUTATIONS
+        uint32_t index = permutation[i];
+#else
+        uint32_t index = i;
+#endif
+        run_start_methods(index);
+    }
+}
+
+__device__
+void world::run_start_methods (uint32_t idx)
+{
+    diderot::strand_status sts = strands->strand_start(@START_ARGS_IN_WRLD@ix);
+    switch (sts) {
+      case diderot::kStabilize:
+        ix = strands->strand_stabilize (@STABILIZE_ARGS_IN_WRLD@ix);
+        break;
+#ifdef DIDEROT_HAS_STRAND_DIE
+      case diderot::kDie:
+        ix = strands->kill (ix);
+        break;
+#endif
+    }
+
+}
