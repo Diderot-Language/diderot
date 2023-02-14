@@ -31,6 +31,7 @@ local
   global-struct.sml
   print-as-c.sml
   target-spec.sml
+  codegen-sig.sml
   pseudo-vars.sml	(* may want to merge this file into codegen-env.sml *)
   codegen-env.sml
   codegen-util.sml
@@ -40,6 +41,8 @@ local
   gen-library-json.sml
 
 in
+
+  signature CODEGEN
 
   structure CLang
   structure CodeGenEnv

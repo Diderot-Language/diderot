@@ -8,6 +8,8 @@
 
 Library
 
+  signature CODEGEN
+
   structure CLang
   structure CodeGenEnv
   structure CodeGenUtil
@@ -42,6 +44,7 @@ is
   clang.sml
   collect-info.sml
   codegen-env.sml
+  codegen-sig.sml
   codegen-util.sml
   code-output.sml
   gen-library-json.sml
