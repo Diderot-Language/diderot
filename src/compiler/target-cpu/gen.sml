@@ -6,7 +6,7 @@
  * All rights reserved.
  *)
 
-structure Gen : CODEGEN =
+structure CPUGen : CODEGEN =
   struct
 
     structure IR = TreeIR

@@ -35,6 +35,7 @@ local
 
 in
 
+  structure CPUGen
   structure TargetCPU
 
 end

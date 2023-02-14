@@ -23,8 +23,8 @@ structure TargetCPU : sig
           val spec = TargetSpec.mk (tgt, prog)
           in
             if (#exec spec)
-              then Gen.exec (spec, defs, prog)
-              else Gen.library (spec, defs, prog)
+              then CPUGen.exec (spec, defs, prog)
+              else CPUGen.library (spec, defs, prog)
           end
 
     fun info (tgt : TargetOptions.t) = {
