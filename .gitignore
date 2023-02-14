@@ -42,5 +42,26 @@
 
 # autoconf files
 #
+config.log
+config.status
+configure
 autom4te.cache
 config/config_h.in
+
+# files generated during configuration
+#
+Makefile
+fragments.gmk
+fragments.sml
+src/compiler/common/paths.sml
+src/compiler/common/size-of.sml
+src/compiler/gen/fragments/mkfrags.sh
+src/compiler/gen/fragments/mkmk.sh
+src/compiler/nrrd/run-dnorm.sml
+src/compiler/options/version.sml
+src/compiler/parser/diderot-1.0.grm.sml
+src/compiler/parser/diderot-1.0.lex.sml
+src/compiler/parser/diderot.grm.sml
+src/compiler/parser/diderot.lex.sml
+src/lib/include/diderot/config.h
+
