@@ -1,0 +1,21 @@
+# Makefile for diderot documentation
+#
+# This code is part of the Diderot Project (http://diderot-language.cs.uchicago.edu)
+#
+# COPYRIGHT (c) 2021 The University of Chicago
+# All rights reserved.
+#
+
+SHELL =		@SHELL@
+@SET_MAKE@
+
+.PHONY:		doc
+doc:		(cd src; $(MAKE))
+
+#################### Cleanup ####################
+
+CLEAN_SUBDIRS =		src
+
+DISTCLEAN_FILES +=	Makefile
+
+include @DIDEROT_MKDIR@/clean-rules.gmk
