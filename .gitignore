@@ -45,6 +45,8 @@
 config.log
 config.status
 configure
+configure~
+configure.ac~
 autom4te.cache
 config/config_h.in
 
@@ -53,6 +55,7 @@ config/config_h.in
 Makefile
 fragments.gmk
 fragments.sml
+bin/install-sml-wrapper.sh
 src/compiler/common/paths.sml
 src/compiler/common/size-of.sml
 src/compiler/gen/fragments/mkfrags.sh
@@ -63,5 +66,6 @@ src/compiler/parser/diderot-1.0.grm.sml
 src/compiler/parser/diderot-1.0.lex.sml
 src/compiler/parser/diderot.grm.sml
 src/compiler/parser/diderot.lex.sml
+src/lib/build/mk/build.gmk
 src/lib/include/diderot/config.h
 
