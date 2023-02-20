@@ -1,4 +1,4 @@
-/*! \file dynseq.hxx
+/*! \file dynseq.h
  *
  * \author John Reppy
  */
@@ -142,6 +142,6 @@ namespace diderot {
 
 } // namespace diderot
 
-#include "dynseq-inst.hxx"
+#include "dynseq-inst.h"
 
 #endif // !_DIDEROT_DYNSEQ_H_

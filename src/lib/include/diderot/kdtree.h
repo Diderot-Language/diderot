@@ -1,4 +1,4 @@
-/*! \file kdtree.hxx
+/*! \file kdtree.h
  *
  * \author John Reppy
  */
@@ -14,7 +14,7 @@
 #define _DIDEROT_KDTREE_H_
 
 #ifndef _DIDEROT_BASE_H_
-#include "diderot/base.hxx"
+#include "diderot/base.h"
 #endif
 
 namespace diderot {
@@ -113,6 +113,6 @@ namespace diderot {
 
 } // namespace Diderot
 
-#include "kdtree-inst.hxx"
+#include "kdtree-inst.h"
 
 #endif // !_DIDEROT_KDTREE_H_

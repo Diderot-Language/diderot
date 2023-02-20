@@ -1,4 +1,4 @@
-/*! \file util.hxx
+/*! \file util.h
  *
  * \author John Reppy
  *

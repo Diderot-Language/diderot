@@ -1,4 +1,4 @@
-/*! \file diderot.hxx
+/*! \file diderot.h
  *
  * This header file pulls in all the various headers used in the Diderot library code.
  * It is meant to be included in the generated code produced by the Diderot compiler.
@@ -16,24 +16,24 @@
 #ifndef _DIDEROT_DIDEROT_H_
 #define _DIDEROT_DIDEROT_H_
 
-#include "base.hxx"
-#include "util.hxx"
-#include "options.hxx"
-#include "tensor.hxx"
-#include "image.hxx"
-#include "dynseq.hxx"
+#include "base.h"
+#include "util.h"
+#include "options.h"
+#include "tensor.h"
+#include "image.h"
+#include "dynseq.h"
 #ifdef DIDEROT_HAS_STRAND_COMMUNICATION
 #  ifdef DIDEROT_NO_SPACE_PARTITION
-#    include "brute-force-query.hxx"
+#    include "brute-force-query.h"
 #  else
-#    include "kdtree.hxx"
+#    include "kdtree.h"
 #  endif // DIDEROT_NO_SPACE_PARTITION
 #endif // DIDEROT_HAS_STRAND_COMMUNICATION
-#include "world.hxx"
-#include "eigen.hxx"
+#include "world.h"
+#include "eigen.h"
 
 #ifdef DIDEROT_TARGET_PARALLEL
-#include "parallel.hxx"
+#include "parallel.h"
 #endif
 
 #endif // !_DIDEROT_DIDEROT_H_

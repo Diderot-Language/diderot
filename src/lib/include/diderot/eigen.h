@@ -1,4 +1,4 @@
-/*! \file eigen.hxx
+/*! \file eigen.h
  *
  * This file contains utility definitions for the various Eigen vector/value routines.
  * The routines themselves are included in the source file based on need.
@@ -17,7 +17,7 @@
 #define _DIDEROT_EIGEN_H_
 
 #ifndef _DIDEROT_DIDEROT_H_
-#  error eigen.hxx should not be directly included
+#  error eigen.h should not be directly included
 #endif
 
 namespace diderot {

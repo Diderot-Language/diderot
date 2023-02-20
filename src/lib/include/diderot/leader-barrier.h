@@ -1,4 +1,4 @@
-/*! \file leader-barrier.hxx
+/*! \file leader-barrier.h
  *
  * \author John Reppy
  */
@@ -15,7 +15,7 @@
 
 
 #ifdef DIDEROT_ENABLE_LOGGING
-#include "logging.hxx"
+#include "logging.h"
 #define IF_LOGGING(...)         __VA_ARGS__
 #else
 #define IF_LOGGING(...)

@@ -1,4 +1,4 @@
-/*! \file query-util.hxx
+/*! \file query-util.h
  *
  * Utility functions to support spatial queries.  Used by both the kdtree implementation
  * and the brute-force implementation.

@@ -1,4 +1,4 @@
-/*! \file parallel.hxx
+/*! \file parallel.h
  *
  * \author John Reppy
  */
@@ -14,14 +14,14 @@
 #define _DIDEROT_PARALLEL_H_
 
 #ifndef DIDEROT_TARGET_PARALLEL
-#  error "parallel.hxx included but target is not parallel"
+#  error "parallel.h included but target is not parallel"
 #endif
 
 #ifndef _DIDEROT_BASE_H_
-#include "base.hxx"
+#include "base.h"
 #endif
 #ifndef _DIDEROT_WORLD_H_
-#include "world.hxx"
+#include "world.h"
 #endif
 
 #include <atomic>
@@ -29,8 +29,8 @@
 typedef std::atomic<uint32_t> atomic_uint32_t;
 
 #include <pthread.h>
-#include "leader-barrier.hxx"
-#include "worker-gate.hxx"
+#include "leader-barrier.h"
+#include "worker-gate.h"
 
 namespace diderot {
 

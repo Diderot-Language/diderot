@@ -1,4 +1,4 @@
-/*! \file world.hxx
+/*! \file world.h
  *
  * \author John Reppy
  */

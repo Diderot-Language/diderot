@@ -1,7 +1,7 @@
 /*! \file image.cxx
  *
  * Utility code to support images in Diderot.  Most of the actual implementation can be
- * found in diderot/image-inst.hxx; this file just contains the shared non-template code.
+ * found in diderot/image-inst.h; this file just contains the shared non-template code.
  *
  * \author John Reppy
  */

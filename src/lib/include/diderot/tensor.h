@@ -1,4 +1,4 @@
-/*! \file tensor.hxx
+/*! \file tensor.h
  *
  * \author John Reppy
  *

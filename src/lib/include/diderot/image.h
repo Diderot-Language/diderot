@@ -1,4 +1,4 @@
-/*! \file image.hxx
+/*! \file image.h
  *
  * \author John Reppy
  */
@@ -17,13 +17,13 @@
 #include <teem/nrrd.h>
 
 #ifndef _DIDEROT_BASE_H_
-#include "base.hxx"
+#include "base.h"
 #endif
 #ifndef _DIDEROT_UTIL_H_
-#include "util.hxx"
+#include "util.h"
 #endif
 #ifndef _DIDEROT_WORLD_H_
-#include "world.hxx"
+#include "world.h"
 #endif
 
 namespace diderot {
@@ -497,6 +497,6 @@ namespace diderot {
 
 } // namespace diderot
 
-#include "image-inst.hxx"
+#include "image-inst.h"
 
 #endif //! _DIDEROT_IMAGE_H_

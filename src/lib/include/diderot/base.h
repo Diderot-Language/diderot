@@ -1,4 +1,4 @@
-/*! \file base.hxx
+/*! \file base.h
  *
  * \author John Reppy
  */

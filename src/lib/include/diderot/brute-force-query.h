@@ -1,9 +1,9 @@
-/*! \file brute-force-query.hxx
+/*! \file brute-force-query.h
  *
  * \author John Reppy
  *
  * This is a brute-force implementation (i.e., O(n^2) of spatial queries for testing
- * purposes.  It is designed to match the kdtree API (see kdtree.hxx), but is implementend
+ * purposes.  It is designed to match the kdtree API (see kdtree.h), but is implementend
  * using strand-to-strand comparisons.
  */
 
@@ -18,10 +18,10 @@
 #define _DIDEROT_BRUTE_FORCE_QUERY_H_
 
 #ifndef _DIDEROT_BASE_H_
-#include "diderot/base.hxx"
+#include "diderot/base.h"
 #endif
 
-#include "query-util.hxx"
+#include "query-util.h"
 
 namespace diderot {
 

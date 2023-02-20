@@ -1,4 +1,4 @@
-/*! \file log-file.hxx
+/*! \file log-file.h
  *
  * \author John Reppy
  *
@@ -30,7 +30,7 @@
 #include <pthread.h>
 
 /* define the predefined log-event codes */
-#include "log-events.hxx"
+#include "log-events.h"
 
 namespace diderot {
 

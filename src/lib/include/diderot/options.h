@@ -1,4 +1,4 @@
-/*! \file options.hxx
+/*! \file options.h
  *
  * \author John Reppy
  */

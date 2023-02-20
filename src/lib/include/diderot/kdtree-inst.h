@@ -1,4 +1,4 @@
-/*! \file kdtree-inst.hxx
+/*! \file kdtree-inst.h
  *
  * \author John Reppy
  */
@@ -14,12 +14,12 @@
 #define _DIDEROT_KDTREE_INST_H_
 
 #ifndef _DIDEROT_KDTREE_H_
-# error kdtree-inst.hxx should not be directly included
+# error kdtree-inst.h should not be directly included
 #endif
 
 #include <stack>
 
-#include "query-util.hxx"
+#include "query-util.h"
 
 namespace diderot {
 

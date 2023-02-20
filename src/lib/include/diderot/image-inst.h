@@ -1,7 +1,7 @@
-/*! \file image-inst.hxx
+/*! \file image-inst.h
  *
  * This file contains the template code for implementing the image template classes.
- * It is included by the "options.hxx" file so that code can be instantiated.
+ * It is included by the "options.h" file so that code can be instantiated.
  *
  * \author John Reppy
  */
@@ -17,7 +17,7 @@
 #define _DIDEROT_IMAGE_INST_H_
 
 #ifndef _DIDEROT_IMAGE_H_
-# error image-inst.hxx should not be directly included
+# error image-inst.h should not be directly included
 #endif
 
 namespace diderot {

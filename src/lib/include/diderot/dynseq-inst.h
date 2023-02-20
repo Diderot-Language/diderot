@@ -1,4 +1,4 @@
-/*! \file dynseq-inst.hxx
+/*! \file dynseq-inst.h
  *
  * \author John Reppy
  */
@@ -14,7 +14,7 @@
 #define _DIDEROT_DYNSEQ_INST_H_
 
 #ifndef _DIDEROT_DYNSEQ_H_
-# error dynseq-inst.hxx should not be directly included
+# error dynseq-inst.h should not be directly included
 #endif
 
 namespace diderot {

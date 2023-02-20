@@ -1,4 +1,4 @@
-/*! \file worker-gate.hxx
+/*! \file worker-gate.h
  *
  * \author John Reppy
  */
@@ -14,7 +14,7 @@
 #define _DIDEROT_WORKER_GATE_H_
 
 #ifdef DIDEROT_ENABLE_LOGGING
-#include "logging.hxx"
+#include "logging.h"
 #define IF_LOGGING(...)         __VA_ARGS__
 #else
 #define IF_LOGGING(...)
