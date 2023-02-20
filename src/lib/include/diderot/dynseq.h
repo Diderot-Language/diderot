@@ -10,8 +10,8 @@
  * All rights reserved.
  */
 
-#ifndef _DIDEROT_DYNSEQ_HXX_
-#define _DIDEROT_DYNSEQ_HXX_
+#ifndef _DIDEROT_DYNSEQ_H_
+#define _DIDEROT_DYNSEQ_H_
 
 #include <memory>
 #include <vector>
@@ -144,4 +144,4 @@ namespace diderot {
 
 #include "dynseq-inst.hxx"
 
-#endif // !_DIDEROT_DYNSEQ_HXX_
+#endif // !_DIDEROT_DYNSEQ_H_

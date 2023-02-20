@@ -10,10 +10,10 @@
  * All rights reserved.
  */
 
-#ifndef _DIDEROT_KDTREE_HXX_
-#define _DIDEROT_KDTREE_HXX_
+#ifndef _DIDEROT_KDTREE_H_
+#define _DIDEROT_KDTREE_H_
 
-#ifndef _DIDEROT_BASE_HXX_
+#ifndef _DIDEROT_BASE_H_
 #include "diderot/base.hxx"
 #endif
 
@@ -115,4 +115,4 @@ namespace diderot {
 
 #include "kdtree-inst.hxx"
 
-#endif // !_DIDEROT_KDTREE_HXX_
+#endif // !_DIDEROT_KDTREE_H_

@@ -10,10 +10,10 @@
  * All rights reserved.
  */
 
-#ifndef _DIDEROT_DYNSEQ_INST_HXX_
-#define _DIDEROT_DYNSEQ_INST_HXX_
+#ifndef _DIDEROT_DYNSEQ_INST_H_
+#define _DIDEROT_DYNSEQ_INST_H_
 
-#ifndef _DIDEROT_DYNSEQ_HXX_
+#ifndef _DIDEROT_DYNSEQ_H_
 # error dynseq-inst.hxx should not be directly included
 #endif
 
@@ -191,4 +191,4 @@ namespace diderot {
 
 } // namespace diderot
 
-#endif // !_DIDEROT_DYNSEQ_INST_HXX_
+#endif // !_DIDEROT_DYNSEQ_INST_H_

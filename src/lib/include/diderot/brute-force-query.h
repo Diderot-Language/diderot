@@ -14,10 +14,10 @@
  * All rights reserved.
  */
 
-#ifndef _DIDEROT_BRUTE_FORCE_QUERY_HXX_
-#define _DIDEROT_BRUTE_FORCE_QUERY_HXX_
+#ifndef _DIDEROT_BRUTE_FORCE_QUERY_H_
+#define _DIDEROT_BRUTE_FORCE_QUERY_H_
 
-#ifndef _DIDEROT_BASE_HXX_
+#ifndef _DIDEROT_BASE_H_
 #include "diderot/base.hxx"
 #endif
 
@@ -146,4 +146,4 @@ namespace diderot {
 
 } // namespace diderot
 
-#endif // !_DIDEROT_BRUTE_FORCE_QUERY_HXX_
+#endif // !_DIDEROT_BRUTE_FORCE_QUERY_H_

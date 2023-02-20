@@ -10,8 +10,8 @@
  * All rights reserved.
  */
 
-#ifndef _DIDEROT_WORKER_GATE_HXX_
-#define _DIDEROT_WORKER_GATE_HXX_
+#ifndef _DIDEROT_WORKER_GATE_H_
+#define _DIDEROT_WORKER_GATE_H_
 
 #ifdef DIDEROT_ENABLE_LOGGING
 #include "logging.hxx"
@@ -93,4 +93,4 @@ namespace diderot {
 
 #undef IF_LOGGING
 
-#endif // !_DIDEROT_WORKER_GATE_HXX_
+#endif // !_DIDEROT_WORKER_GATE_H_

@@ -10,8 +10,8 @@
  * All rights reserved.
  */
 
-#ifndef _DIDEROT_WORLD_HXX_
-#define _DIDEROT_WORLD_HXX_
+#ifndef _DIDEROT_WORLD_H_
+#define _DIDEROT_WORLD_H_
 
 #include <iostream>
 #include <teem/biff.h>
@@ -87,4 +87,4 @@ namespace diderot {
 
 } // namespace diderot
 
-#endif // !_DIDEROT_WORLD_HXX_
+#endif // !_DIDEROT_WORLD_H_

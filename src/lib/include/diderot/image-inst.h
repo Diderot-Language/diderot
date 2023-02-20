@@ -13,10 +13,10 @@
  * All rights reserved.
  */
 
-#ifndef _DIDEROT_IMAGE_INST_HXX_
-#define _DIDEROT_IMAGE_INST_HXX_
+#ifndef _DIDEROT_IMAGE_INST_H_
+#define _DIDEROT_IMAGE_INST_H_
 
-#ifndef _DIDEROT_IMAGE_HXX_
+#ifndef _DIDEROT_IMAGE_H_
 # error image-inst.hxx should not be directly included
 #endif
 
@@ -141,7 +141,7 @@ namespace diderot {
                 return true;
             }
         }
-        
+
       // check the voxel element type
         if (nin->type != image2d<REAL,TY,VOXSZ>::traits::type) {
             wrld->error ("nrrd has unexpected sample type %s; expected %s\n",
@@ -310,4 +310,4 @@ namespace diderot {
 
 } // namespace diderot
 
-#endif // !_DIDEROT_IMAGE_INST_HXX_
+#endif // !_DIDEROT_IMAGE_INST_H_

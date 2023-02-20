@@ -10,10 +10,10 @@
  * All rights reserved.
  */
 
-#ifndef _DIDEROT_KDTREE_INST_HXX_
-#define _DIDEROT_KDTREE_INST_HXX_
+#ifndef _DIDEROT_KDTREE_INST_H_
+#define _DIDEROT_KDTREE_INST_H_
 
-#ifndef _DIDEROT_KDTREE_HXX_
+#ifndef _DIDEROT_KDTREE_H_
 # error kdtree-inst.hxx should not be directly included
 #endif
 
@@ -413,4 +413,4 @@ namespace diderot {
 
 } // namespace diderot
 
-#endif // !_DIDEROT_KDTREE_INST_HXX_
+#endif // !_DIDEROT_KDTREE_INST_H_

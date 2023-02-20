@@ -10,8 +10,8 @@
  * All rights reserved.
  */
 
-#ifndef _DIDEROT_BASE_HXX_
-#define _DIDEROT_BASE_HXX_
+#ifndef _DIDEROT_BASE_H_
+#define _DIDEROT_BASE_H_
 
 #include "config.h"
 
@@ -84,4 +84,4 @@ namespace diderot {
 // disable inlining for a function
 #define NO_INLINE       __attribute__((noinline))
 
-#endif // !_DIDEROT_BASE_HXX_
+#endif // !_DIDEROT_BASE_H_

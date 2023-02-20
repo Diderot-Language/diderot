@@ -13,8 +13,8 @@
  * All rights reserved.
  */
 
-#ifndef _DIDEROT_DIDEROT_HXX_
-#define _DIDEROT_DIDEROT_HXX_
+#ifndef _DIDEROT_DIDEROT_H_
+#define _DIDEROT_DIDEROT_H_
 
 #include "base.hxx"
 #include "util.hxx"
@@ -36,4 +36,4 @@
 #include "parallel.hxx"
 #endif
 
-#endif // !_DIDEROT_DIDEROT_HXX_
+#endif // !_DIDEROT_DIDEROT_H_

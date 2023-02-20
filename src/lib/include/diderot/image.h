@@ -10,19 +10,19 @@
  * All rights reserved.
  */
 
-#ifndef _DIDEROT_IMAGE_HXX_
-#define _DIDEROT_IMAGE_HXX_
+#ifndef _DIDEROT_IMAGE_H_
+#define _DIDEROT_IMAGE_H_
 
 #include <string>
 #include <teem/nrrd.h>
 
-#ifndef _DIDEROT_BASE_HXX_
+#ifndef _DIDEROT_BASE_H_
 #include "base.hxx"
 #endif
-#ifndef _DIDEROT_UTIL_HXX_
+#ifndef _DIDEROT_UTIL_H_
 #include "util.hxx"
 #endif
-#ifndef _DIDEROT_WORLD_HXX_
+#ifndef _DIDEROT_WORLD_H_
 #include "world.hxx"
 #endif
 
@@ -499,4 +499,4 @@ namespace diderot {
 
 #include "image-inst.hxx"
 
-#endif //! _DIDEROT_IMAGE_HXX_
+#endif //! _DIDEROT_IMAGE_H_

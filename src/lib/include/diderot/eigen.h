@@ -13,10 +13,10 @@
  * All rights reserved.
  */
 
-#ifndef _DIDEROT_EIGEN_HXX_
-#define _DIDEROT_EIGEN_HXX_
+#ifndef _DIDEROT_EIGEN_H_
+#define _DIDEROT_EIGEN_H_
 
-#ifndef _DIDEROT_DIDEROT_HXX_
+#ifndef _DIDEROT_DIDEROT_H_
 #  error eigen.hxx should not be directly included
 #endif
 
@@ -63,4 +63,4 @@ namespace diderot {
 
 } // namespace diderot
 
-#endif // !_DIDEROT_EIGEN_HXX_
+#endif // !_DIDEROT_EIGEN_H_

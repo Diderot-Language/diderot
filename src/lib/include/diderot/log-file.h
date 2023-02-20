@@ -15,8 +15,8 @@
  * This code was ported from the Manticore project (http://manticore.cs.uchicago.edu)
  */
 
-#ifndef _DIDEROT_LOG_FILE_HXX_
-#define _DIDEROT_LOG_FILE_HXX_
+#ifndef _DIDEROT_LOG_FILE_H_
+#define _DIDEROT_LOG_FILE_H_
 
 #include "config.h"
 #if defined(HAVE_MACH_ABSOLUTE_TIME)
@@ -146,4 +146,4 @@ namespace diderot {
 
 } // namespace diderot
 
-#endif // !_DIDEROT_LOG_FILE_HXX_
+#endif // !_DIDEROT_LOG_FILE_H_

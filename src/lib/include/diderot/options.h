@@ -10,8 +10,8 @@
  * All rights reserved.
  */
 
-#ifndef _DIDEROT_OPTIONS_HXX_
-#define _DIDEROT_OPTIONS_HXX_
+#ifndef _DIDEROT_OPTIONS_H_
+#define _DIDEROT_OPTIONS_H_
 
 #ifndef _DIDEROT_CONFIG_H_
 #include "config.h"
@@ -50,4 +50,4 @@ namespace diderot {
 
 } // namespace diderot
 
-#endif // !_DIDEROT_OPTIONS_HXX_
+#endif // !_DIDEROT_OPTIONS_H_

@@ -10,17 +10,17 @@
  * All rights reserved.
  */
 
-#ifndef _DIDEROT_PARALLEL_HXX_
-#define _DIDEROT_PARALLEL_HXX_
+#ifndef _DIDEROT_PARALLEL_H_
+#define _DIDEROT_PARALLEL_H_
 
 #ifndef DIDEROT_TARGET_PARALLEL
 #  error "parallel.hxx included but target is not parallel"
 #endif
 
-#ifndef _DIDEROT_BASE_HXX_
+#ifndef _DIDEROT_BASE_H_
 #include "base.hxx"
 #endif
-#ifndef _DIDEROT_WORLD_HXX_
+#ifndef _DIDEROT_WORLD_H_
 #include "world.hxx"
 #endif
 
@@ -103,4 +103,4 @@ namespace diderot {
 
 } // namespace diderot
 
-#endif //! _DIDEROT_PARALLEL_HXX_
+#endif //! _DIDEROT_PARALLEL_H_

@@ -10,8 +10,8 @@
  * All rights reserved.
  */
 
-#ifndef _DIDEROT_LEADER_BARRIER_HXX_
-#define _DIDEROT_LEADER_BARRIER_HXX_
+#ifndef _DIDEROT_LEADER_BARRIER_H_
+#define _DIDEROT_LEADER_BARRIER_H_
 
 
 #ifdef DIDEROT_ENABLE_LOGGING
@@ -108,4 +108,4 @@ namespace diderot {
 
 #undef IF_LOGGING
 
-#endif // !_DIDEROT_LEADER_BARRIER_HXX_
+#endif // !_DIDEROT_LEADER_BARRIER_H_
