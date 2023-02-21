@@ -69,3 +69,7 @@ src/compiler/parser/diderot.lex.sml
 src/lib/build/mk/build.gmk
 src/lib/include/diderot/config.h
 
+# build directories
+#
+src/lib/build/rt-*
+
