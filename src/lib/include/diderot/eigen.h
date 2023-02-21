@@ -37,7 +37,7 @@ namespace diderot {
         const int ROOT_THREE = 4;               /* ell_cubic_root_three */
 
         template <typename REAL>
-        inline void normalize2 (REAL *v)
+        HOST_DEVICE inline void normalize2 (REAL *v)
         {
             REAL s = std::sqrt (v[0]*v[0] + v[1]*v[1]);
             if (s > EPSILON) {
@@ -48,7 +48,7 @@ namespace diderot {
         }
 
         template <typename REAL>
-        inline void normalize3 (REAL *v)
+        HOST_DEVICE inline void normalize3 (REAL *v)
         {
             REAL s = std::sqrt (v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
             if (s > EPSILON) {

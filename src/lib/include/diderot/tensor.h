@@ -21,17 +21,17 @@ namespace diderot {
     template <typename REAL, const int N>
     struct tensor_ref {
         const REAL *_data;
-        tensor_ref () : _data(nullptr) { }
-        tensor_ref (const REAL *src) : _data(src) { }
-        REAL const &operator[] (uint32_t i) const
+        HOST_DEVICE tensor_ref () : _data(nullptr) { }
+        HOST_DEVICE tensor_ref (const REAL *src) : _data(src) { }
+        HOST_DEVICE REAL const &operator[] (uint32_t i) const
         {
             return this->_data[i];
         }
-        const REAL *base ()
+        HOST_DEVICE const REAL *base ()
         {
             return this->_data;
         }
-        const REAL *addr (uint32_t i = 0) const
+        HOST_DEVICE const REAL *addr (uint32_t i = 0) const
         {
             return &this->_data[i];
         }
@@ -40,47 +40,55 @@ namespace diderot {
     template <typename REAL, const int N>
     struct tensor {
         REAL _data[N];
-        tensor () { }
-        tensor (std::initializer_list< REAL > const &il)
+        HOST_DEVICE tensor () { }
+        HOST_DEVICE tensor(const tensor &t)
+        {
+            this->copy(t.base());
+        }
+        HOST_DEVICE tensor (std::initializer_list< REAL > const &il)
+        {
+            this->copy(il);
+        }
+        HOST_DEVICE tensor (const REAL *src)
+        {
+            this->copy(src);
+        }
+        HOST_DEVICE ~tensor () = default;
+
+        HOST_DEVICE void copy (const REAL *src)
+        {
+#ifdef DIDEROT_TARGET_CUDA
+            for (int i=0; i< N; i++) {
+                this->base()[i] = src[i];
+            }
+#else
+            std::memcpy(this->_data, src, N*sizeof(REAL));
+#endif // DIDEROT_TARGET_CUDA
+        }
+        HOST_DEVICE void copy (std::initializer_list< REAL > const &il)
         {
             int32_t i = 0;
             for (auto it = il.begin(); it != il.end(); ++i, ++it) {
                 this->_data[i] = *it;
             }
         }
-        tensor (const REAL *src)
-        {
-            std::memcpy(this->_data, src, N*sizeof(REAL));
-        }
-        ~tensor () { }
-        void copy (const REAL *src)
-        {
-            std::memcpy(this->_data, src, N*sizeof(REAL));
-        }
-        void copy (std::initializer_list< REAL > const &il)
-        {
-            int32_t i = 0;
-            for (auto it = il.begin(); it != il.end(); ++i, ++it) {
-                this->_data[i] = *it;
-            }
-        }
-        REAL &operator[] (uint32_t i)
+        HOST_DEVICE REAL &operator[] (uint32_t i)
         {
             return this->_data[i];
         }
-        REAL const &operator[] (uint32_t i) const
+        HOST_DEVICE REAL const &operator[] (uint32_t i) const
         {
             return this->_data[i];
         }
-        REAL *base ()
+        HOST_DEVICE REAL *base ()
         {
             return &this->_data[0];
         }
-        const REAL *base () const
+        HOST_DEVICE const REAL *base () const
         {
             return &this->_data[0];
         }
-        const REAL *addr (uint32_t i = 0) const
+        HOST_DEVICE const REAL *addr (uint32_t i = 0) const
         {
             return &this->_data[i];
         }

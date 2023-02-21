@@ -20,11 +20,11 @@
 
 #include "config.h"
 #if defined(HAVE_MACH_ABSOLUTE_TIME)
-#  include <mach/mach_time.h>
+#include <mach/mach_time.h>
 #elif defined(HAVE_CLOCK_GETTIME)
-#  include <time.h>
+#include <time.h>
 #else
-#  include <sys/time.h>
+#include <sys/time.h>
 #endif
 #include <fstream>
 #include <pthread.h>

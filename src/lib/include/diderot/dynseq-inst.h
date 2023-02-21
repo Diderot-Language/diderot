@@ -40,10 +40,10 @@ namespace diderot {
         this->_seq->reserve (n);
     }
 
-    //! return the contents of a nrrd as a dynamic sequence
-    //! \param wrld the world; used to report errors
-    //! \param nin the source nrrd to copy
-    //! \param sts error status; set to true if there was an error
+  //! return the contents of a nrrd as a dynamic sequence
+  //! \param wrld the world; used to report errors
+  //! \param nin the source nrrd to copy
+  //! \param sts error status; set to true if there was an error
     template <typename T>
     bool dynseq<T>::load (world_base *wrld, const Nrrd *nin)
     {

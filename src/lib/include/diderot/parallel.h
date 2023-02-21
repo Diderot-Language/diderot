@@ -39,8 +39,8 @@ namespace diderot {
 
         struct CACHE_ALIGN worker_info {
             uint16_t            _id;            //!< index into thread _info[] array
-                                                // location info for worker (if affinity is
-                                                // supported)
+                                                //! location info for worker (if affinity is
+                                                //! supported)
             uint16_t            _node;          //!< node id
             uint16_t            _core;          //!< core id for node
             uint16_t            _thd;           //!< thread id for core

@@ -111,7 +111,7 @@ namespace diderot {
 
     };
 
-} // namespace Diderot
+} // namespace diderot
 
 #include "kdtree-inst.h"
 

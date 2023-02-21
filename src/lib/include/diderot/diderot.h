@@ -36,4 +36,31 @@
 #include "parallel.h"
 #endif
 
+#ifdef DIDEROT_TARGET_CUDA
+#include "gpu-select.cuh"
+
+/* FIXME: should be named "CUDA_ERR" or "CUDA_CHECK", since it is a macro */
+#define cuda_err(cuda_fn, str)                                                  \
+    do {                                                                        \
+        cudaError_t cudaErr = cuda_fn;                                          \
+        if (cudaErr) {                                                          \
+            std::cerr << (str) << ". Error " << cudaGetErrorName(cudaErr)       \
+                << ": \"" << cudaGetErrorString(cudaErr) <<  "\" at "           \
+                << __FILE__ << ":" << __LINE__  << std::endl;                   \
+            return 1;                                                           \
+        }                                                                       \
+    } while (0)
+
+#define cuda_err_passthrough(cuda_fn, str)                                      \
+    do {                                                                        \
+        cudaError_t cudaErr = cuda_fn;                                          \
+        if (cudaErr) {                                                          \
+            std::cerr << str << ". Error "<< cudaGetErrorName(cudaErr)          \
+                << ": " << cudaGetErrorString(cudaErr) << std::endl;            \
+            return cudaErr;                                                     \
+        }                                                                       \
+    } while (0)
+
+#endif // DIDEROT_TARGET_CUDA
+
 #endif // !_DIDEROT_DIDEROT_H_

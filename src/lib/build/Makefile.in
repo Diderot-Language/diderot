@@ -17,7 +17,7 @@ INSTALL =		@INSTALL@
 # clear out unused file suffixes for implicit rules
 #
 .SUFFIXES:
-.SUFFIXES:	.cxx .hxx .cuh .h
+.SUFFIXES:	.cxx .cuh .h
 
 #
 # directories for the install target
@@ -34,23 +34,23 @@ LIBDIR =	@DIDEROT_ROOT@/lib
 # optional logging support
 #
 ifeq (@LOGGING_ENABLED@,true)
-LOGGING_HXX =		@DIDEROT_SRCDIR@/lib/include/diderot/logging.hxx
+LOGGING_H =		@DIDEROT_SRCDIR@/lib/include/diderot/logging.h
 endif
 
 .PHONY:			build local-install install
 
-build:			$(LOGGING_HXX)
+build:			$(LOGGING_H)
 	for dir in $(wildcard rt-*) ; do \
 	  (cd $$dir; $(MAKE) build) || exit $$?; \
 	done
 
-local-install:		$(LOGGING_HXX)
+local-install:		$(LOGGING_H)
 	$(INSTALL) -d $(LIBDIR)
 	for dir in $(wildcard rt-*); do \
 	  (cd $$dir && $(MAKE) local-install) || exit $$?; \
 	done
 
-install:		$(LOGGING_HXX)
+install:		$(LOGGING_H)
 	$(INSTALL) -d $(INSTALL_LIBDIR)
 	for dir in $(wildcard rt-*); do \
 	  (cd $$dir && $(MAKE) install) || exit $$?; \
@@ -60,7 +60,7 @@ install:		$(LOGGING_HXX)
 # optional logging support; note that this target is redundant with the
 # logging target in the top-level Makefile
 #
-$(LOGGING_HXX):
+$(LOGGING_H):
 	(cd @DIDEROT_SRCDIR@/logging/gen; log-gen.sh) || exit $$?
 
 #################### Cleanup ####################

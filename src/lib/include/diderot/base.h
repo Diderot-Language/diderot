@@ -32,6 +32,13 @@
 #include <iostream>
 #include <iomanip>
 
+// define HOST_DEVICE for when compiling to CUDA
+#ifdef DIDEROT_TARGET_CUDA
+#define HOST_DEVICE __host__ __device__
+#else
+#define HOST_DEVICE
+#endif
+
 namespace diderot {
 
     enum strand_status {
@@ -45,10 +52,10 @@ namespace diderot {
     };
 
   // predicates on strand_status values
-    inline bool activeSts (strand_status sts) { return (sts <= kNew); }
-    inline bool notActiveSts (strand_status sts) { return (sts > kNew); }
-    inline bool aliveSts (strand_status sts) { return (sts < kDie); }
-    inline bool notAliveSts (strand_status sts) { return (sts >= kDie); }
+    HOST_DEVICE inline bool activeSts (strand_status sts) { return (sts <= kNew); }
+    HOST_DEVICE inline bool notActiveSts (strand_status sts) { return (sts > kNew); }
+    HOST_DEVICE inline bool aliveSts (strand_status sts) { return (sts < kDie); }
+    HOST_DEVICE inline bool notAliveSts (strand_status sts) { return (sts >= kDie); }
 
   // standard vector types
     template <typename REAL> using real2 = REAL[2];

@@ -287,7 +287,7 @@ namespace diderot {
 
 /******************** image_traits ********************/
 
-  // instantiate the traits by sample type
+// instantiate the traits by sample type
 #   define IMAGE_TRAITS(TY, NRRD_TY)                    \
         template<>                                      \
         struct image_traits<TY> {                       \
