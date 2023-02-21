@@ -101,6 +101,7 @@ structure CPUGen : CODEGEN =
             ("LOG_FILE",                OS.Path.joinBaseExt{base= #outBase spec, ext= SOME "evtlog"}),
             ("PREFIX",                  #namespace spec),
             ("SRCFILE",                 #srcFile spec),
+            ("DATE",                    Date.toString(Date.fromTimeLocal(Time.now()))),
             ("PROG_NAME",               #outBase spec),
             ("STRAND",                  Atom.toString name),
             ("STRANDTY",                Atom.toString name ^ "_strand"),

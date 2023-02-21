@@ -25,16 +25,19 @@ structure GenTysAndOps : sig
 
     fun mkReturn exp = CL.mkReturn(SOME exp)
     fun mkInt i = CL.mkInt(IntInf.fromInt i)
-    fun mkFunc (ty, name, params, body) = CL.D_Func(["HD", "inline"], ty, [], name, params, body)
+    fun mkFunc (ty, name, params, body) =
+          CL.D_Func(["HOST_DEVICE", "inline"], ty, [], name, params, body)
    (* make a constructor function's prototype and out-of-line definition *)
     fun mkConstr (cls, params, inits) = (
-            CL.D_Constr(["HD"], [], cls, params, NONE),
-            CL.D_Constr(["HD", "inline"], [CL.SC_Type(CL.T_Named cls)], cls, params, SOME(inits, CL.mkBlock[]))
+            CL.D_Constr(["HOST_DEVICE"], [], cls, params, NONE),
+            CL.D_Constr(
+              ["HOST_DEVICE", "inline"],
+              [CL.SC_Type(CL.T_Named cls)], cls, params, SOME(inits, CL.mkBlock[]))
           )
    (* make a member function prototype and out-of-line definition *)
     fun mkMemberFn (cls, ty, f, params, body) = (
-            CL.D_Proto(["HD"], ty, f, params),
-            CL.D_Func(["HD", "inline"], ty, [CL.SC_Type(CL.T_Named cls)], f, params, body)
+            CL.D_Proto(["HOST_DEVICE"], ty, f, params),
+            CL.D_Func(["HOST_DEVICE", "inline"], ty, [CL.SC_Type(CL.T_Named cls)], f, params, body)
           )
 
     fun trType namespace env ty = TypeToCxx.trQType(env, namespace, ty)
@@ -65,7 +68,7 @@ structure GenTysAndOps : sig
                             | mkOps i = (mkOps (i-1)) @ [mkOp i]
                           val body = mkReturn (CL.mkApply (concat["make_", cudaTyName], mkOps(w-1)))
                         in
-                          CL.D_Func(["HD", "inline"], cTy, [], concat["operator", symbol], [mkWrapperParam("v0"), mkWrapperParam("v1")], body)
+                          CL.D_Func(["HOST_DEVICE", "inline"], cTy, [], concat["operator", symbol], [mkWrapperParam("v0"), mkWrapperParam("v1")], body)
                         end
                       val negWrapperDcl =
                         let
@@ -75,7 +78,7 @@ structure GenTysAndOps : sig
                             | mkOps i = (mkOps (i-1)) @ [mkOp i]
                           val body = mkReturn (CL.mkApply (concat["make_", cudaTyName], mkOps(w-1)))
                         in
-                          CL.D_Func(["HD", "inline"], cTy, [], "operator-", [mkWrapperParam("v")], body)
+                          CL.D_Func(["HOST_DEVICE", "inline"], cTy, [], "operator-", [mkWrapperParam("v")], body)
                         end
                       val addWrapperDcl = mkBinOpWrapper("+", CL.#+)
                       val subWrapperDcl = mkBinOpWrapper("-", CL.#-)
@@ -112,7 +115,7 @@ structure GenTysAndOps : sig
                              | _::dd => let
                                 val d = List.last dd
                                 in [
-                                  CL.D_Func(["HD"], RN.tensorRefTy[d], [], "last",
+                                  CL.D_Func(["HOST_DEVICE"], RN.tensorRefTy[d], [], "last",
                                     [CL.PARAM([], CL.uint32, "i")],
                                     CL.mkReturn(
                                       SOME(CL.mkAddrOf(CL.mkSubscript(thisData, CL.mkVar "i")))))
@@ -138,12 +141,12 @@ structure GenTysAndOps : sig
                               Int.toString(List.foldl Int.* 1 shape), ">"
                             ]
                       fun mkConstr (paramTy, paramId, arg) = CL.D_Constr (
-                            ["HD"], [], name,
+                            ["HOST_DEVICE"], [], name,
                             [CL.PARAM([], paramTy, paramId)],
                             SOME([CL.mkApply(baseCls, [arg])], CL.mkBlock[]))
                     (* default constructor *)
                       val constrDcl1 = CL.D_Constr (
-                            ["HD"], [], name, [], SOME([CL.mkApply(baseCls, [])], CL.mkBlock[]))
+                            ["HOST_DEVICE"], [], name, [], SOME([CL.mkApply(baseCls, [])], CL.mkBlock[]))
                     (* constructor from initializer list *)
                       val constrDcl2 = mkConstr (
                             CL.T_Template("std::initializer_list", [realTy]), "const & il",
@@ -156,7 +159,7 @@ structure GenTysAndOps : sig
                             CL.T_Named(name ^ " const &"), "ten",
                             CL.mkSelect(CL.mkVar "ten", "_data"))
                     (* destructor *)
-                      val destrDcl = CL.D_Destr(["HD"], [], name, SOME(CL.mkBlock[]))
+                      val destrDcl = CL.D_Destr(["HOST_DEVICE"], [], name, SOME(CL.mkBlock[]))
                       val thisData = CL.mkIndirect(CL.mkVar "this", "_data")
                       val returnThis = CL.mkReturn(SOME(CL.mkUnOp(CL.%*, CL.mkVar "this")))
                     (* assignment from Tensor *)
@@ -198,7 +201,7 @@ structure GenTysAndOps : sig
                              | _::dd => let
                                 val d = List.last dd
                                 in [
-                                  CL.D_Func(["HD"], RN.tensorRefTy[d], [], "last",
+                                  CL.D_Func(["HOST_DEVICE"], RN.tensorRefTy[d], [], "last",
                                       [CL.PARAM([], CL.uint32, "i")],
                                       CL.mkReturn(
                                         SOME(CL.mkAddrOf(CL.mkSubscript(thisData, CL.mkVar "i")))))

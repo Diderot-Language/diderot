@@ -207,12 +207,14 @@ structure Paths : sig
             String.concatWith " " (cmd::args)
           end
 
-    val nvcc = let
-          val (cmd::args) = String.tokens Char.isSpace "@NVCC@"
-          val cmd = findExe ([], cmd)
-          in
-            String.concatWith " " (cmd::args)
-          end
+    val nvcc = if @CUDA_ENABLED@
+          then let
+            val (cmd::args) = String.tokens Char.isSpace "@NVCC@"
+            val cmd = findExe ([], cmd)
+            in
+              String.concatWith " " (cmd::args)
+            end
+          else ""
 
     val cxxFlags = {
             base = "@CXXFLAGS_BASE@",

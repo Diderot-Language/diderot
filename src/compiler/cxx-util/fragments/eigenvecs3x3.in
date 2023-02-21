@@ -1,16 +1,16 @@
-inline @REALTY@ dot3 (tensor_ref_3 const & a, tensor_ref_3 const & b)
+HOST_DEVICE inline @REALTY@ dot3 (tensor_ref_3 const & a, tensor_ref_3 const & b)
 {
     return (a[0]*b[0] + a[1]*b[1] + a[2]*b[2]);
 }
 
-inline void cross3 (tensor_ref_3 const & v1, tensor_ref_3 const & v2, tensor_3 & res)
+HOST_DEVICE inline void cross3 (tensor_ref_3 const & v1, tensor_ref_3 const & v2, tensor_3 & res)
 {
     res[0] = v1[1]*v2[2] - v1[2]*v2[1];
     res[1] = v1[2]*v2[0] - v1[0]*v2[2];
     res[2] = v1[0]*v2[1] - v1[1]*v2[0];
 }
 
-inline void nullspace1 (
+HOST_DEVICE inline void nullspace1 (
     tensor_ref_3 const & r0,
     tensor_ref_3 const & r1,
     tensor_ref_3 const & r2,
@@ -49,7 +49,7 @@ inline void nullspace1 (
 ** All vectors are in the same 1D space, we have to find two
 ** mutually vectors perpendicular to that span
 */
-static void nullspace2 (
+HOST_DEVICE static void nullspace2 (
     tensor_ref_3 const & r0,
     tensor_ref_3 const & r1,
     tensor_ref_3 const & r2,
@@ -101,7 +101,7 @@ static void nullspace2 (
     return;
 }
 
-static int eigenvecs (tensor_ref_3_3 const &mat, diderot::array<@REALTY@, 3> &eval, diderot::array<tensor_3,3> &evec)
+HOST_DEVICE static int eigenvecs (tensor_ref_3_3 const &mat, diderot::array<@REALTY@, 3> &eval, diderot::array<tensor_3,3> &evec)
 {
     @REALTY@ len, dot;
     int roots;

@@ -47,8 +47,6 @@ structure GenStrand : sig
     structure Env = CodeGenEnv
     structure TSpec = TargetSpec
 
-    val host_device = ["HD"]
-
     val strandStatusTy = CL.T_Named "diderot::strand_status"
 
     fun methodParams {world, wcache, globals} spec {cxt, needWorker, needsW, hasG} = let
@@ -68,8 +66,8 @@ structure GenStrand : sig
                 (* end case *))
           in
 (* FIXME: once CLang supports "const" functions, we should switch to building AST *)
-            mkDcl (host_device @ [
-                "const ", realTy, " *pos (uint32_t inIdx) const { return ",
+            mkDcl ([
+                "HOST_DEVICE", "const ", realTy, " *pos (uint32_t inIdx) const { return ",
                 addrof, "this->", substruct, select, "; }"
               ])
           end
@@ -153,7 +151,7 @@ structure GenStrand : sig
                 } @ stateParams @ params
           val body = TreeToCxx.trBlock (env, body)
           in
-            CL.D_Func(host_device @ ["static"], CL.voidTy, [], fName, params, body)
+            CL.D_Func(["HOST_DEVICE", "static"], CL.voidTy, [], fName, params, body)
           end
 
   (* generate the function for dynamically creating new strands (if needed) *)
@@ -199,7 +197,7 @@ structure GenStrand : sig
           (* initialize new strand *)
             val initStm = CL.mkCall(strandName ^ "_init", args)
             in [
-              CL.D_Func(host_device @ ["static"], CL.voidTy, [], fName, params', CL.mkBlock [allocStm, initStm])
+              CL.D_Func(["HOST_DEVICE", "static"], CL.voidTy, [], fName, params', CL.mkBlock [allocStm, initStm])
             ] end
           else []
 
@@ -212,7 +210,7 @@ structure GenStrand : sig
                   spec = Env.target env, needWorker = needsWorker, needsW = needsWrld, hasG = usesGlobs
                 } @ stateParams
           in
-            CL.D_Func(host_device @ ["static"], methTy, [], fName, params, body)
+            CL.D_Func(["HOST_DEVICE", "static"], methTy, [], fName, params, body)
           end
 
   (* generate a function definition for a strand method *)

@@ -1,10 +1,10 @@
 // forward declarations of strand methods
 #ifdef DIDEROT_HAS_START_METHOD
-static HD diderot::strand_status @STRAND@_start (@START_PARAMS@@STRANDTY@ *self);
+static HOST_DEVICE diderot::strand_status @STRAND@_start (@START_PARAMS@@STRANDTY@ *self);
 #endif // DIDEROT_HAS_START_METHOD
-static HD diderot::strand_status @STRAND@_update (@UPDATE_PARAMS@@STRANDTY@ *self);
+static HOST_DEVICE diderot::strand_status @STRAND@_update (@UPDATE_PARAMS@@STRANDTY@ *self);
 #ifdef DIDEROT_HAS_STABILIZE_METHOD
-static HD void @STRAND@_stabilize (@STABILIZE_PARAMS@@STRANDTY@ *self);
+static HOST_DEVICE void @STRAND@_stabilize (@STABILIZE_PARAMS@@STRANDTY@ *self);
 #endif // DIDEROT_HAS_STABILIZE_METHOD
 
 // if we have both communication and "die", then we need to track when strands die
@@ -40,42 +40,36 @@ struct strand_array {
     uint32_t num_alive () const { return this->_nActive+this->_nStable; }
 
   // return the ID of a strand, which is the same as the ix index
-    HD
-    sid_t id (index_t ix) const
+    HOST_DEVICE sid_t id (index_t ix) const
     {
         assert (ix < this->_nItems);
         return ix;
     }
   // return a pointer to the strand with the given ID
-    HD
-    @STRANDTY@ *id_to_strand (sid_t id) const
+    HOST_DEVICE @STRANDTY@ *id_to_strand (sid_t id) const
     {
         assert (id < this->_nItems);
         return reinterpret_cast<@STRANDTY@ *>(this->_storage + id * sizeof(@STRANDTY@));
     }
 
   // return a strand's status
-    HD
-    diderot::strand_status status (index_t ix) const
+    HOST_DEVICE diderot::strand_status status (index_t ix) const
     {
         assert (ix < this->_nItems);
         return static_cast<diderot::strand_status>(this->_status[ix]);
     }
   // return a pointer to the given strand
-    HD
-    @STRANDTY@ *strand (index_t ix) const
+    HOST_DEVICE @STRANDTY@ *strand (index_t ix) const
     {
         return this->id_to_strand(this->id(ix));
     }
   // return a pointer to the local state of strand ix
-    HD
-    @STRANDTY@ *local_state (index_t ix) const
+    HOST_DEVICE @STRANDTY@ *local_state (index_t ix) const
     {
         return this->strand(ix);
     }
   // return a pointer to the local state of strand with the given ID
-    HD
-    @STRANDTY@ *id_to_local_state (sid_t id) const
+    HOST_DEVICE @STRANDTY@ *id_to_local_state (sid_t id) const
     {
         return this->id_to_strand(id);
     }
@@ -133,16 +127,14 @@ struct strand_array {
 
 #ifdef DIDEROT_HAS_START_METHOD
   // invoke strand's start method
-    HD
-    diderot::strand_status strand_start (@START_PARAMS@index_t ix)
+    HOST_DEVICE diderot::strand_status strand_start (@START_PARAMS@index_t ix)
     {
         return @STRAND@_start(@START_ARGS@this->strand(ix));
     }
 #endif // DIDEROT_HAS_START_METHOD
 
   // invoke strand's update method
-    HD
-    diderot::strand_status strand_update (@UPDATE_PARAMS@index_t ix)
+    HOST_DEVICE diderot::strand_status strand_update (@UPDATE_PARAMS@index_t ix)
     {
         return @STRAND@_update(@UPDATE_ARGS@this->strand(ix));
     }
@@ -160,8 +152,7 @@ struct strand_array {
     }
 
   // mark the given strand as dead
-    HD
-    void kill (index_t ix)
+    HOST_DEVICE void kill (index_t ix)
     {
 #ifdef TRACK_STRAND_DEATH
         this->_died = true;

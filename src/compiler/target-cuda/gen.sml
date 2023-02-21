@@ -23,7 +23,7 @@ structure CudaGen : CODEGEN =
     structure TrTy = TreeTypes
     structure Frags = CUDAFragments
 
-     fun mkEnv spec = if TSpec.dualState spec
+    fun mkEnv spec = if TSpec.dualState spec
           then Env.new {
               world = RN.worldVar,
               global = RN.globalsVar,
@@ -62,7 +62,7 @@ structure CudaGen : CODEGEN =
     fun mkCopyImage name g_var gpu_g_var imgty spec = let
           val varName = "gv_" ^ name;
           val var = CL.mkIndirect(g_var, varName);
-          val copyFn = CL.mkSelect(var, "copy_to_device_async");
+          val copyFn = CL.mkSelect(var, "copyToDeviceAsync");
           in [
             CL.mkCall("cuda_err_passthrough", [
                 CL.mkApplyExp(copyFn,[]),
@@ -72,26 +72,32 @@ structure CudaGen : CODEGEN =
 
     fun copy_other tt name gvg_var gpu_g_var spec = []
 
-    fun copy_list name g_var gpu_g_var spec (SOME _) = let
+    fun copySeq name g_var gpu_g_var spec (SOME _) = let
           val varName = "gv_" ^ name;
           val var = CL.mkIndirect(g_var, varName);
-          val copyFn = CL.mkSelect (var, "copy_to_device_async");
+          val copyFn = CL.mkSelect (var, "copyToDeviceAsync");
           val target_var = CL.mkIndirect(gpu_g_var, varName);
           val target_ref = CL.mkAddrOf target_var
-          in
-            [CL.mkCall("cuda_err_passthrough", [CL.mkApplyExp(copyFn, [target_ref]), CL.mkStr(concat["Failed to copy list \"", varName ,"\" to GPU"])])]
-          end
-        | copy_list name gvg_var gpu_g_var spec NONE = raise Fail "Not implemented: dynamic length list copy"
+          in [
+            CL.mkCall("cuda_err_passthrough", [
+                CL.mkApplyExp(copyFn, [target_ref]),
+                CL.mkStr(concat["Failed to copy list \"", varName ,"\" to GPU"])
+              ])
+          ] end
+      | copySeq name gvg_var gpu_g_var spec NONE =
+          raise Fail "Not implemented: dynamic length list copy"
 
-    fun copy_field_match (TrTy.TensorRefTy lengths) name gvg_var gpu_g_var spec = raise Fail "not Implemented: tensorref"
-      | copy_field_match (TrTy.ImageTy info) name gvg_var gpu_g_var spec = mkCopyImage name gvg_var gpu_g_var (TrTy.ImageTy info) spec
-      | copy_field_match (TrTy.TupleTy ttypes) name gvg_var gpu_g_var spec = raise Fail "not Implemented: tuple"
-      | copy_field_match (TrTy.SeqTy (stype_i,len_opt)) name gvg_var gpu_g_var spec = copy_list name gvg_var gpu_g_var spec len_opt
-      | copy_field_match tt name gvg_var gpu_g_var spec = copy_other tt name gvg_var gpu_g_var spec
+    fun copyField (IR.GV{ty, name, ...}) gvg_var gpu_g_var spec = (case ty
+           of TrTy.TensorRefTy lengths => raise Fail "not Implemented: TensorRef"
+            | TrTy.ImageTy info =>
+                mkCopyImage name gvg_var gpu_g_var (TrTy.ImageTy info) spec
+            | TrTy.TupleTy ttypes => raise Fail "not Implemented: tuple"
+            | TrTy.SeqTy(_, optLen) => copySeq name gvg_var gpu_g_var spec optLen
+            | _ => copy_other ty name gvg_var gpu_g_var spec
+          (* end case *))
 
-    fun copy_field (IR.GV{ty, name, ...}) gvg_var gpu_g_var =  copy_field_match ty name gvg_var gpu_g_var
-
-    fun copy_fields globals gvg_var gpu_g_var spec = List.concat (List.map (fn gv => copy_field gv gvg_var gpu_g_var spec) globals)
+    fun copyFields globals gvg_var gpu_g_var spec =
+          List.concat (List.map (fn gv => copyField gv gvg_var gpu_g_var spec) globals)
 
     fun create_prep_copy global_var global_ty = let
           val target_var = CL.mkVar "gpu_prep_globals";
@@ -109,16 +115,14 @@ structure CudaGen : CODEGEN =
         val gpu_var = CL.mkVar "gpu_globals";
         val gpu_param = CL.PARAM ([], CL.T_Ptr(globTy), "gpu_globals");
         val return0 = CL.mkReturn (SOME (CL.mkVar "cudaSuccess"))
-        val field_copy_stmt = copy_fields gvs prep_copy_var gpu_var spec;
+        val field_copy_stmt = copyFields gvs prep_copy_var gpu_var spec;
         val copy_struct = CL.mkCall("cuda_err_passthrough", [CL.mkApply("cudaMemcpyAsync", [gpu_var, prep_copy_var, CL.mkSizeof(globTy), CL.mkVar "cudaMemcpyHostToDevice"]), CL.mkStr("Failed to copy global structure to GPU")])
         val block = CL.mkBlock (field_copy_stmt @ [copy_struct, return0]);
-    in
-      [ CL.D_Verbatim ["#ifndef DIDEROT_NO_GLOBALS"],
-        CL.mkFuncDcl(CL.T_Named "cudaError_t", "copy_globals", [prep_copy_param, gpu_param], block),
-        CL.D_Verbatim ["#endif"]
-      ]
-    end
-
+        in [
+          CL.D_Verbatim ["#ifndef DIDEROT_NO_GLOBALS"],
+          CL.mkFuncDcl(CL.T_Named "cudaError_t", "copy_globals", [prep_copy_param, gpu_param], block),
+          CL.D_Verbatim ["#endif"]
+        ] end
 
     fun mkEnv spec = if TSpec.dualState spec
           then Env.new {
@@ -578,5 +582,5 @@ structure CudaGen : CODEGEN =
             compile (spec, baseName);
             RunCC.linkLib (#staticLib spec, baseName, ldFlags spec)
           end
-end
 
+end
