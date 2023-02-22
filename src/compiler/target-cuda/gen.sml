@@ -59,7 +59,7 @@ structure CudaGen : CODEGEN =
               ])
           ])
 
-    fun mkCopyImage name g_var gpu_g_var imgty spec = let
+    fun mkCopyImage (name, g_var, gpu_g_var, imgty, spec) = let
           val varName = "gv_" ^ name;
           val var = CL.mkIndirect(g_var, varName);
           val copyFn = CL.mkSelect(var, "copyToDeviceAsync");
@@ -90,7 +90,7 @@ structure CudaGen : CODEGEN =
     fun copyField (IR.GV{ty, name, ...}) gvg_var gpu_g_var spec = (case ty
            of TrTy.TensorRefTy lengths => raise Fail "not Implemented: TensorRef"
             | TrTy.ImageTy info =>
-                mkCopyImage name gvg_var gpu_g_var (TrTy.ImageTy info) spec
+                mkCopyImage (name, gvg_var, gpu_g_var, TrTy.ImageTy info, spec)
             | TrTy.TupleTy ttypes => raise Fail "not Implemented: tuple"
             | TrTy.SeqTy(_, optLen) => copySeq name gvg_var gpu_g_var spec optLen
             | _ => copy_other ty name gvg_var gpu_g_var spec
