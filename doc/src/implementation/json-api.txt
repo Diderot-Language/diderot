@@ -1,0 +1,76 @@
+﻿Below are the descriptions of fields and arrays in the PROGRAM.json file
+
+Program Descriptions
+
+“src-file” : FILE - the diderot program source of this JSON file
+"version" : VER - the diderot program version the JSON file draw from
+"program" : PROGNAME - the name of the diderot program
+
+Purpose fields - These fields are the most general descriptors of the functions in the diderot program. These fields describe what in general this function modifies/inputs/runs in relation to the program. Within these fields are an array of the functions that can be categorized within the purpose.
+
+“inputs”  : [FUNCTIONS] - describes the diderot functions with relation to inputs of the diderot program
+“outputs”  :  [FUNCTIONS] - describes the diderot functions with relation to outputs of the diderot program
+“runtime”  :  [FUNCTIONS] - describes the diderot functions with relation to runtime operations of the diderot program
+“control”  :  [FUNCTIONS] - describes the diderot functions with relation to control operations of the diderot program
+“query”  :  [FUNCTIONS] - describes the diderot functions with relation to querying information about the diderot program
+
+Function objects - These are the objects within the arrays of the purpose fields. In these objects is information on the type of function. The general example is posted below with comments (denoted by // or /* */) describing their function.
+
+
+{
+	//"name" refers to what aspect of the diderot program the function(s) pertains to 
+  //In this case, it is "minVal"
+  "name" : "minVal",
+  
+  //"type" provides information on the attributes of the diderot function we are describing
+  "type" : {"kind" : "tensor",
+  	"shape" : []},
+  
+  /* "get" here may be replaced by either "set" or "func"
+   *  "get" - occurs when the aspect described by "name" has a get-function 
+   *  "set" - occurs when the aspect described by "name" has a set-function
+   *  usually, "get" and "set" will be paired together as two different fields within the function object
+   *  "func" - when the aspect has neither a get or set function, but does something entirely different
+   *  "func" provides structure to the json and may be re-done later
+   *  usually, "func" will be alone
+   */
+  "get" : {
+  
+  /* "return-ty" is the return-type of the function
+   * If it is neither an array, or a pointer, it may just be described as a simple string
+   * Here, it is "void"
+   * But if it is a pointer or an array, the return-type is written as follows:
+   * "return-ty" : {
+   *        "kind" : "*" OR [],
+   *        "arg" : THE TYPE OF THE POINTER OR ARRAY
+   *        "length" : []}
+   * If the type is a pointer, "length" may be omitted
+   */
+  "return-ty" : "void",
+  
+  //This inner "name" is the c-prototype function of the diderot instruction
+  "name" : "Diderot_input_get_minval",
+  
+  /* "params" is an array of the parameters described as objects of the c-prototype function
+   * Within each object:
+   * "name" - the name of the parameter
+   * "param-ty" - the type of the parameter, structured the same way as "return-ty"
+   * "attrbs" - the diderot attributes of each parameter
+   */
+  "params" : [{
+    "name" : "wrld",
+    "param-ty" : {
+      "kind" : "*",
+      "arg" : "Diderot_world_t"},
+    "attrbs" : ["world"]
+  },
+  {
+    "name" : "v",
+    "param-ty" : {
+      "kind" : "*",
+      "arg" : "float"},
+    "attrbs" : ["out"]
+  }]
+}
+
+End of File

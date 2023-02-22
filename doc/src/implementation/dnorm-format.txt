@@ -1,0 +1,150 @@
+The ASCII lines in the header end with '\n'.
+
+First line should be the magic:
+NRRD0004
+
+Rest of header will be a sequence of plain text lines, terminated by
+an empty line ('\n' alone).  Some header lines give per-array
+information, some give per-axis information.
+
+Note that the distinction between scalar and non-scalar images is
+given by the per-axis "kinds" field, so that is where further
+information is given about the constraints associated iwth non-scalar
+image data.
+
+============================================================
+The basic fields that should be there are:
+
+----------------
+type: <string>
+
+Gives the type of the scalar values in the array.  Current values are:
+signed char
+unsigned char
+short
+unsigned short
+int
+unsigned int
+long long int
+unsigned long long int
+float
+double
+
+----------------
+dimension: <int>
+
+Gives the dimension of the array.  Must be greater than 0.  Current
+code has a #define that limits the value to <= 16.  The per-axis fields
+will have this many pieces of information.
+
+----------------
+encoding: <string>
+
+How scalar values are encoded on disk.  Currently, should only see 
+"encoding: raw".
+
+----------------
+endian: <string>
+
+Endian-ness of raw values saved on disk.  Possibilities are:
+little
+big
+
+----------------
+space dimension: <int>
+
+Gives the dimension of the world-space in which the array or oriented
+(For now we're not allowing the named spaces that are given with the
+"space: " field).  The points and vectors given by "space origin"
+and "space directions" will have this many coefficients, so this
+field has to precede "space origin" and "space directions".
+
+----------------
+space origin: (<float1>,<float2>,...,<floatN>)
+
+Gives the location of the center of the first sample (with index
+space coordinates (0,0,0,...,0).  The number of coefficients 
+separated by commas and bounded by parens (with optional whitespace
+throughout) is given by the "space dimension" field.  Each coefficient
+is a floating point value (of the sort produced by printf("%g", val))
+
+============================================================
+The per-axis fields that should be there are as follows.  The ordering
+of these fields is always *fast* to *slow*, and the number of pieces
+of information is always equal to the image dimension.
+
+----------------
+sizes: <int1> <int2> ... <intD>
+
+The number of samples along each axis.  Each integer value must be >= 0.
+
+----------------
+kinds: <string1> <string2> ... <stringD>
+
+The kind of information represented by the samples along each axis. The
+possible values are:
+
+2-vector
+3-vector
+4-vector
+2D-symmetric-matrix
+2D-matrix
+3D-symmetric-matrix
+3D-matrix
+space
+
+The "space" kind is for a typical axis of the image, with samples that
+subtend some region of the spatial domain of the image.  All the other
+kinds are the sequence of scalar values that compose a non-scalar
+image value (vectors and tensors).
+
+We currently allow there to be *at* *most* *one* axis with a
+non-"space" kind.  We can have non-scalar image values, but we don't
+have cartesian products of non-scalar image values.  The non-"space"
+kind can be anywhere in the axis ordering.  If all the axis kinds are
+"space", then then image data is for scalars, else it is for
+non-scalar data.
+
+In scalar data, the image "dimension" must equal the "space dimension". 
+In non-scalar data, the image "dimension" must equal *one* plus 
+the "space dimension".  That is, the spatial axes have to form a
+basis, not necessarily orthonormal, for world space (the vectors
+are defined by the "space directions" field, below).  Thus, a
+3-D scalar image can't reside in a 2-D or 4-D world space, nor can
+a 3-D vector image reside in a 3-D or 5-D world space.
+
+We are currently not allowing the "measurement frame" field that
+identifies the coordinate system in which these are measured relative
+to the image orientation, so nothing should be assumed about the space
+in which these coefficients are measured.  The order of coefficients
+for these non-scalar kinds is:
+
+2D-symmetric-matrix: Mxx Mxy Myy
+2D-matrix: Mxx Mxy Myx Myy
+3D-symmetric-matrix: Mxx Mxy Mxz Myy Myz Mzz
+3D-matrix: Mxx Mxy Mxz Myx Myy Myz Mzx Mzy Mzz
+
+----------------
+space directions: (<x1>,<x2>,...,<xN>) (<x1>,<x2>,...,<xN>) ...
+(and at most one of these vectors is actually "none")
+
+These give the "direction" in world-space between successive samples
+along each axis: the columns of the index-to-world transform matrix.
+There is one per image axis, even for the axis of coefficients of
+non-scalar image values.  Because such an axis really has no spatial
+extent, for this and only this axis, the space direction vector is
+instead the string "none".
+
+============================================================
+Field ordering:
+
+The fields should appear in this order:
+type
+dimension
+space dimension
+sizes
+space directions
+kinds
+endian
+encoding
+space origin
