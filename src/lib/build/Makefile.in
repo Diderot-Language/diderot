@@ -41,19 +41,25 @@ endif
 
 build:			$(LOGGING_H)
 	for dir in $(wildcard rt-*) ; do \
-	  (cd $$dir; $(MAKE) build) || exit $$?; \
+          if test -f $$dir/Makefile ; then \
+	    (cd $$dir; $(MAKE) build) || exit $$?; \
+          fi \
 	done
 
 local-install:		$(LOGGING_H)
 	$(INSTALL) -d $(LIBDIR)
 	for dir in $(wildcard rt-*); do \
-	  (cd $$dir && $(MAKE) local-install) || exit $$?; \
+          if test -f $$dir/Makefile ; then \
+	    (cd $$dir && $(MAKE) local-install) || exit $$?; \
+          fi \
 	done
 
 install:		$(LOGGING_H)
 	$(INSTALL) -d $(INSTALL_LIBDIR)
 	for dir in $(wildcard rt-*); do \
-	  (cd $$dir && $(MAKE) install) || exit $$?; \
+          if test -f $$dir/Makefile ; then \
+	    (cd $$dir && $(MAKE) install) || exit $$?; \
+          fi \
 	done
 
 #
@@ -66,7 +72,7 @@ $(LOGGING_H):
 #################### Cleanup ####################
 
 CLEAN_SUBDIRS =		$(wildcard rt-*)
-DISTCLEAN_FILES =	$(wildcard rt-*) mk/build.gmk
+DISTCLEAN_FILES =	mk/build.gmk
 DEVCLEAN_FILES =
 
 include @DIDEROT_MKDIR@/clean-rules.gmk
